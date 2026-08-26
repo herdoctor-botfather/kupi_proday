@@ -1,0 +1,181 @@
+import type {
+  ApiError,
+  AuthResponse,
+  Category,
+  CreateReportDto,
+  CreateReviewDto,
+  CurrentUser,
+  MapBoundsQuery,
+  MySpecialistProfile,
+  Onboarding,
+  Paginated,
+  ProfileViewItem,
+  Review,
+  SpecialistApplicationDto,
+  SpecialistDetail,
+  SpecialistListItem,
+} from '@app/shared';
+
+const BASE_URL = import.meta.env.VITE_API_URL ?? '';
+const TOKEN_KEY = 'tgspec.token';
+
+/** Ошибка API с машиночитаемым кодом — по нему интерфейс решает, что показать. */
+export class ApiRequestError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+    readonly code?: string,
+  ) {
+    super(message);
+  }
+}
+
+let token: string | null = readToken();
+
+function readToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    // Приватный режим браузера может запрещать localStorage — работаем без сохранения.
+    return null;
+  }
+}
+
+export function setToken(value: string | null): void {
+  token = value;
+  try {
+    if (value) localStorage.setItem(TOKEN_KEY, value);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* см. readToken */
+  }
+}
+
+export const getToken = (): string | null => token;
+
+/**
+ * Отправка файла. Content-Type не выставляем: браузер добавит его сам
+ * вместе с boundary, а заданный вручную заголовок сломает разбор на сервере.
+ */
+async function upload<T>(path: string, file: Blob, fields: Record<string, string> = {}): Promise<T> {
+  const form = new FormData();
+  form.append('file', file, 'photo.jpg');
+  for (const [key, value] of Object.entries(fields)) form.append(key, value);
+
+  const headers = new Headers({ Accept: 'application/json' });
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+
+  const response = await fetch(`${BASE_URL}/api${path}`, { method: 'POST', body: form, headers });
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const error = (payload ?? {}) as Partial<ApiError>;
+    if (response.status === 401) setToken(null);
+    throw new ApiRequestError(response.status, error.message ?? 'Не удалось загрузить файл', error.code);
+  }
+
+  return payload as T;
+}
+
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const headers = new Headers(init.headers);
+  headers.set('Accept', 'application/json');
+  if (init.body) headers.set('Content-Type', 'application/json');
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+
+  const response = await fetch(`${BASE_URL}/api${path}`, { ...init, headers });
+
+  if (response.status === 204) return undefined as T;
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const error = (payload ?? {}) as Partial<ApiError>;
+    // Токен протух — стираем, чтобы следующий запуск прошёл авторизацию заново.
+    if (response.status === 401) setToken(null);
+    throw new ApiRequestError(response.status, error.message ?? 'Не удалось выполнить запрос', error.code);
+  }
+
+  return payload as T;
+}
+
+const qs = (params: Record<string, unknown>): string => {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') search.set(key, String(value));
+  }
+  const s = search.toString();
+  return s ? `?${s}` : '';
+};
+
+export interface SpecialistFilters {
+  q?: string;
+  categorySlug?: string;
+  city?: string;
+  minRating?: number;
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
+  sort?: 'rating' | 'reviews' | 'distance' | 'new';
+  page?: number;
+  pageSize?: number;
+}
+
+export const api = {
+  authTelegram: (initData: string) =>
+    request<AuthResponse>('/auth/telegram', { method: 'POST', body: JSON.stringify({ initData }) }),
+
+  categories: () => request<Category[]>('/categories'),
+
+  /** Города с опубликованными карточками — для подсказки в поле города. */
+  cities: (q?: string) => request<{ name: string; count: number }[]>(`/specialists/cities${qs({ q })}`),
+
+  specialists: (filters: SpecialistFilters) =>
+    request<Paginated<SpecialistListItem>>(`/specialists${qs(filters as Record<string, unknown>)}`),
+
+  specialist: (idOrSlug: string) => request<SpecialistDetail>(`/specialists/${idOrSlug}`),
+
+  specialistsOnMap: (bounds: MapBoundsQuery) =>
+    request<SpecialistListItem[]>(`/specialists/map${qs(bounds as unknown as Record<string, unknown>)}`),
+
+  reviews: (specialistId: string, page = 1) =>
+    request<Paginated<Review>>(`/specialists/${specialistId}/reviews${qs({ page })}`),
+
+  createReview: (specialistId: string, dto: CreateReviewDto) =>
+    request<Review>(`/specialists/${specialistId}/reviews`, { method: 'POST', body: JSON.stringify(dto) }),
+
+  /** Сохраняет выбор со стартового экрана. */
+  setOnboarding: (role: Onboarding) =>
+    request<CurrentUser>('/auth/onboarding', { method: 'PATCH', body: JSON.stringify({ role }) }),
+
+  // ─── Своя анкета специалиста ───
+  myProfile: () => request<MySpecialistProfile | null>('/me/specialist'),
+  createProfile: (dto: SpecialistApplicationDto) =>
+    request<MySpecialistProfile>('/me/specialist', { method: 'POST', body: JSON.stringify(dto) }),
+  updateProfile: (dto: SpecialistApplicationDto) =>
+    request<MySpecialistProfile>('/me/specialist', { method: 'PUT', body: JSON.stringify(dto) }),
+  replyToReview: (reviewId: string, text: string) =>
+    request<MySpecialistProfile>(`/me/specialist/reviews/${reviewId}/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    }),
+
+  createReport: (dto: CreateReportDto) =>
+    request<{ id: string }>('/reports', { method: 'POST', body: JSON.stringify(dto) }),
+
+  uploadAvatar: (file: Blob) => upload<MySpecialistProfile>('/me/specialist/avatar', file),
+  addPhoto: (file: Blob, caption?: string) =>
+    upload<MySpecialistProfile>('/me/specialist/photos', file, caption ? { caption } : {}),
+  removePhoto: (photoId: string) =>
+    request<void>(`/me/specialist/photos/${photoId}`, { method: 'DELETE' }),
+
+  hideProfile: () => request<MySpecialistProfile>('/me/specialist/hide', { method: 'POST' }),
+  publishProfile: () => request<MySpecialistProfile>('/me/specialist/publish', { method: 'POST' }),
+
+  history: () => request<ProfileViewItem[]>('/me/history'),
+  clearHistory: () => request<void>('/me/history', { method: 'DELETE' }),
+  myReviews: () => request<Review[]>('/me/reviews'),
+  favorites: () => request<SpecialistListItem[]>('/me/favorites'),
+  toggleFavorite: (specialistId: string) =>
+    request<{ isFavorite: boolean }>(`/me/favorites/${specialistId}`, { method: 'POST' }),
+};

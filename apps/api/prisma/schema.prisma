@@ -1,0 +1,382 @@
+// Каталог специалистов — схема БД (PostgreSQL)
+// Генерация клиента:  npm run db:generate -w apps/api
+// Применение схемы:   npm run db:push -w apps/api
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────── Пользователи ───────────────────────────
+
+enum Role {
+  USER       // обычный клиент
+  MODERATOR  // модерирует отзывы
+  ADMIN      // полный доступ к админ-панели
+}
+
+/// Что пользователь выбрал на стартовом экране. Не влияет на права —
+/// определяет только то, какой интерфейс ему показывать.
+enum Onboarding {
+  CLIENT      // ищет специалистов
+  SPECIALIST  // сам оказывает услуги
+}
+
+/// Пользователь Telegram. Создаётся автоматически при первом открытии Mini App.
+model User {
+  id           String  @id @default(cuid())
+  /// Telegram user id. BigInt — id уже вышли за пределы int32.
+  telegramId   BigInt  @unique
+  username     String?
+  firstName    String
+  lastName     String?
+  photoUrl     String?
+  languageCode String?
+  isPremium    Boolean @default(false)
+  role         Role    @default(USER)
+  isBlocked    Boolean @default(false)
+  /// Пользователь заблокировал бота или не начинал с ним чат.
+  /// Telegram отвечает 403 — запоминаем, чтобы не тратить лимит запросов.
+  botBlocked   Boolean @default(false)
+  /// null — выбор ещё не сделан, показываем стартовый экран.
+  onboardedAs  Onboarding?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastSeenAt DateTime @default(now())
+
+  /// Если пользователь сам является специалистом — обратная связь на карточку.
+  specialist Specialist?
+  reviews    Review[]
+  views      ProfileView[]
+  favorites  Favorite[]
+  reports    Report[]
+
+  @@index([role])
+  @@map("users")
+}
+
+// ─────────────────────────── Категории ───────────────────────────
+
+/// Категория услуг: «Ремонт», «Красота», «Репетиторы» и т.д.
+model Category {
+  id        String  @id @default(cuid())
+  /// Человекочитаемый идентификатор для URL: "beauty", "repair".
+  slug      String  @unique
+  name      String
+  /// Emoji или имя иконки из набора фронтенда.
+  icon      String  @default("🔧")
+  /// Родительская категория — на будущее, для подкатегорий. null = корневая.
+  parentId  String?
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Category[] @relation("CategoryTree")
+
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  specialists SpecialistCategory[]
+
+  @@index([isActive, sortOrder])
+  @@map("categories")
+}
+
+// ─────────────────────────── Специалисты ───────────────────────────
+
+enum SpecialistStatus {
+  DRAFT     // черновик, не виден в каталоге
+  PENDING   // подана заявка, ждёт проверки админом
+  ACTIVE    // опубликован
+  HIDDEN    // скрыт админом или по окончании подписки
+  BLOCKED   // заблокирован за нарушения
+}
+
+/// Карточка специалиста в каталоге.
+model Specialist {
+  id     String  @id @default(cuid())
+  /// Telegram-аккаунт владельца карточки. null — карточку завёл админ вручную.
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  displayName String
+  slug        String  @unique
+  /// Краткая строка под именем: «Мастер маникюра, 8 лет опыта».
+  headline    String?
+  about       String? @db.Text
+  photoUrl    String?
+  /// Ключ файла аватара в хранилище. Нужен, чтобы удалить прежний при замене:
+  /// по одному URL это невозможно, у драйверов разные схемы адресов.
+  photoKey    String?
+
+  // — Локация —
+  city    String
+  address String?
+  /// Координаты для карты и поиска «рядом». null — не показывается на карте.
+  lat     Float?
+  lng     Float?
+
+  // — Контакты. Приложение не хранит переписку, только точки входа. —
+  phone     String?
+  telegram  String?  // @username или ссылка t.me
+  whatsapp  String?  // номер в международном формате
+  instagram String?
+  website   String?
+
+  status SpecialistStatus @default(PENDING)
+
+  /// Анкета опубликована, но владелец её изменил — нужна повторная проверка.
+  /// Карточка при этом остаётся видимой: снимать с публикации из-за правки
+  /// опечатки слишком грубо, а изменения всё равно попадут к модератору.
+  needsReview Boolean @default(false)
+
+  /// Причина отклонения анкеты. Показывается владельцу, чтобы он понимал,
+  /// что исправить, и мог подать её заново.
+  rejectionReason String?
+
+  /// Кто завёл карточку: сам специалист через приложение или администратор.
+  isSelfRegistered Boolean @default(false)
+
+  /// Денормализованный рейтинг: пересчитывается при модерации отзыва.
+  /// Хранится здесь, чтобы сортировка и фильтры каталога не делали агрегат на лету.
+  ratingAvg   Float @default(0)
+  ratingCount Int   @default(0)
+  viewCount   Int   @default(0)
+
+  /// Платная подписка. Оплата вне приложения, админ ставит отметку вручную.
+  subscriptionUntil DateTime?
+  /// Поднятие в выдаче для оплативших.
+  isPromoted        Boolean   @default(false)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+
+  categories    SpecialistCategory[]
+  services      Service[]
+  photos        SpecialistPhoto[]
+  reviews       Review[]
+  views         ProfileView[]
+  favorites     Favorite[]
+  subscriptions Subscription[]
+
+  @@index([status, ratingAvg])
+  @@index([status, needsReview])
+  @@index([city, status])
+  @@index([lat, lng])
+  @@map("specialists")
+}
+
+/// Связь многие-ко-многим: специалист может работать в нескольких категориях.
+model SpecialistCategory {
+  specialistId String
+  categoryId   String
+  specialist   Specialist @relation(fields: [specialistId], references: [id], onDelete: Cascade)
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([specialistId, categoryId])
+  @@index([categoryId])
+  @@map("specialist_categories")
+}
+
+/// Позиция прайс-листа. Цены информационные — платежи приложение не проводит.
+model Service {
+  id           String  @id @default(cuid())
+  specialistId String
+  specialist   Specialist @relation(fields: [specialistId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  /// Цена в минимальных единицах (копейках), чтобы не ловить ошибки float.
+  priceAmount Int?
+  currency    String  @default("RUB")
+  /// true — «от 1500 ₽», false — фиксированная цена.
+  priceIsFrom Boolean @default(false)
+  sortOrder   Int     @default(0)
+
+  @@index([specialistId, sortOrder])
+  @@map("services")
+}
+
+/// Фотография в галерее работ.
+model SpecialistPhoto {
+  id           String  @id @default(cuid())
+  specialistId String
+  specialist   Specialist @relation(fields: [specialistId], references: [id], onDelete: Cascade)
+
+  url       String
+  /// Ключ в хранилище — по нему файл удаляется вместе с записью.
+  storageKey String?
+  caption   String?
+  sortOrder Int     @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([specialistId, sortOrder])
+  @@map("specialist_photos")
+}
+
+// ─────────────────────────── Отзывы ───────────────────────────
+
+enum ReviewStatus {
+  PENDING   // ждёт модерации
+  APPROVED  // опубликован, учитывается в рейтинге
+  REJECTED  // отклонён модератором
+}
+
+/// Отзыв клиента. В рейтинг попадают только APPROVED.
+model Review {
+  id           String @id @default(cuid())
+  specialistId String
+  userId       String
+  specialist   Specialist @relation(fields: [specialistId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Оценка 1..5. Диапазон проверяется на уровне API (Prisma не умеет CHECK).
+  rating Int
+  text   String? @db.Text
+
+  status           ReviewStatus @default(PENDING)
+  /// Причина отклонения — показывается автору отзыва.
+  moderationNote   String?
+
+  /// Публичный ответ специалиста. Виден всем рядом с отзывом.
+  /// Мастер с одним резким отзывом и спокойным ответом вызывает больше
+  /// доверия, чем мастер без отзывов вообще — без права ответа он беззащитен.
+  replyText   String?   @db.Text
+  repliedAt   DateTime?
+  moderatedAt      DateTime?
+  moderatedByUserId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Один отзыв на специалиста от одного пользователя.
+  @@unique([specialistId, userId])
+  @@index([status, createdAt])
+  @@index([specialistId, status])
+  @@map("reviews")
+}
+
+// ─────────────────────────── Активность пользователя ───────────────────────────
+
+/// История просмотров для личного кабинета.
+model ProfileView {
+  id           String @id @default(cuid())
+  userId       String
+  specialistId String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialist   Specialist @relation(fields: [specialistId], references: [id], onDelete: Cascade)
+
+  viewedAt DateTime @default(now())
+
+  /// Один пользователь — одна запись на специалиста, обновляем время повторного захода.
+  @@unique([userId, specialistId])
+  @@index([userId, viewedAt])
+  @@map("profile_views")
+}
+
+/// Избранное. В ТЗ прямо не заявлено, но дешёво и заметно улучшает удержание.
+model Favorite {
+  userId       String
+  specialistId String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialist   Specialist @relation(fields: [specialistId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@id([userId, specialistId])
+  @@index([specialistId])
+  @@map("favorites")
+}
+
+// ─────────────────────────── Подписки ───────────────────────────
+
+/// Отметка об оплаченном периоде размещения.
+/// Деньги проходят мимо приложения — админ фиксирует факт оплаты вручную.
+model Subscription {
+  id           String @id @default(cuid())
+  specialistId String
+  specialist   Specialist @relation(fields: [specialistId], references: [id], onDelete: Cascade)
+
+  /// Название тарифа: "month", "quarter", "year".
+  plan      String
+  startsAt  DateTime
+  endsAt    DateTime
+  /// Сумма в минимальных единицах, для отчётности.
+  amount    Int?
+  currency  String   @default("RUB")
+  /// Комментарий админа: способ оплаты, номер чека и т.п.
+  note      String?
+  createdByUserId String?
+  createdAt DateTime @default(now())
+
+  @@index([specialistId, endsAt])
+  @@map("subscriptions")
+}
+
+// ─────────────────────────── Жалобы ───────────────────────────
+
+enum ReportTarget {
+  SPECIALIST
+  REVIEW
+}
+
+enum ReportStatus {
+  OPEN      // ждёт рассмотрения
+  RESOLVED  // меры приняты
+  DISMISSED // жалоба отклонена
+}
+
+/// Жалоба на карточку или отзыв.
+///
+/// Без неё модерация работает только на упреждение: администратор должен сам
+/// наткнуться на нарушение. В каталоге с публичными контактами и текстами
+/// от пользователей это неприемлемо — в том числе юридически.
+model Report {
+  id       String       @id @default(cuid())
+  target   ReportTarget
+  /// Идентификатор карточки или отзыва. Внешний ключ не ставим:
+  /// поле указывает на разные таблицы в зависимости от target.
+  targetId String
+
+  reporterId String
+  reporter   User   @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  reason  String
+  comment String? @db.Text
+
+  status           ReportStatus @default(OPEN)
+  resolutionNote   String?
+  resolvedAt       DateTime?
+  resolvedByUserId String?
+
+  createdAt DateTime @default(now())
+
+  /// Один пользователь — одна жалоба на объект: иначе жалобами можно
+  /// завалить очередь модерации и утопить в ней настоящие нарушения.
+  @@unique([reporterId, target, targetId])
+  @@index([status, createdAt])
+  @@index([target, targetId])
+  @@map("reports")
+}
+
+// ─────────────────────────── Служебное ───────────────────────────
+
+/// Журнал действий администраторов — нужен для разбора спорных ситуаций.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String   // "review.approve", "specialist.block", ...
+  entityType String
+  entityId   String
+  payload    Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

@@ -1,0 +1,29 @@
+{
+  "name": "tg-specialists",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Telegram Mini App: каталог специалистов сферы услуг",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build:shared": "npm run build -w @app/shared",
+    "dev:api": "npm run dev -w @app/api",
+    "dev:miniapp": "npm run dev -w @app/miniapp",
+    "dev:admin": "npm run dev -w @app/admin",
+    "dev:bot": "npm run dev -w @app/bot",
+    "db:generate": "npm run db:generate -w @app/api",
+    "db:push": "npm run db:push -w @app/api",
+    "db:seed": "npm run db:seed -w @app/api",
+    "db:studio": "npm run db:studio -w @app/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "tunnel": "bash scripts/dev-tunnel.sh",
+    "start:all": "bash scripts/dev-start.sh",
+    "stop:all": "bash scripts/dev-stop.sh"
+  }
+}

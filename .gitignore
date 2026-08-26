@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.local
+.DS_Store
+coverage/
+*.log
+apps/api/prisma/migrations/dev.db*
+.vscode/
+.idea/
+.tunnel.log
+uploads/
+.logs/

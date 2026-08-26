@@ -1,0 +1,95 @@
+import { useEffect } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './lib/auth';
+import { TabBar } from './components/TabBar';
+import { CatalogPage } from './pages/CatalogPage';
+import { OnboardingPage } from './pages/OnboardingPage';
+import { ApplicationPage } from './pages/ApplicationPage';
+import { MyCardPage } from './pages/MyCardPage';
+import { SpecialistsPage } from './pages/SpecialistsPage';
+import { SpecialistPage } from './pages/SpecialistPage';
+import { MapPage } from './pages/MapPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { EmptyState } from './components/states';
+import { useBackButtonEffect } from './lib/telegram';
+import { isRoleChosenThisSession } from './lib/session';
+import { useGoBack } from './lib/navigation';
+
+/** Корневые вкладки — на них системная кнопка «Назад» не показывается. */
+const ROOT_ROUTES = new Set(['/', '/map', '/profile']);
+
+export function App() {
+  return (
+    <AuthProvider>
+      <Root />
+    </AuthProvider>
+  );
+}
+
+function Root() {
+  const { status } = useAuth();
+  const location = useLocation();
+
+  // Экран выбора показывается при каждом открытии приложения, а не только
+  // при первом. Запомненный в профиле выбор лишь подсвечивает прежний ответ:
+  // роль должна оставаться сменяемой, иначе заказчик, решивший разместить
+  // анкету, попадал бы в тупик.
+  //
+  // Гость (запуск вне Telegram) выбор не делает — ему доступен только каталог.
+  const needsOnboarding = status === 'authenticated' && !isRoleChosenThisSession();
+  if (needsOnboarding && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  // На стартовом экране таб-бар лишний: он предлагает разделы,
+  // о которых человек ещё ничего не знает.
+  if (location.pathname === '/onboarding') {
+    return (
+      <div className="app">
+        <OnboardingPage />
+      </div>
+    );
+  }
+
+  return (
+    <div className="app">
+      <Shell />
+      <TabBar />
+    </div>
+  );
+}
+
+function Shell() {
+  const location = useLocation();
+  const goBack = useGoBack();
+  const isRoot = ROOT_ROUTES.has(location.pathname);
+
+  // Кнопка «Назад» в шапке Telegram заменяет собой браузерную навигацию.
+  useEffect(() => useBackButtonEffect(goBack, !isRoot), [isRoot, goBack]);
+
+  // Новый экран всегда открывается сверху, а не с позиции прокрутки предыдущего.
+  useEffect(() => {
+    document.querySelector('.page')?.scrollTo({ top: 0 });
+  }, [location.pathname]);
+
+  return (
+    <Routes>
+      <Route path="/" element={<CatalogPage />} />
+      <Route path="/specialists" element={<SpecialistsPage />} />
+      <Route path="/specialist/:idOrSlug" element={<SpecialistPage />} />
+      <Route path="/map" element={<MapPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/profile/application" element={<ApplicationPage />} />
+      <Route path="/profile/my-card" element={<MyCardPage />} />
+      <Route path="/onboarding" element={<OnboardingPage />} />
+      <Route
+        path="*"
+        element={
+          <div className="page">
+            <EmptyState icon="🧭" title="Страница не найдена" />
+          </div>
+        }
+      />
+    </Routes>
+  );
+}

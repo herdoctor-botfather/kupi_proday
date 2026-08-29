@@ -69,7 +69,7 @@ export const createReviewSchema = z.object({
 export type CreateReviewDto = z.infer<typeof createReviewSchema>;
 
 export const onboardingSchema = z.object({
-  role: z.enum(['CLIENT', 'SPECIALIST', 'MARKET']),
+  role: z.enum(['CLIENT', 'SPECIALIST', 'MARKET', 'WANTED']),
 });
 export type OnboardingDto = z.infer<typeof onboardingSchema>;
 
@@ -170,6 +170,11 @@ export const LISTING_CONDITIONS = [
 const MAX_PRICE_RUB = 1_000_000_000;
 
 export const listingSchema = z.object({
+  /**
+   * Что это за объявление. По умолчанию продажа: обратная витрина
+   * появилась позже, и старые клиенты про неё ничего не знают.
+   */
+  kind: z.enum(['SELL', 'BUY']).default('SELL'),
   title: z.string().trim().min(3, 'Слишком короткое название').max(120),
   description: z.string().trim().max(4000).nullable().optional(),
   /** Цена вводится в рублях, хранится в копейках. */
@@ -182,6 +187,8 @@ export const listingSchema = z.object({
 export type ListingDto = z.infer<typeof listingSchema>;
 
 export const listingQuerySchema = paginationSchema.extend({
+  /** Витрины не смешиваются: запрос всегда про одну из них. */
+  kind: z.enum(['SELL', 'BUY']).default('SELL'),
   q: z.string().trim().max(100).optional(),
   categorySlug: z.string().trim().max(64).optional(),
   city: z.string().trim().max(100).optional(),

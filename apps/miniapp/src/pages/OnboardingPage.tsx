@@ -30,13 +30,15 @@ export function OnboardingPage() {
       markRoleChosen();
       // У кого анкета уже есть — сразу к ней, а не к пустой форме.
       const target =
-        role === 'MARKET'
-          ? '/market'
-          : role === 'CLIENT'
-            ? '/'
-            : updated.hasSpecialistProfile
-              ? '/profile/my-card'
-              : '/profile/application';
+        role === 'WANTED'
+          ? '/wanted'
+          : role === 'MARKET'
+            ? '/market'
+            : role === 'CLIENT'
+              ? '/'
+              : updated.hasSpecialistProfile
+                ? '/profile/my-card'
+                : '/profile/application';
       // Без replace: иначе история состоит из одной записи, и кнопка «Назад»
       // на форме анкеты видна, но возвращаться ей некуда.
       navigate(target);
@@ -48,18 +50,6 @@ export function OnboardingPage() {
 
   return (
     <div className="page onboarding">
-      <div className="onboarding__intro">
-        <div className="onboarding__emoji" aria-hidden>
-          👋
-        </div>
-        <h1 className="onboarding__title">Добро пожаловать</h1>
-        <p className="onboarding__subtitle">
-          {user?.onboardedAs
-            ? 'С чем пришли сегодня? Роль можно менять в любой момент — прошлый выбор ни к чему не обязывает.'
-            : 'Каталог проверенных специалистов сферы услуг. Выберите, зачем вы здесь.'}
-        </p>
-      </div>
-
       {error && (
         <div style={{ color: 'var(--destructive)', fontSize: 13, marginBottom: 12, textAlign: 'center' }}>
           {error}
@@ -110,7 +100,6 @@ export function OnboardingPage() {
                 : 'Заполнить анкету →'}
           </span>
         </button>
-      </div>
 
         <button
           type="button"
@@ -130,6 +119,32 @@ export function OnboardingPage() {
             {saving === 'MARKET' ? 'Открываем...' : 'Открыть объявления →'}
           </span>
         </button>
+
+        {/*
+          Спрос отдельной дверью, а не разделом внутри барахолки.
+          Это не «ещё один вид объявлений», а другая роль: человек приходит
+          не покупать и не продавать, а посмотреть, что людям нужно прямо
+          сейчас, — и предложить то, что у него уже есть.
+        */}
+        <button
+          type="button"
+          className={`role-card${user?.onboardedAs === 'WANTED' ? ' role-card--previous' : ''}`}
+          onClick={() => choose('WANTED')}
+          disabled={saving !== null}
+        >
+          {user?.onboardedAs === 'WANTED' && <span className="role-card__mark">Прошлый выбор</span>}
+          <span className="role-card__emoji" aria-hidden>
+            🔎
+          </span>
+          <span className="role-card__title">Люди ищут прямо сейчас</span>
+          <span className="role-card__text">
+            Кому-то нужна вещь, которая у вас уже есть, — предложите её
+          </span>
+          <span className="role-card__action">
+            {saving === 'WANTED' ? 'Открываем...' : 'Смотреть спрос →'}
+          </span>
+        </button>
+      </div>
 
       <p className="onboarding__note">
         Отдельная регистрация не нужна: вы уже вошли через Telegram. Пароли приложение не хранит.

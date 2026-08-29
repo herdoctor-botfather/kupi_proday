@@ -248,7 +248,7 @@ export class AdminService {
   async moderateListing(id: string, dto: ModerateListingDto, actorId: string) {
     const listing = await this.prisma.listing.findUnique({
       where: { id },
-      select: { id: true, userId: true, title: true, publishedAt: true },
+      select: { id: true, userId: true, kind: true, title: true, publishedAt: true },
     });
     if (!listing) {
       throw new NotFoundException({ code: 'LISTING_NOT_FOUND', message: 'Объявление не найдено' });
@@ -270,11 +270,18 @@ export class AdminService {
       return saved;
     });
 
+    // Запрос и объявление о продаже — разные вещи для автора, и путать
+    // их в уведомлении нельзя: человек не поймёт, о чём речь.
+    const isWanted = listing.kind === 'BUY';
     this.notifications.notify(
       listing.userId,
       approved
-        ? `🏷 <b>Объявление опубликовано</b>\n\n«${escapeHtml(listing.title)}» появилось на витрине.`
-        : `🏷 <b>Объявление отклонено</b>\n\n${escapeHtml(dto.reason ?? 'Причина не указана')}\n\nИсправьте и отправьте снова.`,
+        ? isWanted
+          ? `🔎 <b>Запрос опубликован</b>\n\n«${escapeHtml(listing.title)}» видят продавцы — ждите предложений.`
+          : `🏷 <b>Объявление опубликовано</b>\n\n«${escapeHtml(listing.title)}» появилось на витрине.`
+        : isWanted
+          ? `🔎 <b>Запрос отклонён</b>\n\n${escapeHtml(dto.reason ?? 'Причина не указана')}\n\nИсправьте и отправьте снова.`
+          : `🏷 <b>Объявление отклонено</b>\n\n${escapeHtml(dto.reason ?? 'Причина не указана')}\n\nИсправьте и отправьте снова.`,
       this.notifications.miniAppUrl,
     );
 

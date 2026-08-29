@@ -3,11 +3,13 @@
 export type Role = 'USER' | 'MODERATOR' | 'ADMIN';
 
 /** Что пользователь выбрал на стартовом экране. */
-export type Onboarding = 'CLIENT' | 'SPECIALIST' | 'MARKET';
+export type Onboarding = 'CLIENT' | 'SPECIALIST' | 'MARKET' | 'WANTED';
 
 export type CategoryKind = 'SERVICE' | 'PRODUCT';
 export type ListingStatus = 'DRAFT' | 'PENDING' | 'ACTIVE' | 'SOLD' | 'HIDDEN' | 'REJECTED';
 export type ListingCondition = 'NEW' | 'USED_PERFECT' | 'USED';
+/** SELL — продаю вещь, BUY — ищу вещь и жду предложений от продавцов. */
+export type ListingKind = 'SELL' | 'BUY';
 export type SpecialistStatus = 'DRAFT' | 'PENDING' | 'ACTIVE' | 'HIDDEN' | 'BLOCKED';
 export type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -132,6 +134,7 @@ export interface MySpecialistProfile extends SpecialistDetail {
 export interface ListingListItem {
   id: string;
   slug: string;
+  kind: ListingKind;
   title: string;
   priceAmount: number;
   currency: string;
@@ -148,6 +151,7 @@ export interface ListingDetail extends ListingListItem {
   description: string | null;
   photos: { id: string; url: string }[];
   viewCount: number;
+  /** Автор объявления: продавец у SELL и покупатель у BUY. */
   seller: { name: string; photoUrl: string | null };
   /** Объявление принадлежит текущему пользователю — писать себе не нужно. */
   isMine: boolean;

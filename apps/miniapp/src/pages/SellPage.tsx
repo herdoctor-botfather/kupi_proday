@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   LISTING_CONDITIONS,
   LISTING_PHOTOS_MAX,
   listingSchema,
   type ListingCondition,
+  type ListingKind,
   type MyListing,
 } from '@app/shared';
 import { api } from '../lib/api';
@@ -64,8 +65,21 @@ interface PendingPhoto {
 export function SellPage() {
   const navigate = useNavigate();
   const goBack = useGoBack();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const editingId = searchParams.get('id');
+  /**
+   * Форма обслуживает обе витрины. Что именно размещаем, приходит
+   * параметром при создании, а при правке берётся из самого объявления:
+   * переобуть запрос в продажу на полпути нельзя — это разные сделки.
+   */
+  // Форму открывают из двух разделов, и что именно размещаем, понятно
+  // по адресу: /wanted/new — предложение в раздел спроса, /market/sell —
+  // объявление на витрину. При правке вид берётся из самого объявления.
+  const [kind, setKind] = useState<ListingKind>(
+    location.pathname.startsWith('/wanted') ? 'BUY' : 'SELL',
+  );
+  const wanted = kind === 'BUY';
 
   const categories = useAsync(() => api.categories('PRODUCT'), []);
   const existing = useAsync(
@@ -116,6 +130,7 @@ export function SellPage() {
         categoryIds: listing.categories.map((c) => c.id),
       });
       setPhotos(listing.photos);
+      setKind(listing.kind);
     }
     setLoaded(true);
   }, [existing.loading, existing.data, loaded]);
@@ -128,6 +143,7 @@ export function SellPage() {
     setSaveError(null);
 
     const parsed = listingSchema.safeParse({
+      kind,
       title: form.title.trim(),
       description: form.description.trim() || null,
       price: form.price.trim() ? Number(form.price) : Number.NaN,
@@ -262,11 +278,21 @@ export function SellPage() {
 
   return (
     <div className="page">
-      <h1 className="page__title">{editingId ? 'Объявление' : 'Новое объявление'}</h1>
+      <h1 className="page__title">
+        {editingId
+          ? wanted
+            ? 'Запрос'
+            : 'Объявление'
+          : wanted
+            ? 'Что вы ищете'
+            : 'Новое объявление'}
+      </h1>
       <p className="form-intro">
         {editingId
           ? 'После изменений объявление отправится на повторную проверку. С витрины оно не пропадёт.'
-          : 'Заполните описание — модератор проверит объявление и опубликует его на витрине.'}
+          : wanted
+            ? 'Опишите, что нужно и сколько готовы заплатить. Продавцы увидят запрос и сами напишут вам.'
+            : 'Заполните описание — модератор проверит объявление и опубликует его на витрине.'}
       </p>
 
       {saveError && <div className="alert alert--error">{saveError}</div>}
@@ -274,7 +300,7 @@ export function SellPage() {
       <AsyncContent state={categories}>
         {(allCategories) => (
           <form onSubmit={submit} noValidate>
-            <Field label="Что продаёте" error={errors.title} required>
+            <Field label={wanted ? 'Что ищете' : 'Что продаёте'} error={errors.title} required>
               <input
                 className="form-input"
                 value={form.title}
@@ -284,7 +310,7 @@ export function SellPage() {
             </Field>
 
             <div className="form-row">
-              <Field label="Цена, ₽" error={errors.price} required>
+              <Field label={wanted ? 'Готов заплатить, ₽' : 'Цена, ₽'} error={errors.price} required>
                 <input
                   className="form-input"
                   value={form.price}
@@ -303,7 +329,7 @@ export function SellPage() {
               </label>
             </div>
 
-            <Field label="Состояние">
+            <Field label={wanted ? 'Какое состояние устроит' : 'Состояние'}>
               <div className="chips">
                 {LISTING_CONDITIONS.map((option) => (
                   <button
@@ -348,12 +374,24 @@ export function SellPage() {
               <CityInput value={form.city} onChange={(city) => set('city', city)} invalid={Boolean(errors.city)} />
             </Field>
 
-            <Field label="Описание" error={errors.description} hint="Состояние, комплектация, причина продажи">
+            <Field
+              label="Описание"
+              error={errors.description}
+              hint={
+                wanted
+                  ? 'Комплектация, допустимые изъяны, как быстро нужно'
+                  : 'Состояние, комплектация, причина продажи'
+              }
+            >
               <textarea
                 className="form-input form-textarea"
                 value={form.description}
                 onChange={(e) => set('description', e.target.value)}
-                placeholder="Расскажите о товаре так, чтобы не пришлось переспрашивать"
+                placeholder={
+                  wanted
+                    ? 'Опишите, что именно нужно, чтобы вам не предлагали не то'
+                    : 'Расскажите о товаре так, чтобы не пришлось переспрашивать'
+                }
               />
             </Field>
 
@@ -407,7 +445,9 @@ export function SellPage() {
             <div className="field__hint">
               {photoCount >= LISTING_PHOTOS_MAX
                 ? `Больше ${LISTING_PHOTOS_MAX} фотографий не поместится`
-                : 'Первая фотография станет обложкой. Объявления без фото смотрят заметно реже.'}
+                : wanted
+                  ? 'Фотография нужна, только если важен конкретный вид вещи — подойдёт и снимок из интернета.'
+                  : 'Первая фотография станет обложкой. Объявления без фото смотрят заметно реже.'}
             </div>
             {photoError && <div className="field__error">{photoError}</div>}
             <input

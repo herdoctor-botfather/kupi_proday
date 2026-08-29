@@ -194,6 +194,8 @@ export interface ReportRow {
 export interface ListingRow {
   id: string;
   slug: string;
+  /** SELL — продают вещь, BUY — ищут вещь и ждут предложений. */
+  kind: 'SELL' | 'BUY';
   title: string;
   description: string | null;
   priceAmount: number;

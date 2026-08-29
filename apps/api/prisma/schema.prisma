@@ -25,6 +25,7 @@ enum Onboarding {
   CLIENT      // ищет специалистов
   SPECIALIST  // сам оказывает услуги
   MARKET      // пришёл покупать или продавать товары
+  WANTED      // пришёл в раздел спроса: что людям нужно прямо сейчас
 }
 
 /// Пользователь Telegram. Создаётся автоматически при первом открытии Mini App.
@@ -263,10 +264,24 @@ enum ListingCondition {
 /// Отдельно от карточки специалиста: у товара цена, состояние и признак
 /// «продано», у специалиста — рейтинг, услуги и режим работы. Общая таблица
 /// заставила бы половину полей быть пустыми у каждой из сторон.
+/// Кто разместил объявление и чего хочет.
+enum ListingKind {
+  /// Продаю вещь. Обычная витрина: предложение ищет спрос.
+  SELL
+  /// Ищу вещь. Обратная витрина: объявление даёт покупатель,
+  /// а откликаются продавцы. Цена здесь — сколько покупатель готов дать.
+  BUY
+}
+
 model Listing {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Две витрины живут в одной таблице: у них совпадает всё —
+  /// проверка модератором, фотографии, категории, переписка, — и
+  /// различаются только тексты в интерфейсе и направление сделки.
+  kind ListingKind @default(SELL)
 
   title       String
   slug        String  @unique
@@ -298,7 +313,7 @@ model Listing {
   photos        ListingPhoto[]
   conversations Conversation[]
 
-  @@index([status, createdAt])
+  @@index([kind, status, createdAt])
   @@index([city, status])
   @@index([userId])
   @@map("listings")

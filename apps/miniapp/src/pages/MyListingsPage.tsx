@@ -79,7 +79,7 @@ export function MyListingsPage() {
               <EmptyState
                 icon="🏷"
                 title="Объявлений пока нет"
-                hint="Разместите первое — оно появится на витрине после проверки"
+                hint="Разместите первое — оно появится на витрине после проверки. Здесь же будут ваши запросы на покупку."
               />
               <button type="button" className="button" onClick={() => navigate('/market/sell')}>
                 Разместить объявление
@@ -96,12 +96,19 @@ export function MyListingsPage() {
                         {listing.coverUrl ? (
                           <img src={listing.coverUrl} alt="" loading="lazy" />
                         ) : (
-                          <span aria-hidden>📦</span>
+                          <span aria-hidden>{listing.kind === 'BUY' ? '🔎' : '📦'}</span>
                         )}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
+                        {/* Продажа и запрос лежат в одном списке, и без пометки
+                            владелец не поймёт, почему у одной записи цена — это
+                            ценник, а у другой потолок, который он сам назвал. */}
+                        {listing.kind === 'BUY' && <span className="badge-promoted">Ищу</span>}
                         <div className="my-listing__title">{listing.title}</div>
                         <div className="my-listing__price">
+                          {listing.kind === 'BUY' && (
+                            <span className="card__headline">до </span>
+                          )}
                           {formatPrice(listing.priceAmount, listing.currency)}
                         </div>
                         <div className="card__headline">

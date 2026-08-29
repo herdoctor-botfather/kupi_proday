@@ -2,14 +2,20 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
+import { usePagedFeed } from '../lib/usePagedFeed';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SearchInput } from '../components/SearchInput';
+import { ListingCard } from '../components/ListingCard';
+import { FeedHeader, FeedMore } from '../components/Feed';
 import { haptic } from '../lib/telegram';
 import { pluralize } from '../lib/format';
 import { categoryStyle } from '../lib/category-colors';
 
 /** Сколько городов показываем: длинный список превращается в стену чипов. */
 const CITIES_SHOWN = 8;
+
+/** Сколько объявлений лента показывает за раз. */
+const FEED_PAGE_SIZE = 6;
 
 /**
  * Каталог товаров — то же, что главный экран услуг, только для покупателя.
@@ -25,6 +31,10 @@ export function MarketCatalogPage() {
 
   const categories = useAsync(() => api.categories('PRODUCT'), []);
   const cities = useAsync(() => api.listingCities(), []);
+  const feed = usePagedFeed(
+    (page) => api.listings({ pageSize: FEED_PAGE_SIZE, sort: 'new', page }),
+    [],
+  );
 
   const submitSearch = (event: React.FormEvent) => {
     event.preventDefault();
@@ -51,17 +61,6 @@ export function MarketCatalogPage() {
       <form onSubmit={submitSearch}>
         <SearchInput value={query} onChange={setQuery} placeholder="Название товара" />
       </form>
-
-      <button
-        type="button"
-        className="button"
-        onClick={() => {
-          haptic.tap();
-          navigate('/market/listings');
-        }}
-      >
-        🛍 Смотреть все объявления
-      </button>
 
       <h2 className="section-title">Категории</h2>
 
@@ -124,6 +123,31 @@ export function MarketCatalogPage() {
             ))}
           </div>
         </>
+      )}
+
+      {/* Лента новых объявлений.
+          Категории и города отвечают на вопрос «где искать», но не на
+          вопрос «что тут вообще продают». Тому, кто зашёл посмотреть,
+          а не за конкретной вещью, нужен именно товар перед глазами. */}
+      <FeedHeader title="Новые объявления" to="/market/listings" total={feed.total} />
+
+      {feed.items.length > 0 ? (
+        <>
+          <div className="listing-grid">
+            {feed.items.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+          <FeedMore feed={feed} />
+        </>
+      ) : (
+        !feed.loading && (
+          <EmptyState
+            icon="📦"
+            title="Объявлений пока нет"
+            hint="Разместите первое — оно появится здесь после проверки"
+          />
+        )
       )}
     </div>
   );

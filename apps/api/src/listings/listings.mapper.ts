@@ -21,6 +21,7 @@ export function toListItem(row: ListRow): ListingListItem {
   return {
     id: row.id,
     slug: row.slug,
+    kind: row.kind,
     title: row.title,
     priceAmount: row.priceAmount,
     currency: row.currency,

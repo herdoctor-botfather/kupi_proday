@@ -46,8 +46,11 @@ export class ListingsController {
 
   /** Города с объявлениями — для фильтра. Объявлен до :idOrSlug, иначе примет за адрес. */
   @Get('cities')
-  findCities(@Query('q') q?: string): Promise<{ name: string; count: number }[]> {
-    return this.listings.findCities(q?.trim() || undefined);
+  findCities(
+    @Query('kind') kind?: string,
+    @Query('q') q?: string,
+  ): Promise<{ name: string; count: number }[]> {
+    return this.listings.findCities(kind === 'BUY' ? 'BUY' : 'SELL', q?.trim() || undefined);
   }
 
   @Get(':idOrSlug')

@@ -1,6 +1,14 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import type { ListingDetail, ListingDto, ListingQuery, MyListing, Paginated, ListingListItem } from '@app/shared';
+import type {
+  ListingDetail,
+  ListingDto,
+  ListingKind,
+  ListingQuery,
+  MyListing,
+  Paginated,
+  ListingListItem,
+} from '@app/shared';
 import { LISTING_PHOTOS_MAX, maskContacts } from '@app/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -80,10 +88,14 @@ export class ListingsService {
   }
 
   /** Города, где есть объявления, — для фильтра витрины. */
-  async findCities(query?: string): Promise<{ name: string; count: number }[]> {
+  async findCities(kind: ListingKind, query?: string): Promise<{ name: string; count: number }[]> {
     const rows = await this.prisma.listing.groupBy({
       by: ['city'],
-      where: { status: 'ACTIVE', ...(query ? { city: { contains: query, mode: 'insensitive' } } : {}) },
+      where: {
+        status: 'ACTIVE',
+        kind,
+        ...(query ? { city: { contains: query, mode: 'insensitive' } } : {}),
+      },
       _count: { city: true },
       orderBy: { _count: { city: 'desc' } },
       take: 30,
@@ -114,8 +126,10 @@ export class ListingsService {
   async create(userId: string, dto: ListingDto): Promise<MyListing> {
     await this.assertCategoriesExist(dto.categoryIds);
 
+    // Лимит считается по каждой витрине отдельно: два десятка запросов
+    // не должны мешать человеку продавать свои вещи.
     const active = await this.prisma.listing.count({
-      where: { userId, status: { in: ['ACTIVE', 'PENDING'] } },
+      where: { userId, kind: dto.kind, status: { in: ['ACTIVE', 'PENDING'] } },
     });
     if (active >= MAX_ACTIVE_LISTINGS) {
       throw new BadRequestException({
@@ -136,7 +150,9 @@ export class ListingsService {
     });
 
     void this.notifications.notifyStaff(
-      `🏷 <b>Новое объявление на проверку</b>\n\n${escapeHtml(dto.title)} — ${formatPrice(dto.price)}`,
+      dto.kind === 'BUY'
+        ? `🔎 <b>Новый запрос на проверку</b>\n\nИщут: ${escapeHtml(dto.title)} — до ${formatPrice(dto.price)}`
+        : `🏷 <b>Новое объявление на проверку</b>\n\n${escapeHtml(dto.title)} — ${formatPrice(dto.price)}`,
     );
     if (prepared.hadContacts) this.contactPolicy.register(userId, 'profile');
 
@@ -274,7 +290,9 @@ export class ListingsService {
   // ─────────── Вспомогательное ───────────
 
   private buildWhere(query: ListingQuery): Prisma.ListingWhereInput {
-    const where: Prisma.ListingWhereInput = { status: 'ACTIVE' };
+    // Витрина продажи и витрина спроса не пересекаются никогда: смешав их,
+    // мы показали бы покупателю чужие запросы вместо товаров.
+    const where: Prisma.ListingWhereInput = { status: 'ACTIVE', kind: query.kind };
 
     if (query.categorySlug) where.categories = { some: { category: { slug: query.categorySlug } } };
     if (query.city) where.city = { equals: query.city, mode: 'insensitive' };
@@ -322,6 +340,7 @@ export class ListingsService {
     };
 
     const data = {
+      kind: dto.kind,
       // Название чистим тоже: «iPhone 89001234567» видно прямо в списке.
       title: clean(dto.title) ?? dto.title.trim(),
       description: clean(dto.description),

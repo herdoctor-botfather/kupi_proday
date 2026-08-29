@@ -1,7 +1,15 @@
 /*
- * Оформление опирается на переменные темы Telegram: клиент присылает свою
- * палитру, приложение подхватывает её и выглядит родным и в светлой, и в
- * тёмной теме. Значения после запятой — запасные, для запуска вне Telegram.
+ * Файл читается сверху вниз тремя слоями.
+ *
+ * Здесь, в основании, оформление опирается на переменные темы Telegram:
+ * клиент присылает свою палитру, приложение подхватывает её. Значения
+ * после запятой — запасные, для запуска вне Telegram.
+ *
+ * Дальше идут слой «жидкого стекла» и слой тёмной темы с кислотным
+ * акцентом. Последний перекрывает палитру целиком и за темой клиента
+ * уже не следует — почему так, объяснено на месте. Основание при этом
+ * остаётся рабочим: на нём держится вся раскладка, и при отказе от
+ * кислотной темы приложение возвращается к родному виду.
  */
 
 :root {
@@ -2215,178 +2223,845 @@ body::before {
 
 /* ─── Витрина барахолки на главной ─── */
 
-.market-teaser-block {
-  margin-top: 28px;
-}
-
-.market-teaser-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.market-teaser-head__title {
-  font-size: 17px;
-  font-weight: 600;
-}
-
-.market-teaser-head__all {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--accent);
-  white-space: nowrap;
-}
-
-.market-teaser-head__hint {
-  margin: 2px 0 12px;
-  font-size: 12.5px;
-  color: var(--text-hint);
-}
-
 /*
  * Полоса выходит за поля экрана и уходит под правый край: обрезанная
  * карточка — единственный честный признак того, что список продолжается
  * вбок. Ровно закончившийся ряд читается как «здесь всё».
  */
-.market-strip {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  padding: 2px var(--page-padding) 2px 0;
-  margin: 0 calc(-1 * var(--page-padding));
-  padding-left: var(--page-padding);
-  scrollbar-width: none;
-}
-
-.market-strip::-webkit-scrollbar {
-  display: none;
-}
-
-.market-strip__item {
-  flex: 0 0 116px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  color: var(--text);
-  scroll-snap-align: start;
-}
-
-.market-strip__photo {
-  aspect-ratio: 1;
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--bg-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 3px;
-}
-
-.market-strip__photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 /*
  * Заглушка для объявления без фотографии: тот же оттенок, что у плитки
  * этой категории в каталоге. Полоса из одинаковых серых квадратов
  * выглядела бы поломкой, а не витриной.
  */
-.market-strip__photo--tinted {
-  background: linear-gradient(
-    155deg,
-    hsl(var(--tile-hue, 220) 90% 96%),
-    hsl(var(--tile-hue, 220) 85% 91%)
-  );
-  font-size: 34px;
-}
-
-[data-theme='dark'] .market-strip__photo--tinted {
-  background: linear-gradient(
-    155deg,
-    hsl(var(--tile-hue, 220) 42% 20%),
-    hsl(var(--tile-hue, 220) 45% 15%)
-  );
-}
-
-.market-strip__price {
-  font-size: 14.5px;
-  font-weight: 700;
-}
-
-.market-strip__title {
-  font-size: 12.5px;
-  line-height: 1.25;
-  color: var(--text-hint);
-  /* Одна строка: подпись здесь — намёк, а не описание. */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.market-strip__more {
-  flex: 0 0 116px;
-  /* Ровно высота квадратного фото: иначе плитка «дальше» торчит из ряда. */
-  height: 116px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  border: 1px solid var(--hairline);
-  box-shadow: var(--shadow-card);
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: 500;
-  scroll-snap-align: start;
-}
-
-.market-strip__more-icon {
-  font-size: 22px;
-}
-
 /* Пустая витрина: карусель показывать нечем, зато можно позвать продавца. */
-.market-teaser {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 28px;
-  padding: 14px;
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  border: 1px solid var(--hairline);
-  box-shadow: var(--shadow-card);
+/* ═══════════════════════════════════════════════════════════════
+   ЖИДКОЕ СТЕКЛО
+
+   Поверхности перестают быть плашками и становятся стеклом: пропускают
+   размытый фон, ловят свет верхней кромкой и отбрасывают мягкую тень.
+
+   Слой идёт последним и целиком спрятан за @supports. Там, где WebView
+   не умеет backdrop-filter, ни одно правило отсюда не применяется —
+   приложение остаётся в прежнем плотном оформлении, а не превращается
+   в набор полупрозрачных пятен поверх нечитаемого фона.
+
+   Стекло само по себе не выглядит стеклом: ему нужно, чтобы за ним
+   что-то было. Поэтому вместе с ним появляется цветной фон, медленно
+   плывущий за содержимым.
+   ═══════════════════════════════════════════════════════════════ */
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  :root {
+    /* Плотность стекла. Чем выше прозрачность, тем сильнее нужен блюр,
+       иначе текст ложится на пёстрый фон и теряет читаемость. */
+    --glass-bg: rgba(255, 255, 255, 0.6);
+    --glass-bg-strong: rgba(255, 255, 255, 0.76);
+    --glass-blur: 20px;
+    --glass-blur-strong: 28px;
+
+    /* Блик по верхней кромке и тонкая грань по контуру — то, что делает
+       поверхность стеклянной, а не просто размытой. */
+    --glass-rim: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.55);
+
+    --glass-shadow: 0 6px 20px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.05);
+    --glass-shadow-lift: 0 14px 36px rgba(0, 0, 0, 0.13), 0 2px 6px rgba(0, 0, 0, 0.06);
+
+    /* Фон под стеклом должен быть заметнее прежнего: полупрозрачная
+       поверхность над ровной белизной неотличима от белой плашки. */
+    --glow-accent: rgba(0, 122, 255, 0.32);
+    --glow-warm: rgba(255, 184, 0, 0.22);
+    --glow-cool: rgba(90, 200, 250, 0.3);
+  }
+
+  [data-theme='dark'] {
+    --glass-bg: rgba(30, 30, 34, 0.52);
+    --glass-bg-strong: rgba(32, 32, 38, 0.72);
+    --glass-rim: rgba(255, 255, 255, 0.14);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 6px 22px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.4);
+    --glass-shadow-lift: 0 16px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.45);
+
+    --glow-accent: rgba(0, 122, 255, 0.4);
+    --glow-warm: rgba(255, 184, 0, 0.18);
+    --glow-cool: rgba(90, 200, 250, 0.26);
+  }
+
+  @supports (color: color-mix(in srgb, red, blue)) {
+    :root {
+      --glow-accent: color-mix(in srgb, var(--accent) 32%, transparent);
+      --glow-warm: color-mix(in srgb, var(--star) 22%, transparent);
+      --glow-cool: color-mix(in srgb, var(--link) 28%, transparent);
+    }
+
+    [data-theme='dark'] {
+      --glow-accent: color-mix(in srgb, var(--accent) 40%, transparent);
+      --glow-warm: color-mix(in srgb, var(--star) 18%, transparent);
+      --glow-cool: color-mix(in srgb, var(--link) 26%, transparent);
+    }
+  }
+
+  /* ─── Фон, который видно сквозь стекло ─── */
+
+  /*
+   * Цветные пятна по всему экрану вместо прежнего свечения у верхнего края:
+   * стекло должно что-то показывать, а над ровной заливкой оно неотличимо
+   * от матовой плашки.
+   *
+   * Фон намеренно неподвижен. Движение под стеклом заставляло бы каждую
+   * поверхность пересчитывать размытие в каждом кадре — на недорогих
+   * телефонах это видно сразу. Оживляет картинку прокрутка: содержимое
+   * проезжает под стеклом, и размытие меняется вместе с ним — то есть
+   * ровно тогда, когда человек и так двигает экран.
+   */
+  /*
+   * Фон лежит на самом каркасе приложения, а не на псевдоэлементе <body>.
+   * Каркас занимает весь экран и не прокручивается — прокрутку ведёт
+   * страница внутри, — поэтому картинка остаётся неподвижной сама собой,
+   * без position: fixed и лишнего слоя композиции.
+   */
+  .app {
+    background:
+      radial-gradient(78% 46% at 4% -4%, var(--glow-accent), transparent 76%),
+      radial-gradient(70% 40% at 102% 8%, var(--glow-warm), transparent 74%),
+      radial-gradient(84% 48% at 96% 58%, var(--glow-cool), transparent 76%),
+      radial-gradient(74% 44% at -6% 102%, var(--glow-accent), transparent 76%);
+  }
+
+  /* Прежнее свечение у верхнего края лишнее: его заменил фон каркаса. */
+  body::before {
+    display: none;
+  }
+
+  /* ─── Стеклянные поверхности ─── */
+
+  .role-card,
+  .my-card,
+  .profile-cta,
+  .role-switch,
+  .card,
+  .service-row,
+  .chat-row,
+  .review,
+  .reply-box,
+  .report-form,
+  .alert,
+  .state,
+  .city-input__list,
+  .my-listing {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-rim);
+  }
+
+  /* Нажатие «продавливает» стекло: тень уходит, поверхность садится. */
+  .role-card:active,
+  .profile-cta:active,
+  .card:active {
+    box-shadow: inset 0 1px 0 var(--glass-rim);
+    transform: scale(0.99);
+  }
+
+  /* ─── Нижняя навигация ─── */
+
+  /*
+   * Панель отрывается от края и висит над содержимым: у стекла должно
+   * быть что размывать, а прижатая к низу полоса размывает только поля
+   * страницы. Заодно видно, что список под ней продолжается.
+   */
+  .tabbar {
+    left: 10px;
+    right: 10px;
+    bottom: calc(env(safe-area-inset-bottom) + 8px);
+    height: var(--tabbar-height);
+    padding-bottom: 0;
+    border: 1px solid var(--glass-border);
+    border-radius: 22px;
+    background: var(--glass-bg-strong);
+    -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(200%);
+    backdrop-filter: blur(var(--glass-blur-strong)) saturate(200%);
+    box-shadow: var(--glass-shadow-lift), inset 0 1px 0 var(--glass-rim);
+    overflow: hidden;
+  }
+
+  /* Панель больше не занимает всю ширину внизу — запас под неё вырос. */
+  .page {
+    padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 26px);
+  }
+
+  /* Выбранная вкладка подсвечивается лепестком, а не только цветом текста. */
+  .tabbar__item--active {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 16%, transparent),
+      color-mix(in srgb, var(--accent) 7%, transparent)
+    );
+  }
+
+  /* ─── Элементы управления ─── */
+
+  /* Поле со стеклом создаёт свой слой и перекрывает лежащую под ним
+     иконку — поднимаем её обратно наверх. */
+  .search__icon {
+    z-index: 1;
+  }
+
+  .search__input,
+  .form-input,
+  .textarea,
+  .chat__input {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+    border: 1px solid var(--glass-border);
+    box-shadow: inset 0 1px 0 var(--glass-rim);
+  }
+
+  .chip {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(14px) saturate(170%);
+    backdrop-filter: blur(14px) saturate(170%);
+    border: 1px solid var(--glass-border);
+    box-shadow: inset 0 1px 0 var(--glass-rim);
+  }
+
+  .chip--active {
+    background: var(--accent);
+    border-color: transparent;
+    box-shadow:
+      0 4px 12px color-mix(in srgb, var(--accent) 32%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  /* Основная кнопка — не стекло, а налитый цветом камень под ним:
+     она должна оставаться самым плотным пятном на экране. */
+  .button {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 88%, #ffffff),
+      var(--accent)
+    );
+    box-shadow:
+      0 6px 18px color-mix(in srgb, var(--accent) 34%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.32);
+  }
+
+  .button:active {
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
+  }
+
+  .button--secondary {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-rim);
+  }
+
+  /* ─── Экраны переписки и карты ─── */
+
+  .chat__header,
+  .chat__composer,
+  .map-sheet,
+  .map__filters {
+    background: var(--glass-bg-strong);
+    -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(190%);
+    backdrop-filter: blur(var(--glass-blur-strong)) saturate(190%);
+    border-color: var(--glass-border);
+  }
+
+  .bubble {
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    backdrop-filter: blur(12px) saturate(160%);
+    box-shadow: inset 0 1px 0 var(--glass-rim);
+  }
+
+  /* ─── Блик на цветных плитках ─── */
+
+  /*
+   * Плитки категорий сохраняют свой цвет, но получают световое пятно
+   * сверху слева — как будто над экраном есть источник света. Без него
+   * они выглядят напечатанными, а не лежащими под стеклом.
+   */
+  .category {
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+
+  .category::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      120% 80% at 8% -10%,
+      rgba(255, 255, 255, 0.55),
+      transparent 60%
+    );
+  }
+
+  [data-theme='dark'] .category {
+    box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  [data-theme='dark'] .category::before {
+    background: radial-gradient(
+      120% 80% at 8% -10%,
+      rgba(255, 255, 255, 0.14),
+      transparent 60%
+    );
+  }
+
+  /* ─── Когда стекло мешает ─── */
+
+  /*
+   * Системная настройка «уменьшить прозрачность» существует для тех, кому
+   * текст на просвечивающем фоне читать трудно. Мы обязаны её услышать.
+   */
+  @media (prefers-reduced-transparency: reduce) {
+    .role-card,
+    .my-card,
+    .profile-cta,
+    .role-switch,
+    .card,
+    .service-row,
+    .chat-row,
+    .review,
+    .reply-box,
+    .report-form,
+    .alert,
+    .state,
+    .city-input__list,
+    .my-listing,
+    .tabbar,
+    .form-input,
+    .textarea,
+    .chat__input,
+    .search__input,
+    .chip,
+    .button--secondary,
+    .chat__header,
+    .chat__composer,
+    .map-sheet,
+    .map__filters,
+    .bubble {
+      background: var(--surface-raised);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .app {
+      background: none;
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ТЁМНАЯ ТЕМА С КИСЛОТНЫМ АКЦЕНТОМ
+
+   Слой перекрывает палитру целиком и намеренно не следует за темой
+   Telegram: у клиента она бывает светлой, а этот стиль строится на
+   чёрном фоне — на светлом он рассыпается. Приложение выглядит одинаково
+   у всех, как и задумано; взамен теряется способность мимикрировать
+   под клиент, и это осознанный размен.
+
+   Механику стекла предыдущий слой оставляет: полупрозрачные капсулы
+   поверх фотографий — часть той же стилистики.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --bg: #08090a;
+  --bg-secondary: #131519;
+  --text: #f1f3ef;
+  --text-hint: #8a9186;
+
+  /* Лайм работает и как акцент, и как ссылка: другого яркого цвета
+     в этой палитре нет, а два акцента спорили бы друг с другом. */
+  --accent: #ccff33;
+  --accent-text: #0a0b08;
+  --link: #ccff33;
+  --destructive: #ff5c5c;
+  --star: #ffb800;
+
+  --border: rgba(255, 255, 255, 0.1);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+
+  /* Поверхности: почти чёрные, но светлее фона — иначе карточка
+     на чёрном не читается как карточка. */
+  --surface-raised: #14161a;
+  --hairline: rgba(255, 255, 255, 0.08);
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.5);
+
+  /* Стекло на чёрном: тёмное и плотное. Светлое стекло из прежнего
+     слоя дало бы молочные пятна вместо затемнённых поверхностей. */
+  --glass-bg: rgba(24, 27, 31, 0.62);
+  --glass-bg-strong: rgba(14, 16, 19, 0.82);
+  --glass-rim: rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-shadow: 0 6px 22px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --glass-shadow-lift: 0 16px 40px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.5);
+
+  /* Свечение фона — тот же лайм, но еле различимый: на чёрном даже
+     десятая доля цвета читается как подсветка. */
+  --glow-accent: rgba(204, 255, 51, 0.1);
+  --glow-warm: rgba(204, 255, 51, 0.05);
+  --glow-cool: rgba(80, 255, 190, 0.06);
+
+  /* Микротипографика: короткие заглавные подписи с разрядкой.
+     Из них набраны разделы, чипы и подписи вкладок. */
+  --label-size: 11px;
+  --label-spacing: 0.1em;
+}
+
+body {
+  background: var(--bg);
   color: var(--text);
 }
 
-.market-teaser__badge {
+/* ─── Разделы ─── */
+
+.section-title {
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
+  color: var(--text-hint);
+  margin: 28px 0 14px;
+}
+
+/* Тире перед заголовком — след типографики, где подпись не кричит,
+   а помечает начало блока. */
+.section-title::before {
+  content: '—';
+  opacity: 0.45;
+}
+
+/* ─── Капсулы ─── */
+
+.chip {
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
+  color: var(--text-hint);
+}
+
+.chip--active {
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+/* ─── Кнопки ─── */
+
+.button {
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--accent-text);
+}
+
+.button--secondary {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ─── Плитки категорий ─── */
+
+/*
+ * Пастельные плитки на чёрном фоне светятся и перетягивают внимание
+ * на себя. Цвет категории остаётся, но уходит вглубь: фон почти чёрный
+ * с оттенком, а сам оттенок держат значок и подпись.
+ */
+.category {
+  --tile-bg: hsl(var(--tile-hue, 220) 28% 13%);
+  --tile-bg-to: hsl(var(--tile-hue, 220) 32% 9%);
+  --tile-fg: hsl(var(--tile-hue, 220) 78% 76%);
+  --tile-muted: hsl(var(--tile-hue, 220) 22% 55%);
+  --tile-icon-bg: hsla(var(--tile-hue, 220) 78% 76% / 0.12);
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.category__count {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ─── Витрина ─── */
+
+/* Заглушки товаров без фотографий: на чёрном светлые пастельные
+   квадраты бьют по глазам сильнее самих фотографий. Оттенок категории
+   остаётся, но уходит в глубину — как и на плитках каталога. */
+/* Приветствие — такая же служебная подпись, как названия разделов,
+   и кричать лаймом ей незачем: акцент нужен действиям, а не словам. */
+.hero__greeting {
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
+  color: var(--text-hint);
+  margin-bottom: 8px;
+}
+
+/* Подписи товаров в полосе — цена белая, название приглушённое. */
+/* ─── Нижняя навигация в кислотной теме ─── */
+
+.tabbar__item {
+  gap: 5px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-hint);
+}
+
+.tabbar__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Значок и подпись окрашиваются вместе: контурный значок наследует
+   currentColor, поэтому достаточно задать цвет самой вкладке. */
+.tabbar__item--active {
+  color: var(--accent);
+  background: none;
+}
+
+/* ─── Кнопка «разместить» ─── */
+
+/*
+ * Висит над панелью, а не внутри неё: вкладок пять, и шестое место
+ * в ряду сделало бы каждую вкладку уже и мельче. Поднятая кнопка
+ * заодно отделяет действие от навигации.
+ */
+.fab {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 20px);
+  z-index: 25;
+
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--accent);
+  color: var(--accent-text);
+  box-shadow:
+    0 8px 24px rgba(204, 255, 51, 0.28),
+    0 2px 6px rgba(0, 0, 0, 0.5);
+  transition: transform 0.12s ease;
+}
+
+.fab:active {
+  transform: translateX(-50%) scale(0.93);
+}
+
+/* ─── Всплывающая панель выбора ─── */
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: sheet-fade 0.16s ease;
+}
+
+.sheet {
+  width: 100%;
+  padding: 10px var(--page-padding) calc(env(safe-area-inset-bottom) + 18px);
+  border-radius: 24px 24px 0 0;
+  background: var(--surface-raised);
+  border-top: 1px solid var(--hairline);
+  animation: sheet-rise 0.2s ease;
+}
+
+.sheet__grip {
+  width: 38px;
+  height: 4px;
+  margin: 0 auto 14px;
+  border-radius: 999px;
+  background: var(--hairline);
+}
+
+.sheet__title {
+  margin: 0 0 14px;
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
+  color: var(--text-hint);
+}
+
+.sheet__option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  text-align: left;
+  padding: 14px;
+  margin-bottom: 10px;
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+  border: 1px solid var(--hairline);
+  color: var(--text);
+}
+
+.sheet__option:active {
+  transform: scale(0.99);
+}
+
+.sheet__option-icon {
   font-size: 24px;
   line-height: 1;
 }
 
-.market-teaser__body {
+.sheet__option-body {
   flex: 1;
   min-width: 0;
 }
 
-.market-teaser__title {
+.sheet__option-title {
   display: block;
   font-weight: 600;
 }
 
-.market-teaser__text {
+.sheet__option-text {
   display: block;
+  margin-top: 2px;
   font-size: 12.5px;
-  color: var(--text-hint);
   line-height: 1.35;
+  color: var(--text-hint);
 }
 
-.market-teaser__chevron {
-  font-size: 22px;
+.sheet__cancel {
+  width: 100%;
+  padding: 13px;
+  border-radius: 999px;
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
   color: var(--text-hint);
+}
+
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-rise {
+  from {
+    transform: translateY(14px);
+  }
+}
+
+/* Кнопка перекрывает нижний край списка — увеличиваем запас. */
+.page {
+  padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 92px);
+}
+
+/* ─── Ярлык продвижения ─── */
+
+/* Аналог «HOT» из образца: короткое слово заглавными на лаймовой
+   капсуле. Единственное место, где акцент используется как заливка
+   не у действия, — потому что это и есть выделение карточки. */
+.badge-promoted {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ─── Ярлык категории поверх фотографии товара ─── */
+
+/* Активная капсула остаётся залитой и там, где прозрачность отключена:
+   правило для неактивных капсул идёт ниже по файлу и иначе перебило бы
+   заливку, оставив лаймовый текст на тёмном фоне. */
+.chip--active {
+  background: var(--accent);
+  border-color: transparent;
+}
+
+/* Заглушка карточки на витрине — то же решение, что и в полосе. */
+.listing-card__photo--tinted {
+  background: linear-gradient(
+    155deg,
+    hsl(var(--tile-hue, 220) 30% 15%),
+    hsl(var(--tile-hue, 220) 34% 10%)
+  );
+}
+
+.listing-card__no-photo {
+  /* Карточка на витрине крупная — значок в ней тоже должен быть крупным,
+     иначе он читается как случайная точка посреди пустого прямоугольника. */
+  font-size: 46px;
+  opacity: 0.85;
+}
+
+/* Метка категории в подписи карточки: на чёрном светлая плашка
+   выглядит наклейкой, а нужен приглушённый оттенок. */
+.tag {
+  background: hsla(var(--tile-hue, 220) 60% 60% / 0.16);
+  color: hsl(var(--tile-hue, 220) 70% 74%);
+}
+
+/* ─── Три двери наверху главной ─── */
+
+/*
+ * Сжатая версия стартового экрана. Открыв приложение по ссылке из бота,
+ * человек стартовый экран не видит вовсе, и без этого ряда остаётся
+ * запертым в том разделе, куда попал.
+ */
+.role-row {
+  display: grid;
+  /* Четыре двери в один ряд на телефоне не помещаются: подпись вроде
+     «Я ищу специалиста» ломается на три строки и перестаёт читаться.
+     Два на два оставляют каждой кнопке половину ширины экрана. */
+  grid-template-columns: repeat(2, 1fr);
+  /* Один и тот же промежуток по обеим осям: разные значения сразу видно
+     как перекос, даже если разница в пару пикселей. */
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.role-mini {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Содержимое по центру, а высота одна на все четыре кнопки: иначе
+     подпись, переносящаяся на вторую строку, вытягивает свою кнопку,
+     и ряд получается рваным. */
+  justify-content: center;
+  min-height: 94px;
+  gap: 8px;
+  padding: 12px 8px;
+  border-radius: 16px;
+  text-align: center;
+
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  color: var(--text);
+  transition: transform 0.12s ease;
+}
+
+.role-mini:active {
+  transform: scale(0.97);
+}
+
+/*
+ * Значок и подпись занимают одинаковые полосы во всех четырёх кнопках.
+ * У эмодзи разные метрики — у одного глиф выше, у другого ниже, — и без
+ * фиксированной высоты они встают на разных уровнях, а вместе с ними
+ * съезжают и подписи.
+ */
+.role-mini__emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  font-size: 21px;
+  line-height: 1;
+}
+
+.role-mini__label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Две строки по высоте строки: однострочные подписи встают по центру
+     этой полосы, двухстрочные заполняют её целиком. */
+  min-height: 29px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.22;
+}
+
+/* ─── Ленты на главной ─── */
+
+.feed-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 30px 0 12px;
+}
+
+.feed-head__title {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.feed-head__all {
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/*
+ * «Смотреть ещё» во всю ширину: кнопка завершает ленту, и узкая
+ * посреди пустой строки читалась бы как случайная ссылка.
+ */
+.feed-more {
+  width: 100%;
+  margin-top: 12px;
+  padding: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  border-radius: 999px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  color: var(--text-hint);
+
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
+}
+
+.feed-more:active {
+  transform: scale(0.99);
+}
+
+.feed-more:disabled {
+  opacity: 0.6;
+}
+
+.feed-more__chevron {
+  font-size: 14px;
+  line-height: 1;
+  /* Стрелка «вниз» набрана символом, у которого свой отступ сверху. */
+  margin-top: -3px;
+}
+
+/* Карточка мастера — целиком ссылка, и без этого её содержимое
+   наследует цвет ссылок: имя выходило лаймовым, хотя акцент в этой
+   палитре закреплён за действиями, а не за текстом. */
+.card {
+  color: var(--text);
 }

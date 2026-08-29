@@ -17,6 +17,7 @@ const ROUTES: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
   [/^listing_([a-z0-9-]{1,64})$/i, (m) => `/listing/${m[1]}`],
   [/^catalog$/i, () => '/'],
   [/^market$/i, () => '/market'],
+  [/^wanted$/i, () => '/wanted'],
   [/^buy$/i, () => '/market/browse'],
   [/^sell$/i, () => '/market/sell'],
   [/^apply$/i, () => '/profile/my-card'],

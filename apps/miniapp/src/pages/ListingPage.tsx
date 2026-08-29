@@ -10,7 +10,13 @@ import { categoryStyle } from '../lib/category-colors';
 import { haptic } from '../lib/telegram';
 import { useIsAuthenticated } from '../lib/auth';
 
-/** Карточка товара: фотографии, цена, описание и кнопка «Написать продавцу». */
+/**
+ * Карточка объявления — и товара, и запроса.
+ *
+ * Отличаются они только словами: у запроса цена это потолок покупателя,
+ * автор не продавец, а покупатель, и написать ему идёт продавец с
+ * предложением. Сущность одна, поэтому и экран один.
+ */
 export function ListingPage() {
   const { idOrSlug = '' } = useParams();
   const state = useAsync(() => api.listing(idOrSlug), [idOrSlug]);
@@ -48,11 +54,14 @@ export function ListingPage() {
                 </div>
               ) : (
                 <div className="listing-photos__empty" aria-hidden>
-                  📦
+                  {listing.kind === 'BUY' ? '🔎' : '📦'}
                 </div>
               )}
 
               <div className="listing-price">
+                {listing.kind === 'BUY' && (
+                  <span className="listing-price__negotiable">готовы заплатить до</span>
+                )}
                 {formatPrice(listing.priceAmount, listing.currency)}
                 {listing.isNegotiable && <span className="listing-price__negotiable">торг уместен</span>}
               </div>
@@ -77,12 +86,14 @@ export function ListingPage() {
 
               {listing.description && (
                 <>
-                  <h2 className="section-title">Описание</h2>
+                  <h2 className="section-title">
+                    {listing.kind === 'BUY' ? 'Что именно нужно' : 'Описание'}
+                  </h2>
                   <p style={{ margin: 0, whiteSpace: 'pre-line' }}>{listing.description}</p>
                 </>
               )}
 
-              <h2 className="section-title">Продавец</h2>
+              <h2 className="section-title">{listing.kind === 'BUY' ? 'Покупатель' : 'Продавец'}</h2>
               <div className="seller">
                 {listing.seller.photoUrl ? (
                   <img className="seller__avatar" src={listing.seller.photoUrl} alt="" />
@@ -98,7 +109,11 @@ export function ListingPage() {
               </div>
 
               <div className="profile__footer">
-                <ReportButton target="SPECIALIST" targetId={listing.id} label="Пожаловаться на объявление" />
+                <ReportButton
+                  target="SPECIALIST"
+                  targetId={listing.id}
+                  label={listing.kind === 'BUY' ? 'Пожаловаться на запрос' : 'Пожаловаться на объявление'}
+                />
               </div>
             </>
           );
@@ -112,7 +127,7 @@ function SellerAction({
   listing,
   isAuthenticated,
 }: {
-  listing: { id: string; isMine: boolean };
+  listing: { id: string; isMine: boolean; kind: 'SELL' | 'BUY' };
   isAuthenticated: boolean;
 }) {
   const navigate = useNavigate();
@@ -128,13 +143,18 @@ function SellerAction({
         style={{ margin: '16px 0' }}
         onClick={() => navigate('/market/my')}
       >
-        Это ваше объявление — управлять
+        {listing.kind === 'BUY' ? 'Это ваш запрос — управлять' : 'Это ваше объявление — управлять'}
       </button>
     );
   }
 
   if (!isAuthenticated) {
-    return <div className="contact-note">Откройте приложение в Telegram, чтобы написать продавцу.</div>;
+    return (
+      <div className="contact-note">
+        Откройте приложение в Telegram, чтобы{' '}
+        {listing.kind === 'BUY' ? 'предложить свой товар' : 'написать продавцу'}.
+      </div>
+    );
   }
 
   const write = async () => {
@@ -154,7 +174,7 @@ function SellerAction({
   return (
     <div style={{ margin: '16px 0' }}>
       <button type="button" className="button" onClick={write} disabled={busy}>
-        {busy ? 'Открываем...' : '💬 Написать продавцу'}
+        {busy ? 'Открываем...' : listing.kind === 'BUY' ? '🤝 У меня есть — предложить' : '💬 Написать продавцу'}
       </button>
       {error && <div className="field__error" style={{ marginTop: 6 }}>{error}</div>}
     </div>

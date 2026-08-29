@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { LISTING_CONDITIONS, type ListingListItem } from '@app/shared';
 import { api } from '../lib/api';
 import { useAsync, useDebounced } from '../lib/useAsync';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SearchInput } from '../components/SearchInput';
-import { categoryStyle } from '../lib/category-colors';
-import { formatPrice } from '../lib/format';
+import { ListingCard } from '../components/ListingCard';
 import { haptic } from '../lib/telegram';
 
 const SORT_LABELS = { new: 'Новые', cheap: 'Сначала дешёвые', expensive: 'Сначала дорогие' } as const;
@@ -136,35 +135,7 @@ export function MarketBrowsePage() {
 
               <div className="listing-grid">
                 {loaded.map((listing) => (
-                  <Link
-                    key={listing.id}
-                    to={`/listing/${listing.slug}`}
-                    className="listing-card"
-                    onClick={() => haptic.tap()}
-                  >
-                    <div className="listing-card__photo">
-                      {listing.coverUrl ? (
-                        <img src={listing.coverUrl} alt="" loading="lazy" />
-                      ) : (
-                        <span className="listing-card__no-photo" aria-hidden>
-                          📦
-                        </span>
-                      )}
-                    </div>
-                    <div className="listing-card__price">
-                      {formatPrice(listing.priceAmount, listing.currency)}
-                      {listing.isNegotiable && <span className="listing-card__negotiable">торг</span>}
-                    </div>
-                    <div className="listing-card__title">{listing.title}</div>
-                    <div className="listing-card__meta">
-                      {listing.categories[0] && (
-                        <span className="tag" style={categoryStyle(listing.categories[0].slug)}>
-                          {listing.categories[0].icon}
-                        </span>
-                      )}
-                      {listing.city}
-                    </div>
-                  </Link>
+                  <ListingCard key={listing.id} listing={listing} />
                 ))}
               </div>
 

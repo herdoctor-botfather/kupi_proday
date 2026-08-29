@@ -65,11 +65,24 @@ export function ListingsPage() {
         <div key={row.id} className="review-card">
           <div className="review-card__head">
             <div className="listing-thumb">
-              {row.photos[0] ? <img src={row.photos[0].url} alt="" /> : <span aria-hidden>📦</span>}
+              {row.photos[0] ? (
+                <img src={row.photos[0].url} alt="" />
+              ) : (
+                <span aria-hidden>{row.kind === 'BUY' ? '🔎' : '📦'}</span>
+              )}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 620, fontSize: 15 }}>{row.title}</div>
+              {/* Запрос и продажу нужно различать с первого взгляда:
+                  проверяются они по-разному — у запроса нет товара,
+                  который можно было бы оценить по фотографии. */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                <span className={row.kind === 'BUY' ? 'badge badge--accent' : 'badge'}>
+                  {row.kind === 'BUY' ? 'Ищут' : 'Продают'}
+                </span>
+                <span style={{ fontWeight: 620, fontSize: 15 }}>{row.title}</span>
+              </div>
               <div style={{ fontWeight: 680 }}>
+                {row.kind === 'BUY' && <span className="cell-muted">до </span>}
                 {formatPrice(row.priceAmount, row.currency)}
                 {row.isNegotiable && <span className="cell-muted"> · торг</span>}
               </div>

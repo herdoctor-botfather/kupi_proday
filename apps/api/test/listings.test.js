@@ -88,10 +88,11 @@ async function main() {
   const SELLER_TG = 850000001;
   const BUYER_TG = 850000002;
   const ADMIN_TG = 850000003;
-  /** Демо-продавец из сида — его объявления заполняют витрину. */
+  /** Демо-аккаунты из сида: их объявления и запросы заполняют обе витрины. */
   const DEMO_SELLER_TG = 1;
+  const DEMO_BUYER_TG = 2;
 
-  reset([SELLER_TG, BUYER_TG, ADMIN_TG, DEMO_SELLER_TG]);
+  reset([SELLER_TG, BUYER_TG, ADMIN_TG, DEMO_SELLER_TG, DEMO_BUYER_TG]);
 
   const seller = await login(SELLER_TG, 'Продавец');
   const buyer = await login(BUYER_TG, 'Покупатель');
@@ -400,6 +401,106 @@ async function main() {
     assert(status === 204, `статус ${status}`);
     const left = sql(`SELECT count(*) FROM listing_categories WHERE "listingId" = '${listingId}'`);
     assert(left === '0', `осталось ${left} связей`);
+  });
+
+  console.log('\nОбратная витрина — запросы покупателей:\n');
+
+  let wantedId;
+
+  await check('запрос размещается и ждёт проверки', async () => {
+    const { status, body } = await req('/me/listings', {
+      method: 'POST',
+      token: buyer.token,
+      body: JSON.stringify({
+        kind: 'BUY',
+        title: 'Ищу PlayStation 5',
+        description: 'Готов забрать сегодня, важен комплект с геймпадом',
+        price: 35000,
+        city: 'Москва',
+        categoryIds: [electronics()],
+      }),
+    });
+    assert(status === 201, `статус ${status}`);
+    assert(body.kind === 'BUY', `вид: ${body.kind}`);
+    assert(body.status === 'PENDING', `статус: ${body.status}`);
+    wantedId = body.id;
+  });
+
+  await check('запрос не попадает на витрину продажи', async () => {
+    const { body } = await req('/listings');
+    assert(
+      !body.items.some((item) => item.id === wantedId),
+      'запрос виден среди товаров',
+    );
+  });
+
+  await check('одобрение публикует запрос', async () => {
+    const { status } = await req(`/admin/listings/${wantedId}/moderate`, {
+      method: 'PATCH',
+      token: admin.token,
+      body: JSON.stringify({ action: 'approve' }),
+    });
+    assert(status === 200, `статус ${status}`);
+  });
+
+  await check('витрины не смешиваются', async () => {
+    const { body: sell } = await req('/listings');
+    const { body: buy } = await req('/listings?kind=BUY');
+
+    assert(sell.items.every((item) => item.kind === 'SELL'), 'в продаже есть запрос');
+    assert(buy.items.every((item) => item.kind === 'BUY'), 'в запросах есть товар');
+    assert(buy.total === 1, `запросов ${buy.total}`);
+    assert(
+      !sell.items.some((item) => item.id === wantedId),
+      'запрос попал в продажу после публикации',
+    );
+  });
+
+  await check('поиск и фильтры работают внутри своей витрины', async () => {
+    const { body: found } = await req('/listings?kind=BUY&q=' + encodeURIComponent('playstation'));
+    assert(found.total === 1, `найдено ${found.total}`);
+
+    const { body: other } = await req('/listings?kind=BUY&categorySlug=home');
+    assert(other.total === 0, `в доме ${other.total} запросов`);
+  });
+
+  await check('города считаются по своей витрине', async () => {
+    const { body } = await req('/listings/cities?kind=BUY');
+    assert(body.length === 1 && body[0].name === 'Москва', `города: ${JSON.stringify(body)}`);
+  });
+
+  await check('контакты в запросе тоже скрываются', async () => {
+    const { body } = await req('/me/listings', {
+      method: 'POST',
+      token: buyer.token,
+      body: JSON.stringify({
+        kind: 'BUY',
+        title: 'Ищу велосипед 89001234567',
+        price: 12000,
+        city: 'Москва',
+        categoryIds: [productCategories.find((c) => c.slug === 'sport').id],
+      }),
+    });
+    assert(!body.title.includes('89001234567'), `телефон в названии: ${body.title}`);
+  });
+
+  await check('продавец откликается на запрос через чат', async () => {
+    const { status, body } = await req('/chat/conversations', {
+      method: 'POST',
+      token: seller.token,
+      body: JSON.stringify({ listingId: wantedId }),
+    });
+    assert(status === 201 || status === 200, `статус ${status}: ${JSON.stringify(body)}`);
+    assert(body.listing?.id === wantedId, `предмет: ${JSON.stringify(body.listing)}`);
+  });
+
+  await check('автору запроса писать самому себе нельзя', async () => {
+    const { status } = await req('/chat/conversations', {
+      method: 'POST',
+      token: buyer.token,
+      body: JSON.stringify({ listingId: wantedId }),
+    });
+    assert(status === 400, `статус ${status}`);
   });
 
   console.log(`\nИтого: успешно ${passed}, провалено ${failed}`);

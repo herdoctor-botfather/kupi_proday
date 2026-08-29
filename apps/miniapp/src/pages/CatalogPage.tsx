@@ -2,31 +2,44 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
+import { usePagedFeed } from '../lib/usePagedFeed';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SearchInput } from '../components/SearchInput';
+import { SpecialistCard } from '../components/SpecialistCard';
+import { FeedHeader, FeedMore } from '../components/Feed';
 import { useGeolocation } from '../lib/geolocation';
 import { haptic } from '../lib/telegram';
 import { pluralize } from '../lib/format';
 import { categoryStyle } from '../lib/category-colors';
 import { useAuth } from '../lib/auth';
-import { MarketTeaser } from '../components/MarketTeaser';
 
-/** Главный экран: категории услуг, поиск и переход к поиску рядом. */
-/** Приветствие по времени суток — мелочь, но приложение перестаёт быть безликим. */
-function greeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 5) return 'Доброй ночи';
-  if (hour < 12) return 'Доброе утро';
-  if (hour < 18) return 'Добрый день';
-  return 'Добрый вечер';
-}
+/** Сколько карточек показывает лента за раз. */
+const FEED_PAGE_SIZE = 4;
 
+/**
+ * Главный экран.
+ *
+ * Наверху — три двери в разделы, дальше поиск и категории, внизу — лента
+ * мастеров. Она отвечает на вопрос «что здесь вообще есть» тем, кто пришёл
+ * без запроса: пустой поиск и сетка категорий этого не показывают,
+ * а живые карточки показывают сразу.
+ *
+ * Товары в ленту не попадают: сюда приходят по кнопке «я ищу специалиста»,
+ * и объявления о продаже дивана здесь не к месту. Их лента живёт
+ * в «Купи-продай» — там она и ожидается.
+ */
 export function CatalogPage() {
   const navigate = useNavigate();
   const { user, status } = useAuth();
   const [query, setQuery] = useState('');
   const geo = useGeolocation();
+
   const categories = useAsync(() => api.categories(), []);
+
+  const services = usePagedFeed(
+    (page) => api.specialists({ pageSize: FEED_PAGE_SIZE, page }),
+    [],
+  );
 
   // Координаты приходят асинхронно — переход делаем эффектом, а не в рендере.
   useEffect(() => {
@@ -42,16 +55,46 @@ export function CatalogPage() {
     if (trimmed) navigate(`/specialists?q=${encodeURIComponent(trimmed)}`);
   };
 
+  const applyTo = user?.hasSpecialistProfile ? '/profile/my-card' : '/profile/application';
+
   return (
     <div className="page">
-      <header className="hero">
-        <div className="hero__greeting">
-          {greeting()}
-          {user?.firstName ? `, ${user.firstName}` : ''}
-        </div>
-        <h1 className="hero__title">Найдите своего мастера</h1>
-        <p className="hero__subtitle">Проверенные специалисты с отзывами — рядом с вами</p>
-      </header>
+      {/* Выбор роли повторяет стартовый экран, но в сжатом виде: открыв
+          приложение по ссылке из бота, человек стартовый экран не видит,
+          и без этих кнопок остаётся запертым в одном разделе. */}
+      <nav className="role-row">
+        <Link to="/specialists" className="role-mini" onClick={() => haptic.tap()}>
+          <span className="role-mini__emoji" aria-hidden>
+            🔎
+          </span>
+          <span className="role-mini__label">Я ищу специалиста</span>
+        </Link>
+
+        <Link
+          to={status === 'authenticated' ? applyTo : '/profile'}
+          className="role-mini"
+          onClick={() => haptic.tap()}
+        >
+          <span className="role-mini__emoji" aria-hidden>
+            🛠
+          </span>
+          <span className="role-mini__label">Я оказываю услуги</span>
+        </Link>
+
+        <Link to="/market" className="role-mini" onClick={() => haptic.tap()}>
+          <span className="role-mini__emoji" aria-hidden>
+            🛍
+          </span>
+          <span className="role-mini__label">Купи-продай</span>
+        </Link>
+
+        <Link to="/wanted" className="role-mini" onClick={() => haptic.tap()}>
+          <span className="role-mini__emoji" aria-hidden>
+            🔎
+          </span>
+          <span className="role-mini__label">Люди ищут сейчас</span>
+        </Link>
+      </nav>
 
       <form onSubmit={submitSearch}>
         <SearchInput value={query} onChange={setQuery} />
@@ -104,39 +147,20 @@ export function CatalogPage() {
         }
       </AsyncContent>
 
-      {/* Барахолка живёт в соседней вкладке, и пришедший за мастером
-          человек о ней не узнаёт — тем более если открыл приложение
-          сразу в каталоге по кнопке из бота. */}
-      <MarketTeaser />
-
-      {/* Вход в исполнители с главной.
-          Раньше единственной дверью туда был стартовый экран выбора роли,
-          но открытие по ссылке из бота его пропускает: человек уже сказал,
-          что ищет мастера. Без этой ссылки он не узнал бы, что здесь можно
-          и разместить свою анкету. */}
-      {status === 'authenticated' && (
-        <Link
-          to={user?.hasSpecialistProfile ? '/profile/my-card' : '/profile/application'}
-          className="profile-cta profile-cta--standalone"
-          onClick={() => haptic.tap()}
-        >
-          <span className="profile-cta__icon" aria-hidden>
-            🛠
-          </span>
-          <span className="profile-cta__body">
-            <span className="profile-cta__title">
-              {user?.hasSpecialistProfile ? 'Моя анкета исполнителя' : 'Сами оказываете услуги?'}
-            </span>
-            <span className="profile-cta__text">
-              {user?.hasSpecialistProfile
-                ? 'Статус публикации, просмотры и редактирование'
-                : 'Разместите анкету — вас будут находить клиенты'}
-            </span>
-          </span>
-          <span className="profile-cta__chevron" aria-hidden>
-            ›
-          </span>
-        </Link>
+      <FeedHeader title="Мастера" to="/specialists" total={services.total} />
+      {services.items.length > 0 ? (
+        <>
+          <div className="card-list">
+            {services.items.map((specialist) => (
+              <SpecialistCard key={specialist.id} specialist={specialist} />
+            ))}
+          </div>
+          <FeedMore feed={services} />
+        </>
+      ) : (
+        !services.loading && (
+          <EmptyState icon="🛠" title="Мастеров пока нет" hint="Загляните позже — каталог пополняется" />
+        )
       )}
     </div>
   );

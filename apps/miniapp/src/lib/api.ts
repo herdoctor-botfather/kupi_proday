@@ -184,7 +184,8 @@ export const api = {
   listings: (filters: Record<string, unknown>) =>
     request<Paginated<ListingListItem>>(`/listings${qs(filters)}`),
   listing: (idOrSlug: string) => request<ListingDetail>(`/listings/${idOrSlug}`),
-  listingCities: (q?: string) => request<{ name: string; count: number }[]>(`/listings/cities${qs({ q })}`),
+  listingCities: (kind?: string, q?: string) =>
+    request<{ name: string; count: number }[]>(`/listings/cities${qs({ kind, q })}`),
 
   myListings: () => request<MyListing[]>('/me/listings'),
   myListing: (id: string) => request<MyListing>(`/me/listings/${id}`),

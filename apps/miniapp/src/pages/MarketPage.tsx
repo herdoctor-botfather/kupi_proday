@@ -56,6 +56,7 @@ export function MarketPage() {
             {active > 0 || pending > 0 ? 'Мои объявления →' : 'Разместить объявление →'}
           </span>
         </Link>
+
       </div>
 
       <p className="onboarding__note">

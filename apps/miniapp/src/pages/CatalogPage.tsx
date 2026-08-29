@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { AsyncContent, EmptyState } from '../components/states';
@@ -22,7 +22,7 @@ function greeting(): string {
 
 export function CatalogPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, status } = useAuth();
   const [query, setQuery] = useState('');
   const geo = useGeolocation();
   const categories = useAsync(() => api.categories(), []);
@@ -93,8 +93,8 @@ export function CatalogPage() {
                   </span>
                   <span className="category__name">{category.name}</span>
                   <span className="category__count">
-                    {category.specialistCount}{' '}
-                    {pluralize(category.specialistCount, ['мастер', 'мастера', 'мастеров'])}
+                    {category.itemCount}{' '}
+                    {pluralize(category.itemCount, ['мастер', 'мастера', 'мастеров'])}
                   </span>
                 </button>
               ))}
@@ -102,6 +102,32 @@ export function CatalogPage() {
           )
         }
       </AsyncContent>
+
+      {/* Вход в исполнители с главной.
+          Раньше единственной дверью туда был стартовый экран выбора роли,
+          но открытие по ссылке из бота его пропускает: человек уже сказал,
+          что ищет мастера. Без этой ссылки он не узнал бы, что здесь можно
+          и разместить свою анкету. */}
+      {status === 'authenticated' && (
+        <Link to="/profile/my-card" className="profile-cta" onClick={() => haptic.tap()}>
+          <span className="profile-cta__icon" aria-hidden>
+            🛠
+          </span>
+          <span className="profile-cta__body">
+            <span className="profile-cta__title">
+              {user?.hasSpecialistProfile ? 'Моя анкета исполнителя' : 'Сами оказываете услуги?'}
+            </span>
+            <span className="profile-cta__text">
+              {user?.hasSpecialistProfile
+                ? 'Статус публикации, просмотры и редактирование'
+                : 'Разместите анкету — вас будут находить клиенты'}
+            </span>
+          </span>
+          <span className="profile-cta__chevron" aria-hidden>
+            ›
+          </span>
+        </Link>
+      )}
     </div>
   );
 }

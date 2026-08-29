@@ -13,7 +13,7 @@
  */
 const { createHmac } = require('node:crypto');
 
-const BASE = 'http://localhost:3000/api';
+const BASE = process.env.API_URL || 'http://localhost:3000/api';
 const BOT_TOKEN = process.env.TEST_BOT_TOKEN || '123456:TEST-TOKEN-FOR-VERIFICATION';
 
 let passed = 0;
@@ -78,7 +78,7 @@ async function main() {
     assert(Array.isArray(body) && body.length === 10, `ожидалось 10 категорий, пришло ${body?.length}`);
     const beauty = body.find((c) => c.slug === 'beauty');
     assert(beauty, 'категория beauty не найдена');
-    assert(beauty.specialistCount === 1, `счётчик beauty = ${beauty.specialistCount}, ожидался 1`);
+    assert(beauty.itemCount === 1, `счётчик beauty = ${beauty.itemCount}, ожидался 1`);
     categories = body;
   });
 
@@ -164,7 +164,9 @@ async function main() {
     assert(status === 200, `статус ${status}`);
     assert(body.displayName === 'Анна Соколова', `имя: ${body.displayName}`);
     assert(body.services.length === 3, `услуг ${body.services.length}, ожидалось 3`);
-    assert(body.contacts.telegram === '@anna_nails_demo', 'контакт Telegram потерян');
+    // Контакты наружу не отдаются: связь идёт через чат приложения,
+    // иначе общение уходило бы с площадки в первый же клик.
+    assert(body.contacts === undefined, `контакты отдаются наружу: ${JSON.stringify(body.contacts)}`);
     assert(body.ratingBreakdown['5'] === 0, 'разбивка оценок не инициализирована');
     assert(body.myReview === null, 'у гостя не должно быть своего отзыва');
   });
@@ -291,10 +293,10 @@ async function main() {
 
   // Повышаем тестового пользователя до администратора прямо в базе —
   // так же, как это делал бы владелец проекта через Prisma Studio.
-  const { execSync } = require('node:child_process');
+  const { execFileSync } = require('node:child_process');
   const PSQL = process.env.PSQL_BIN || 'psql';
   const DB_URL = process.env.DATABASE_URL || 'postgresql://app:app@localhost:5432/tgspec';
-  execSync(`${PSQL} "${DB_URL}" -c "UPDATE users SET role='ADMIN' WHERE \\"telegramId\\"=555000111;"`, { stdio: 'ignore' });
+  execFileSync(PSQL, [DB_URL, '-c', `UPDATE users SET role='ADMIN' WHERE "telegramId"=555000111;`], { stdio: 'ignore' });
 
   let adminToken;
   await check('после смены роли выдаётся токен администратора', async () => {

@@ -12,6 +12,11 @@ const envSchema = z.object({
     // Telegram открывает Mini App только по HTTPS — http-адрес не заработает
     // даже локально, поэтому проверяем схему сразу, а не при первом запуске.
     .refine((url) => url.startsWith('https://'), 'MINIAPP_URL должен начинаться с https://'),
+  /**
+   * Адрес API — бот подтягивает оттуда живые числа для приветствия.
+   * Не обязателен: без него сообщение просто обходится без цифр.
+   */
+  API_PROXY_TARGET: z.string().url().default('http://localhost:3000'),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -5,9 +5,9 @@
  * что указан в TEST_BOT_TOKEN.
  */
 const { createHmac } = require('node:crypto');
-const { execSync } = require('node:child_process');
+const { execFileSync } = require('node:child_process');
 
-const BASE = 'http://localhost:3000/api';
+const BASE = process.env.API_URL || 'http://localhost:3000/api';
 const BOT_TOKEN = process.env.TEST_BOT_TOKEN || '123456:TEST-TOKEN-FOR-VERIFICATION';
 const PSQL = process.env.PSQL_BIN || 'psql';
 const DB_URL = process.env.DATABASE_URL || 'postgresql://app:app@localhost:5432/tgspec';
@@ -63,7 +63,9 @@ const login = async (id, name) => {
   return body;
 };
 
-const sql = (query) => execSync(`${PSQL} "${DB_URL}" -tAc "${query}"`, { encoding: 'utf8' }).trim();
+// Через execFileSync, а не execSync: оболочка съедает кавычки вокруг
+// имён столбцов, и PostgreSQL перестаёт узнавать "telegramId".
+const sql = (query) => execFileSync(PSQL, [DB_URL, '-tAc', query], { encoding: 'utf8' }).trim();
 
 async function main() {
   const MASTER_TG = 830000001;
@@ -75,7 +77,7 @@ async function main() {
   const client = await login(CLIENT_TG, 'Клиент');
   const other = await login(OTHER_TG, 'Прохожий');
   await login(ADMIN_TG, 'Админ');
-  sql(`UPDATE users SET role='ADMIN' WHERE \\"telegramId\\"=${ADMIN_TG}`);
+  sql(`UPDATE users SET role='ADMIN' WHERE \"telegramId\"=${ADMIN_TG}`);
   const admin = await login(ADMIN_TG, 'Админ');
 
   // Готовим опубликованную карточку с одобренным отзывом.

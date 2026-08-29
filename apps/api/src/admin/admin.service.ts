@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import type { Prisma } from '@prisma/client';
 import type {
   ModerateReviewDto,
+  ModerateListingDto,
   ModerateSpecialistDto,
   Paginated,
   Review,
@@ -35,6 +36,8 @@ export class AdminService {
       specialistsPending,
       specialistsChanged,
       reviewsPending,
+      listingsPending,
+      listingsActive,
       reviewsTotal,
       subscriptionsActive,
       topViewed,
@@ -46,6 +49,8 @@ export class AdminService {
       this.prisma.specialist.count({ where: { status: 'PENDING' } }),
       this.prisma.specialist.count({ where: { status: 'ACTIVE', needsReview: true } }),
       this.prisma.review.count({ where: { status: 'PENDING' } }),
+      this.prisma.listing.count({ where: { status: 'PENDING' } }),
+      this.prisma.listing.count({ where: { status: 'ACTIVE' } }),
       this.prisma.review.count(),
       this.prisma.specialist.count({ where: { subscriptionUntil: { gt: now } } }),
       this.prisma.specialist.findMany({
@@ -65,6 +70,7 @@ export class AdminService {
         changed: specialistsChanged,
       },
       reviews: { total: reviewsTotal, pending: reviewsPending },
+      listings: { active: listingsActive, pending: listingsPending },
       subscriptions: { active: subscriptionsActive },
       topViewed,
     };
@@ -211,6 +217,70 @@ export class AdminService {
     return updated;
   }
 
+  // ─────────── Объявления ───────────
+
+  /** Очередь объявлений: новые и правки уже опубликованных. */
+  async pendingListings() {
+    const [pending, changed] = await this.prisma.$transaction([
+      this.prisma.listing.findMany({
+        where: { status: 'PENDING' },
+        include: {
+          categories: { include: { category: true } },
+          photos: { orderBy: { sortOrder: 'asc' } },
+          user: { select: { firstName: true, lastName: true, username: true } },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.listing.findMany({
+        where: { status: 'ACTIVE', needsReview: true },
+        include: {
+          categories: { include: { category: true } },
+          photos: { orderBy: { sortOrder: 'asc' } },
+          user: { select: { firstName: true, lastName: true, username: true } },
+        },
+        orderBy: { updatedAt: 'asc' },
+      }),
+    ]);
+
+    return { pending, changed, total: pending.length + changed.length };
+  }
+
+  async moderateListing(id: string, dto: ModerateListingDto, actorId: string) {
+    const listing = await this.prisma.listing.findUnique({
+      where: { id },
+      select: { id: true, userId: true, title: true, publishedAt: true },
+    });
+    if (!listing) {
+      throw new NotFoundException({ code: 'LISTING_NOT_FOUND', message: 'Объявление не найдено' });
+    }
+
+    const approved = dto.action === 'approve';
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const saved = await tx.listing.update({
+        where: { id },
+        data: {
+          status: approved ? 'ACTIVE' : 'REJECTED',
+          needsReview: false,
+          rejectionReason: approved ? null : (dto.reason ?? null),
+          publishedAt: approved ? (listing.publishedAt ?? new Date()) : listing.publishedAt,
+        },
+      });
+      await this.log(tx, actorId, `listing.${dto.action}`, 'Listing', id, { reason: dto.reason });
+      return saved;
+    });
+
+    this.notifications.notify(
+      listing.userId,
+      approved
+        ? `🏷 <b>Объявление опубликовано</b>\n\n«${escapeHtml(listing.title)}» появилось на витрине.`
+        : `🏷 <b>Объявление отклонено</b>\n\n${escapeHtml(dto.reason ?? 'Причина не указана')}\n\nИсправьте и отправьте снова.`,
+      this.notifications.miniAppUrl,
+    );
+
+    return updated;
+  }
+
   // ─────────── Специалисты ───────────
 
   async listSpecialists(params: { q?: string; status?: string; page: number; pageSize: number }) {
@@ -240,15 +310,63 @@ export class AdminService {
   }
 
   getSpecialist(id: string) {
-    return this.prisma.specialist.findUniqueOrThrow({ where: { id }, include: detailInclude });
+    return this.prisma.specialist.findUniqueOrThrow({
+      where: { id },
+      include: {
+        ...detailInclude,
+        user: {
+          select: { id: true, telegramId: true, firstName: true, lastName: true, username: true, photoUrl: true },
+        },
+      },
+    });
+  }
+
+  /**
+   * Находит пользователя по Telegram id для привязки карточки.
+   *
+   * Пустое значение означает «отвязать». Пользователь должен уже существовать:
+   * запись создаётся при первом открытии приложения, и привязать карточку
+   * к тому, кто в него не заходил, — значит пообещать чат, которого не будет.
+   */
+  private async resolveOwner(
+    telegramId: string | null | undefined,
+    specialistId: string | null,
+  ): Promise<string | null | undefined> {
+    // undefined — поле не передали, владельца не трогаем.
+    if (telegramId === undefined) return undefined;
+    if (!telegramId) return null;
+
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId: BigInt(telegramId) },
+      select: { id: true, specialist: { select: { id: true } } },
+    });
+
+    if (!user) {
+      throw new BadRequestException({
+        code: 'OWNER_NOT_FOUND',
+        message: 'Пользователь с таким Telegram id ещё не открывал приложение',
+      });
+    }
+    // У пользователя может быть только одна карточка — это ограничение базы,
+    // и лучше объяснить его словами, чем показать ошибку уникального индекса.
+    if (user.specialist && user.specialist.id !== specialistId) {
+      throw new BadRequestException({
+        code: 'OWNER_HAS_PROFILE',
+        message: 'У этого пользователя уже есть своя анкета',
+      });
+    }
+
+    return user.id;
   }
 
   async createSpecialist(dto: UpsertSpecialistDto, actorId: string) {
     await this.assertCategoriesExist(dto.categoryIds);
+    const ownerId = await this.resolveOwner(dto.ownerTelegramId, null);
 
     const specialist = await this.prisma.specialist.create({
       data: {
         ...this.toSpecialistData(dto),
+        ...(ownerId === undefined ? {} : { userId: ownerId }),
         publishedAt: dto.status === 'ACTIVE' ? new Date() : null,
         categories: { create: dto.categoryIds.map((categoryId) => ({ categoryId })) },
       },
@@ -263,6 +381,7 @@ export class AdminService {
     await this.assertCategoriesExist(dto.categoryIds);
     const current = await this.prisma.specialist.findUnique({ where: { id }, select: { publishedAt: true } });
     if (!current) throw new NotFoundException({ code: 'SPECIALIST_NOT_FOUND', message: 'Специалист не найден' });
+    const ownerId = await this.resolveOwner(dto.ownerTelegramId, id);
 
     const specialist = await this.prisma.$transaction(async (tx) => {
       // Категории проще переписать целиком, чем вычислять разницу.
@@ -271,6 +390,7 @@ export class AdminService {
         where: { id },
         data: {
           ...this.toSpecialistData(dto),
+          ...(ownerId === undefined ? {} : { userId: ownerId }),
           // Дата публикации ставится один раз, при первом выходе в ACTIVE.
           publishedAt: dto.status === 'ACTIVE' ? (current.publishedAt ?? new Date()) : current.publishedAt,
           categories: { create: dto.categoryIds.map((categoryId) => ({ categoryId })) },
@@ -320,8 +440,8 @@ export class AdminService {
 
   listCategories() {
     return this.prisma.category.findMany({
-      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-      include: { _count: { select: { specialists: true } } },
+      orderBy: [{ kind: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }],
+      include: { _count: { select: { specialists: true, listings: true } } },
     });
   }
 
@@ -334,11 +454,15 @@ export class AdminService {
   }
 
   async deleteCategory(id: string): Promise<void> {
-    const linked = await this.prisma.specialistCategory.count({ where: { categoryId: id } });
+    const [specialists, listings] = await this.prisma.$transaction([
+      this.prisma.specialistCategory.count({ where: { categoryId: id } }),
+      this.prisma.listingCategory.count({ where: { categoryId: id } }),
+    ]);
+    const linked = specialists + listings;
     if (linked > 0) {
       throw new BadRequestException({
         code: 'CATEGORY_IN_USE',
-        message: `В категории ${linked} специалистов. Перенесите их или скройте категорию вместо удаления.`,
+        message: `В категории ${linked} записей. Перенесите их или скройте категорию вместо удаления.`,
       });
     }
     await this.prisma.category.delete({ where: { id } });

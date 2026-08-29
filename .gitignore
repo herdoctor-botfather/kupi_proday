@@ -6,6 +6,8 @@ build/
 *.local
 .DS_Store
 coverage/
+# Кеш инкрементальной сборки TypeScript — машинный файл, меняется от каждой сборки.
+*.tsbuildinfo
 *.log
 apps/api/prisma/migrations/dev.db*
 .vscode/

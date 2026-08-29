@@ -55,7 +55,7 @@ apply_url() {
   response=$(curl -s -m 20 -X POST \
     "https://api.telegram.org/bot$BOT_TOKEN/setChatMenuButton" \
     -H 'Content-Type: application/json' \
-    -d "{\"menu_button\":{\"type\":\"web_app\",\"text\":\"Каталог\",\"web_app\":{\"url\":\"$url\"}}}")
+    -d "{\"menu_button\":{\"type\":\"web_app\",\"text\":\"Открыть\",\"web_app\":{\"url\":\"$url\"}}}")
 
   if echo "$response" | grep -q '"ok":true'; then
     echo "  кнопка меню бота обновлена"

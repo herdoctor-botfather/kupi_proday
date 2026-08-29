@@ -3,6 +3,7 @@ import type {
   AuthResponse,
   CurrentUser,
   ModerateReviewDto,
+  ModerateListingDto,
   ModerateSpecialistDto,
   Paginated,
   ReportStatus,
@@ -94,18 +95,20 @@ export interface AdminStats {
   users: { total: number; newLast30Days: number };
   specialists: { total: number; active: number; pending: number; changed: number };
   reviews: { total: number; pending: number };
+  listings: { active: number; pending: number };
   subscriptions: { active: number };
   topViewed: { id: string; displayName: string; viewCount: number; ratingAvg: number; ratingCount: number }[];
 }
 
 export interface AdminCategory {
   id: string;
+  kind: 'SERVICE' | 'PRODUCT';
   slug: string;
   name: string;
   icon: string;
   sortOrder: number;
   isActive: boolean;
-  _count: { specialists: number };
+  _count: { specialists: number; listings: number };
 }
 
 export interface AdminSpecialistRow {
@@ -125,7 +128,18 @@ export interface AdminSpecialistRow {
 }
 
 /** Полная карточка из админ-API — со всеми связями, в «сыром» виде Prisma. */
+/** Владелец карточки: он получает сообщения от заказчиков. */
+export interface SpecialistOwner {
+  id: string;
+  telegramId: string;
+  firstName: string;
+  lastName: string | null;
+  username: string | null;
+  photoUrl: string | null;
+}
+
 export interface AdminSpecialistDetail extends AdminSpecialistRow {
+  user: SpecialistOwner | null;
   headline: string | null;
   about: string | null;
   photoUrl: string | null;
@@ -146,7 +160,6 @@ export interface ApplicationRow extends AdminSpecialistDetail {
   needsReview: boolean;
   rejectionReason: string | null;
   updatedAt: string;
-  user: { firstName: string; lastName: string | null; username: string | null; photoUrl: string | null } | null;
 }
 
 export interface ApplicationsQueue {
@@ -177,6 +190,31 @@ export interface ReportRow {
   } | null;
 }
 
+/** Объявление в очереди модерации. */
+export interface ListingRow {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  priceAmount: number;
+  currency: string;
+  isNegotiable: boolean;
+  condition: 'NEW' | 'USED_PERFECT' | 'USED';
+  city: string;
+  status: string;
+  needsReview: boolean;
+  createdAt: string;
+  categories: { category: { id: string; name: string; icon: string } }[];
+  photos: { id: string; url: string }[];
+  user: { firstName: string; lastName: string | null; username: string | null } | null;
+}
+
+export interface ListingsQueue {
+  pending: ListingRow[];
+  changed: ListingRow[];
+  total: number;
+}
+
 export interface AdminSubscription {
   id: string;
   plan: string;
@@ -204,6 +242,10 @@ export const api = {
     request<Review>(`/admin/reviews/${id}`, { method: 'PATCH', body: JSON.stringify(dto) }),
 
   applications: () => request<ApplicationsQueue>('/admin/applications'),
+
+  pendingListings: () => request<ListingsQueue>('/admin/listings/pending'),
+  moderateListing: (id: string, dto: ModerateListingDto) =>
+    request<ListingRow>(`/admin/listings/${id}/moderate`, { method: 'PATCH', body: JSON.stringify(dto) }),
 
   reports: () => request<ReportRow[]>('/admin/reports'),
   resolveReport: (id: string, dto: ResolveReportDto) =>

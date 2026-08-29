@@ -26,6 +26,7 @@ export function CategoriesPage() {
     setError(null);
     try {
       await api.updateCategory(category.id, {
+        kind: category.kind,
         name: category.name,
         slug: category.slug,
         icon: category.icon,
@@ -63,9 +64,10 @@ export function CategoriesPage() {
                   <thead>
                     <tr>
                       <th style={{ width: 70 }}>Порядок</th>
+                      <th>Вид</th>
                       <th>Категория</th>
                       <th>Slug</th>
-                      <th>Специалистов</th>
+                      <th>Записей</th>
                       <th>Видимость</th>
                       <th style={{ width: 170 }} />
                     </tr>
@@ -74,11 +76,16 @@ export function CategoriesPage() {
                     {items.map((category) => (
                       <tr key={category.id}>
                         <td className="cell-muted">{category.sortOrder}</td>
+                        <td>
+                          <span className={category.kind === 'PRODUCT' ? 'badge badge--accent' : 'badge'}>
+                            {category.kind === 'PRODUCT' ? 'Товары' : 'Услуги'}
+                          </span>
+                        </td>
                         <td className="cell-primary">
                           {category.icon} {category.name}
                         </td>
                         <td className="cell-muted">{category.slug}</td>
-                        <td>{category._count.specialists}</td>
+                        <td>{category._count.specialists + category._count.listings}</td>
                         <td>
                           <span className={category.isActive ? 'badge badge--success' : 'badge'}>
                             {category.isActive ? 'Показывается' : 'Скрыта'}
@@ -100,7 +107,7 @@ export function CategoriesPage() {
                             >
                               {category.isActive ? 'Скрыть' : 'Показать'}
                             </button>
-                            {category._count.specialists === 0 && (
+                            {category._count.specialists + category._count.listings === 0 && (
                               <button
                                 type="button"
                                 className="button button--secondary button--sm"
@@ -150,6 +157,7 @@ function CategoryDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const [kind, setKind] = useState<'SERVICE' | 'PRODUCT'>(category?.kind ?? 'SERVICE');
   const [name, setName] = useState(category?.name ?? '');
   const [slug, setSlug] = useState(category?.slug ?? '');
   const [icon, setIcon] = useState(category?.icon ?? '🔧');
@@ -164,6 +172,7 @@ function CategoryDialog({
     setError(null);
 
     const parsed = upsertCategorySchema.safeParse({
+      kind,
       name: name.trim(),
       slug: slug.trim(),
       icon: icon.trim(),
@@ -206,6 +215,24 @@ function CategoryDialog({
       {error && <div className="alert alert--error">{error}</div>}
 
       <form onSubmit={submit}>
+        <div className="field">
+          <span className="field__label">Вид</span>
+          <select
+            className="select"
+            value={kind}
+            onChange={(event) => setKind(event.target.value as 'SERVICE' | 'PRODUCT')}
+            disabled={Boolean(category)}
+          >
+            <option value="SERVICE">Услуги — каталог специалистов</option>
+            <option value="PRODUCT">Товары — витрина объявлений</option>
+          </select>
+          <span className="field__hint">
+            {category
+              ? 'Вид существующей категории не меняется: записи внутри перестали бы находиться.'
+              : 'Наборы категорий для услуг и товаров не пересекаются.'}
+          </span>
+        </div>
+
         <div className="field">
           <span className="field__label">Название</span>
           <input

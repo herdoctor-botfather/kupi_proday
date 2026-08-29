@@ -10,9 +10,9 @@
  * Сброс: npm run test:e2e:reset -w @app/api
  */
 const { createHash, createHmac } = require('node:crypto');
-const { execSync } = require('node:child_process');
+const { execFileSync } = require('node:child_process');
 
-const BASE = 'http://localhost:3000/api';
+const BASE = process.env.API_URL || 'http://localhost:3000/api';
 const BOT_TOKEN = process.env.TEST_BOT_TOKEN || '123456:TEST-TOKEN-FOR-VERIFICATION';
 const PSQL = process.env.PSQL_BIN || 'psql';
 const DB_URL = process.env.DATABASE_URL || 'postgresql://app:app@localhost:5432/tgspec';
@@ -77,7 +77,9 @@ function makeWidgetPayload(user) {
   return { ...fields, hash };
 }
 
-const sql = (query) => execSync(`${PSQL} "${DB_URL}" -tAc "${query}"`, { encoding: 'utf8' }).trim();
+// Через execFileSync, а не execSync: оболочка съедает кавычки вокруг
+// имён столбцов, и PostgreSQL перестаёт узнавать "telegramId".
+const sql = (query) => execFileSync(PSQL, [DB_URL, '-tAc', query], { encoding: 'utf8' }).trim();
 
 async function main() {
   console.log('Вход в админку через Telegram Login Widget:\n');
@@ -93,8 +95,8 @@ async function main() {
       body: JSON.stringify({ initData: makeInitData({ id, first_name: name }) }),
     });
   }
-  sql(`UPDATE users SET role='ADMIN' WHERE \\"telegramId\\"=${ADMIN_TG}`);
-  sql(`UPDATE users SET role='MODERATOR' WHERE \\"telegramId\\"=${MODERATOR_TG}`);
+  sql(`UPDATE users SET role='ADMIN' WHERE \"telegramId\"=${ADMIN_TG}`);
+  sql(`UPDATE users SET role='MODERATOR' WHERE \"telegramId\"=${MODERATOR_TG}`);
 
   let adminToken;
   let moderatorToken;
@@ -406,7 +408,7 @@ async function main() {
   });
 
   await check('истёкшая подписка снимает продвижение', async () => {
-    sql(`UPDATE specialists SET \\"subscriptionUntil\\"=NOW() - INTERVAL '1 day' WHERE id='${specialistId}'`);
+    sql(`UPDATE specialists SET \"subscriptionUntil\"=NOW() - INTERVAL '1 day' WHERE id='${specialistId}'`);
     const { status, body } = await req('/admin/subscriptions/expire', { method: 'POST', token: adminToken });
     assert(status === 201 || status === 200, `статус ${status}`);
     assert(body.expired >= 1, `снято с ${body.expired} карточек, ожидалась минимум 1`);
@@ -418,7 +420,7 @@ async function main() {
   console.log('\nЖурнал и удаление:\n');
 
   await check('действия администратора записаны в журнал', async () => {
-    const count = Number(sql(`SELECT count(*) FROM audit_logs WHERE \\"actorId\\" IS NOT NULL`));
+    const count = Number(sql(`SELECT count(*) FROM audit_logs WHERE \"actorId\" IS NOT NULL`));
     assert(count > 0, 'журнал пуст');
     const actions = sql(`SELECT string_agg(DISTINCT action, ',') FROM audit_logs`);
     assert(actions.includes('specialist.create'), `в журнале нет создания карточки: ${actions}`);
@@ -444,7 +446,7 @@ async function main() {
   await check('карточка удаляется вместе со связями', async () => {
     const { status } = await req(`/admin/specialists/${specialistId}`, { method: 'DELETE', token: adminToken });
     assert(status === 204, `статус ${status}`);
-    const left = Number(sql(`SELECT count(*) FROM specialist_categories WHERE \\"specialistId\\"='${specialistId}'`));
+    const left = Number(sql(`SELECT count(*) FROM specialist_categories WHERE \"specialistId\"='${specialistId}'`));
     assert(left === 0, `осталось ${left} связей с категориями`);
   });
 

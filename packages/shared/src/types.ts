@@ -3,7 +3,11 @@
 export type Role = 'USER' | 'MODERATOR' | 'ADMIN';
 
 /** Что пользователь выбрал на стартовом экране. */
-export type Onboarding = 'CLIENT' | 'SPECIALIST';
+export type Onboarding = 'CLIENT' | 'SPECIALIST' | 'MARKET';
+
+export type CategoryKind = 'SERVICE' | 'PRODUCT';
+export type ListingStatus = 'DRAFT' | 'PENDING' | 'ACTIVE' | 'SOLD' | 'HIDDEN' | 'REJECTED';
+export type ListingCondition = 'NEW' | 'USED_PERFECT' | 'USED';
 export type SpecialistStatus = 'DRAFT' | 'PENDING' | 'ACTIVE' | 'HIDDEN' | 'BLOCKED';
 export type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -31,17 +35,9 @@ export interface Category {
   slug: string;
   name: string;
   icon: string;
-  /** Сколько активных специалистов в категории — показываем в каталоге. */
-  specialistCount: number;
-}
-
-/** Контакты специалиста. Любое поле может отсутствовать. */
-export interface SpecialistContacts {
-  phone: string | null;
-  telegram: string | null;
-  whatsapp: string | null;
-  instagram: string | null;
-  website: string | null;
+  kind: CategoryKind;
+  /** Сколько активных карточек или объявлений в категории. */
+  itemCount: number;
 }
 
 /** Урезанная карточка для списков и маркеров карты. */
@@ -83,7 +79,14 @@ export interface SpecialistPhoto {
 export interface SpecialistDetail extends SpecialistListItem {
   about: string | null;
   address: string | null;
-  contacts: SpecialistContacts;
+  /**
+   * Можно ли написать этому специалисту.
+   *
+   * У карточки, заведённой администратором вручную, нет привязанного
+   * Telegram-аккаунта — сообщение отправлять некому. Показывать кнопку,
+   * которая гарантированно откажет, нечестно.
+   */
+  canChat: boolean;
   services: Service[];
   photos: SpecialistPhoto[];
   /** Разбивка оценок: сколько отзывов на каждую звезду. Ключи '1'..'5'. */
@@ -123,6 +126,81 @@ export interface MySpecialistProfile extends SpecialistDetail {
   viewCount: number;
   createdAt: string;
   publishedAt: string | null;
+}
+
+/** Объявление в списке — краткая карточка витрины. */
+export interface ListingListItem {
+  id: string;
+  slug: string;
+  title: string;
+  priceAmount: number;
+  currency: string;
+  isNegotiable: boolean;
+  condition: ListingCondition;
+  city: string;
+  /** Первое фото: в списке показывается только оно. */
+  coverUrl: string | null;
+  createdAt: string;
+  categories: Pick<Category, 'id' | 'slug' | 'name' | 'icon'>[];
+}
+
+export interface ListingDetail extends ListingListItem {
+  description: string | null;
+  photos: { id: string; url: string }[];
+  viewCount: number;
+  seller: { name: string; photoUrl: string | null };
+  /** Объявление принадлежит текущему пользователю — писать себе не нужно. */
+  isMine: boolean;
+}
+
+/** Своё объявление в личном кабинете — со статусом и причиной отклонения. */
+export interface MyListing extends ListingDetail {
+  status: ListingStatus;
+  needsReview: boolean;
+  rejectionReason: string | null;
+  soldAt: string | null;
+}
+
+/** Собеседник в списке диалогов. */
+export interface ConversationParty {
+  id: string;
+  name: string;
+  photoUrl: string | null;
+}
+
+export interface ConversationSummary {
+  id: string;
+  /** С кем переписка — противоположная сторона, а не сам пользователь. */
+  peer: ConversationParty;
+  /**
+   * О чём разговор: карточка специалиста или объявление.
+   * Ровно одно из полей заполнено.
+   */
+  specialist: { id: string; slug: string; displayName: string } | null;
+  listing: { id: string; slug: string; title: string; priceAmount: number; currency: string } | null;
+  lastMessageText: string | null;
+  lastMessageAt: string | null;
+  unread: number;
+  isBlocked: boolean;
+  /** Текущий пользователь в этом диалоге — специалист или заказчик. */
+  role: 'CLIENT' | 'SPECIALIST';
+}
+
+export interface ChatMessage {
+  id: string;
+  text: string;
+  createdAt: string;
+  /** Сообщение отправлено текущим пользователем. */
+  isMine: boolean;
+  /** В сообщении были контакты, и они скрыты. */
+  hasMaskedContacts: boolean;
+}
+
+export interface ConversationThread {
+  conversation: ConversationSummary;
+  messages: ChatMessage[];
+  /** Есть ли сообщения старше показанных. */
+  hasMore: boolean;
 }
 
 export interface Paginated<T> {

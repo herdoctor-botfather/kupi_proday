@@ -24,6 +24,7 @@ enum Role {
 enum Onboarding {
   CLIENT      // ищет специалистов
   SPECIALIST  // сам оказывает услуги
+  MARKET      // пришёл покупать или продавать товары
 }
 
 /// Пользователь Telegram. Создаётся автоматически при первом открытии Mini App.
@@ -42,6 +43,11 @@ model User {
   /// Пользователь заблокировал бота или не начинал с ним чат.
   /// Telegram отвечает 403 — запоминаем, чтобы не тратить лимит запросов.
   botBlocked   Boolean @default(false)
+
+  /// Сколько раз пользователь пытался передать контакты в обход правил.
+  /// Первая попытка — повод объяснить правило, регулярные — повод
+  /// показать пользователя администратору.
+  contactAttempts Int @default(0)
   /// null — выбор ещё не сделан, показываем стартовый экран.
   onboardedAs  Onboarding?
 
@@ -55,6 +61,9 @@ model User {
   views      ProfileView[]
   favorites  Favorite[]
   reports    Report[]
+  conversations Conversation[] @relation("ClientConversations")
+  messages      Message[]      @relation("SentMessages")
+  listings      Listing[]
 
   @@index([role])
   @@map("users")
@@ -62,9 +71,18 @@ model User {
 
 // ─────────────────────────── Категории ───────────────────────────
 
-/// Категория услуг: «Ремонт», «Красота», «Репетиторы» и т.д.
+/// Что размещается в категории: услуги или товары.
+/// Наборы разные — «Ремонт и стройка» как категория товара бессмысленна,
+/// но админка и модель остаются общими.
+enum CategoryKind {
+  SERVICE
+  PRODUCT
+}
+
+/// Категория: «Ремонт», «Красота» — для услуг; «Электроника», «Одежда» — для товаров.
 model Category {
   id        String  @id @default(cuid())
+  kind      CategoryKind @default(SERVICE)
   /// Человекочитаемый идентификатор для URL: "beauty", "repair".
   slug      String  @unique
   name      String
@@ -83,7 +101,9 @@ model Category {
 
   specialists SpecialistCategory[]
 
-  @@index([isActive, sortOrder])
+  listings  ListingCategory[]
+
+  @@index([kind, isActive, sortOrder])
   @@map("categories")
 }
 
@@ -164,6 +184,7 @@ model Specialist {
   views         ProfileView[]
   favorites     Favorite[]
   subscriptions Subscription[]
+  conversations Conversation[]
 
   @@index([status, ratingAvg])
   @@index([status, needsReview])
@@ -218,6 +239,95 @@ model SpecialistPhoto {
 
   @@index([specialistId, sortOrder])
   @@map("specialist_photos")
+}
+
+// ─────────────────────────── Объявления ───────────────────────────
+
+enum ListingStatus {
+  DRAFT     // черновик
+  PENDING   // ждёт проверки
+  ACTIVE    // опубликовано
+  SOLD      // продано, остаётся в истории продавца
+  HIDDEN    // снято с публикации
+  REJECTED  // отклонено модератором
+}
+
+enum ListingCondition {
+  NEW           // новый
+  USED_PERFECT  // как новый
+  USED          // бывший в употреблении
+}
+
+/// Объявление о продаже товара.
+///
+/// Отдельно от карточки специалиста: у товара цена, состояние и признак
+/// «продано», у специалиста — рейтинг, услуги и режим работы. Общая таблица
+/// заставила бы половину полей быть пустыми у каждой из сторон.
+model Listing {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title       String
+  slug        String  @unique
+  description String? @db.Text
+
+  /// Цена в минимальных единицах (копейках) — как и у услуг,
+  /// чтобы не ловить ошибки округления.
+  priceAmount Int
+  currency    String @default("RUB")
+  /// Цена договорная: сумма показывается как ориентир.
+  isNegotiable Boolean @default(false)
+
+  condition ListingCondition @default(USED)
+  city      String
+
+  status          ListingStatus @default(PENDING)
+  rejectionReason String?
+  /// Опубликованное объявление изменили — нужна повторная проверка.
+  needsReview     Boolean @default(false)
+
+  viewCount Int @default(0)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+  soldAt      DateTime?
+
+  categories    ListingCategory[]
+  photos        ListingPhoto[]
+  conversations Conversation[]
+
+  @@index([status, createdAt])
+  @@index([city, status])
+  @@index([userId])
+  @@map("listings")
+}
+
+/// Одно объявление может попадать в несколько категорий товаров.
+model ListingCategory {
+  listingId  String
+  categoryId String
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([listingId, categoryId])
+  @@index([categoryId])
+  @@map("listing_categories")
+}
+
+model ListingPhoto {
+  id        String  @id @default(cuid())
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  url        String
+  storageKey String?
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([listingId, sortOrder])
+  @@map("listing_photos")
 }
 
 // ─────────────────────────── Отзывы ───────────────────────────
@@ -316,6 +426,77 @@ model Subscription {
 
   @@index([specialistId, endsAt])
   @@map("subscriptions")
+}
+
+// ─────────────────────────── Переписка ───────────────────────────
+
+/// Диалог между заказчиком и специалистом.
+///
+/// Общение происходит внутри приложения, а не во внешних мессенджерах:
+/// так площадка видит переписку, может разобрать спорную ситуацию
+/// и не теряет сделку, ушедшую в личные контакты.
+model Conversation {
+  id String @id @default(cuid())
+
+  /// Предмет разговора: либо карточка специалиста, либо объявление.
+  /// Ровно одно из полей заполнено — проверяется в коде, потому что
+  /// Prisma не умеет описывать такое ограничение на уровне схемы.
+  specialistId String?
+  specialist   Specialist? @relation(fields: [specialistId], references: [id], onDelete: Cascade)
+  listingId    String?
+  listing      Listing?    @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  clientId String
+  client   User   @relation("ClientConversations", fields: [clientId], references: [id], onDelete: Cascade)
+
+  messages Message[]
+
+  /// Денормализованные поля для списка диалогов: без них каждая строка
+  /// списка требовала бы отдельного запроса за последним сообщением.
+  lastMessageAt   DateTime?
+  lastMessageText String?
+
+  /// Непрочитанное считаем отдельно для каждой стороны.
+  clientUnread     Int @default(0)
+  specialistUnread Int @default(0)
+
+  /// Диалог закрыт администрацией — писать нельзя, история сохраняется.
+  isBlocked Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Один диалог на предмет разговора: переписка должна быть сплошной,
+  /// а не рассыпаться на треды при каждом обращении.
+  @@unique([specialistId, clientId])
+  @@unique([listingId, clientId])
+  @@index([clientId, lastMessageAt])
+  @@index([specialistId, lastMessageAt])
+  @@index([listingId, lastMessageAt])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderId String
+  sender   User   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  /// Текст, который видят собеседники: контакты в нём скрыты.
+  text String @db.Text
+  /// Исходник до вычистки. Нужен для разбора жалоб — без него нельзя
+  /// доказать, что специалист уводил клиента с площадки.
+  originalText String? @db.Text
+  /// В сообщении были контакты, и они скрыты.
+  hasMaskedContacts Boolean @default(false)
+
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
 }
 
 // ─────────────────────────── Жалобы ───────────────────────────

@@ -1,8 +1,10 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import type { MySpecialistProfile, SpecialistApplicationDto } from '@app/shared';
+import { maskContacts } from '@app/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import { ContactPolicyService } from '../notifications/contact-policy.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { detailInclude, toDetail } from './specialists.mapper';
 
@@ -24,6 +26,7 @@ export class MySpecialistService {
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
     private readonly notifications: NotificationsService,
+    private readonly contactPolicy: ContactPolicyService,
   ) {}
 
   async findOwn(userId: string): Promise<MySpecialistProfile | null> {
@@ -56,11 +59,12 @@ export class MySpecialistService {
 
     await this.assertCategoriesExist(dto.categoryIds);
     const slug = await this.generateSlug(dto.displayName);
+    const prepared = this.toData(dto);
 
     await this.prisma.$transaction(async (tx) => {
       const specialist = await tx.specialist.create({
         data: {
-          ...this.toData(dto),
+          ...prepared.data,
           userId,
           slug,
           status: 'PENDING',
@@ -79,6 +83,8 @@ export class MySpecialistService {
     void this.notifications.notifyStaff(
       `📨 <b>Новая анкета на проверку</b>\n\n${escapeHtml(dto.displayName)} — ${escapeHtml(dto.city)}`,
     );
+
+    if (prepared.hadContacts) this.contactPolicy.register(userId, 'profile');
 
     return (await this.findOwn(userId))!;
   }
@@ -104,13 +110,14 @@ export class MySpecialistService {
     // Отклонённая или черновая анкета после правки снова идёт на проверку.
     // Опубликованная остаётся видимой, но попадает в очередь повторной проверки.
     const isPublished = current.status === 'ACTIVE';
+    const prepared = this.toData(dto);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.specialistCategory.deleteMany({ where: { specialistId: current.id } });
       await tx.specialist.update({
         where: { id: current.id },
         data: {
-          ...this.toData(dto),
+          ...prepared.data,
           status: isPublished ? 'ACTIVE' : 'PENDING',
           needsReview: isPublished,
           rejectionReason: null,
@@ -119,6 +126,8 @@ export class MySpecialistService {
       });
       await this.replaceServices(tx, current.id, dto.services);
     });
+
+    if (prepared.hadContacts) this.contactPolicy.register(userId, 'profile');
 
     return (await this.findOwn(userId))!;
   }
@@ -270,12 +279,33 @@ export class MySpecialistService {
     return updated;
   }
 
+  /**
+   * Готовит данные анкеты, вычищая контакты из свободных текстов.
+   *
+   * Без этого правило обходится за секунду: телефон пишется в описании
+   * услуг, и каталог снова превращается в доску объявлений с номерами.
+   * Возвращает признак, были ли контакты — по нему решаем, предупреждать ли.
+   */
+  // Тип возвращаемого объекта выводится: явная аннотация Record<string, unknown>
+  // стёрла бы форму данных, и Prisma перестала бы видеть обязательные поля.
   private toData(dto: SpecialistApplicationDto) {
+    let hadContacts = false;
+
+    const clean = (value: string | null | undefined): string | null => {
+      const trimmed = value?.trim();
+      if (!trimmed) return null;
+      const { text, hasContacts } = maskContacts(trimmed);
+      if (hasContacts) hadContacts = true;
+      return text || null;
+    };
+
     const orNull = (value: string | null | undefined) => (value?.trim() ? value.trim() : null);
-    return {
-      displayName: dto.displayName.trim(),
-      headline: orNull(dto.headline),
-      about: orNull(dto.about),
+
+    const data = {
+      // Имя тоже чистим: «Иван +79001234567» — рабочий способ обойти правило.
+      displayName: clean(dto.displayName) ?? dto.displayName.trim(),
+      headline: clean(dto.headline),
+      about: clean(dto.about),
       // photoUrl приходит из формы; загруженный аватар меняется отдельным
       // методом и приносит с собой photoKey.
       photoUrl: orNull(dto.photoUrl),
@@ -283,12 +313,9 @@ export class MySpecialistService {
       address: orNull(dto.address),
       lat: dto.lat ?? null,
       lng: dto.lng ?? null,
-      phone: orNull(dto.phone),
-      telegram: orNull(dto.telegram),
-      whatsapp: orNull(dto.whatsapp),
-      instagram: orNull(dto.instagram),
-      website: orNull(dto.website),
     };
+
+    return { data, hadContacts };
   }
 
   /** Услуги переписываются целиком: так форма и база всегда совпадают. */

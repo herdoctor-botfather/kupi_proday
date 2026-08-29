@@ -14,21 +14,29 @@ async function main() {
   const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 
   await bot.api.setMyCommands([
-    { command: 'start', description: 'Открыть каталог специалистов' },
-    { command: 'help', description: 'Справка' },
+    { command: 'start', description: '🚀 Начать' },
+    { command: 'market', description: '🛍 Купи-продай' },
+    { command: 'help', description: '❓ Как здесь всё устроено' },
   ]);
 
+  // Описание видно на пустом экране до первого сообщения — это витрина бота,
+  // и оно должно отвечать на вопрос «зачем сюда заходить», а не описывать
+  // устройство приложения.
   await bot.api.setMyDescription(
-    'Каталог специалистов сферы услуг: поиск по категориям, рейтинги, отзывы и карта мастеров рядом с вами.',
+    'Мастера и объявления в одном месте.\n\n' +
+      '🔧 Услуги — с отзывами, ценами и картой: видно, кто работает рядом.\n' +
+      '🛍 Купи-продай — вещи от людей поблизости.\n' +
+      '💬 Переписка здесь же, уходить никуда не нужно.\n\n' +
+      'Нажмите «Начать».',
   );
 
-  await bot.api.setMyShortDescription('Каталог проверенных специалистов рядом с вами');
+  await bot.api.setMyShortDescription('Мастера рядом и объявления о продаже — внутри Telegram');
 
   // Кнопка меню рядом с полем ввода — основной вход в приложение.
   await bot.api.setChatMenuButton({
     menu_button: {
       type: 'web_app',
-      text: 'Каталог',
+      text: 'Открыть',
       web_app: { url: config.MINIAPP_URL },
     },
   });

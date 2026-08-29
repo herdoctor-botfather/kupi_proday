@@ -28,6 +28,7 @@ type FormState = {
   status: SpecialistStatus;
   isPromoted: boolean;
   categoryIds: string[];
+  ownerTelegramId: string;
 };
 
 const EMPTY_FORM: FormState = {
@@ -48,6 +49,7 @@ const EMPTY_FORM: FormState = {
   status: 'PENDING',
   isPromoted: false,
   categoryIds: [],
+  ownerTelegramId: '',
 };
 
 /** Создание и редактирование карточки специалиста. */
@@ -287,6 +289,32 @@ export function SpecialistEditPage() {
               </Field>
             </div>
 
+            <div className="form-section__title">Владелец карточки</div>
+            <p className="field__hint" style={{ marginTop: -8, marginBottom: 14 }}>
+              Заказчики пишут специалисту через чат приложения, а чат привязан к аккаунту.
+              Без владельца карточка остаётся в каталоге, но написать по ней нельзя —
+              приложение честно сообщит об этом.
+            </p>
+            <div className="form-grid">
+              <Field
+                label="Telegram id специалиста"
+                error={errors.ownerTelegramId}
+                hint={
+                  existing.data?.user
+                    ? `Сейчас: ${existing.data.user.firstName}${existing.data.user.username ? ` (@${existing.data.user.username})` : ''}`
+                    : 'Пусто — владельца нет. Человек должен хотя бы раз открыть приложение.'
+                }
+              >
+                <input
+                  className={`input${errors.ownerTelegramId ? ' input--invalid' : ''}`}
+                  value={form.ownerTelegramId}
+                  onChange={(e) => set('ownerTelegramId', e.target.value.replace(/\D/g, ''))}
+                  placeholder="123456789"
+                  inputMode="numeric"
+                />
+              </Field>
+            </div>
+
             <div className="form-section__title">Публикация</div>
             <div className="form-grid">
               <Field label="Статус">
@@ -443,6 +471,7 @@ function toForm(row: AdminSpecialistDetail): FormState {
     status: row.status,
     isPromoted: row.isPromoted,
     categoryIds: row.categories.map(({ category }) => category.id),
+    ownerTelegramId: row.user?.telegramId ?? '',
   };
 }
 
@@ -468,5 +497,6 @@ function toDto(form: FormState): UpsertSpecialistDto {
     status: form.status,
     isPromoted: form.isPromoted,
     categoryIds: form.categoryIds,
+    ownerTelegramId: form.ownerTelegramId.trim() || null,
   } as UpsertSpecialistDto;
 }

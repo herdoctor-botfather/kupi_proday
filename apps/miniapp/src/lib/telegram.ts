@@ -9,7 +9,11 @@
 
 interface TelegramWebApp {
   initData: string;
-  initDataUnsafe: { user?: { id: number; first_name: string; username?: string } };
+  initDataUnsafe: {
+    user?: { id: number; first_name: string; username?: string };
+    /** Значение из ссылки `?startapp=` — по нему бот открывает нужный экран. */
+    start_param?: string;
+  };
   colorScheme: 'light' | 'dark';
   themeParams: Record<string, string>;
   viewportStableHeight: number;

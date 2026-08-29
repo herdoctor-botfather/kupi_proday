@@ -21,6 +21,101 @@ const adminTelegramIds = (process.env.ADMIN_TELEGRAM_IDS ?? '')
   .filter(Boolean)
   .map((value) => BigInt(value));
 
+/** Категории товаров для витрины объявлений. */
+const PRODUCT_CATEGORIES = [
+  { slug: 'electronics', name: 'Электроника', icon: '📱', sortOrder: 10 },
+  { slug: 'home', name: 'Для дома', icon: '🏠', sortOrder: 20 },
+  { slug: 'clothes', name: 'Одежда и обувь', icon: '👕', sortOrder: 30 },
+  { slug: 'kids', name: 'Детское', icon: '🧸', sortOrder: 40 },
+  { slug: 'sport', name: 'Спорт и отдых', icon: '⚽️', sortOrder: 50 },
+  { slug: 'auto-parts', name: 'Запчасти', icon: '🔩', sortOrder: 60 },
+  { slug: 'tools', name: 'Инструменты', icon: '🧰', sortOrder: 70 },
+  { slug: 'hobby', name: 'Хобби', icon: '🎸', sortOrder: 80 },
+];
+
+/**
+ * Демо-объявления и их продавец.
+ *
+ * Без них витрина «Купи-продай» открывается пустой, и проверить каталог
+ * не на чем. Продавец — служебная учётная запись с заведомо несуществующим
+ * telegramId: писать ему можно, но ответа не будет, ровно как и демо-мастерам.
+ * Убрать всю демонстрацию разом: DELETE FROM users WHERE "telegramId" = 1.
+ */
+const DEMO_SELLER_TELEGRAM_ID = 1n;
+
+const DEMO_LISTINGS = [
+  {
+    slug: 'iphone-13-128-gb-demo',
+    title: 'iPhone 13, 128 ГБ',
+    description: 'Полностью рабочий, ёмкость аккумулятора 89%. Коробка и кабель в комплекте, чехол в подарок. Смотреть у метро Чистые пруды.',
+    priceAmount: 3990000,
+    condition: 'USED_PERFECT' as const,
+    city: 'Москва',
+    isNegotiable: true,
+    categorySlug: 'electronics',
+  },
+  {
+    slug: 'divan-uglovoy-demo',
+    title: 'Угловой диван, раскладной',
+    description: 'Ширина 260 см, спальное место 200×140. Ткань рогожка, следов от животных нет. Самовывоз, помогу вынести.',
+    priceAmount: 1800000,
+    condition: 'USED' as const,
+    city: 'Москва',
+    isNegotiable: true,
+    categorySlug: 'home',
+  },
+  {
+    slug: 'kurtka-zimnyaya-demo',
+    title: 'Куртка зимняя, размер M',
+    description: 'Носил один сезон, дефектов нет. Пуховый наполнитель, капюшон отстёгивается.',
+    priceAmount: 450000,
+    condition: 'USED_PERFECT' as const,
+    city: 'Санкт-Петербург',
+    isNegotiable: false,
+    categorySlug: 'clothes',
+  },
+  {
+    slug: 'kolyaska-progulochnaya-demo',
+    title: 'Коляска прогулочная',
+    description: 'Лёгкая, складывается одной рукой. Дождевик и москитная сетка в комплекте. Ребёнок вырос.',
+    priceAmount: 800000,
+    condition: 'USED' as const,
+    city: 'Москва',
+    isNegotiable: true,
+    categorySlug: 'kids',
+  },
+  {
+    slug: 'velosiped-gornyy-demo',
+    title: 'Велосипед горный, 26"',
+    description: 'Алюминиевая рама, 21 скорость, дисковые тормоза. Недавно обслужен: смазана цепь, отрегулированы переключатели.',
+    priceAmount: 1200000,
+    condition: 'USED' as const,
+    city: 'Казань',
+    isNegotiable: false,
+    categorySlug: 'sport',
+  },
+  {
+    slug: 'perforator-bosch-demo',
+    title: 'Перфоратор Bosch',
+    description: 'Брал под ремонт, сделал и больше не нужен. Три бура и кейс в комплекте.',
+    priceAmount: 650000,
+    condition: 'USED_PERFECT' as const,
+    city: 'Москва',
+    isNegotiable: false,
+    categorySlug: 'tools',
+  },
+  {
+    slug: 'gitara-akusticheskaya-demo',
+    title: 'Гитара акустическая',
+    description: 'Дредноут, верхняя дека — ель. Новые струны, чехол в комплекте. Играть учился, не пошло.',
+    priceAmount: 900000,
+    condition: 'USED' as const,
+    city: 'Санкт-Петербург',
+    isNegotiable: true,
+    categorySlug: 'hobby',
+  },
+];
+
 const CATEGORIES = [
   { slug: 'beauty', name: 'Красота', icon: '💅', sortOrder: 10 },
   { slug: 'repair', name: 'Ремонт и стройка', icon: '🔨', sortOrder: 20 },
@@ -115,15 +210,25 @@ const DEMO_SPECIALISTS = [
 ];
 
 async function main() {
-  console.log('Загружаю категории...');
+  console.log('Загружаю категории услуг...');
   for (const category of CATEGORIES) {
     await prisma.category.upsert({
       where: { slug: category.slug },
-      create: category,
-      update: { name: category.name, icon: category.icon, sortOrder: category.sortOrder },
+      create: { ...category, kind: 'SERVICE' },
+      update: { name: category.name, icon: category.icon, sortOrder: category.sortOrder, kind: 'SERVICE' },
     });
   }
-  console.log(`  категорий: ${CATEGORIES.length}`);
+  console.log(`  категорий услуг: ${CATEGORIES.length}`);
+
+  console.log('Загружаю категории товаров...');
+  for (const category of PRODUCT_CATEGORIES) {
+    await prisma.category.upsert({
+      where: { slug: category.slug },
+      create: { ...category, kind: 'PRODUCT' },
+      update: { name: category.name, icon: category.icon, sortOrder: category.sortOrder, kind: 'PRODUCT' },
+    });
+  }
+  console.log(`  категорий товаров: ${PRODUCT_CATEGORIES.length}`);
 
   console.log('Загружаю демо-специалистов...');
   for (const demo of DEMO_SPECIALISTS) {
@@ -148,6 +253,30 @@ async function main() {
     });
   }
   console.log(`  специалистов: ${DEMO_SPECIALISTS.length}`);
+
+  console.log('Загружаю демо-объявления...');
+  const demoSeller = await prisma.user.upsert({
+    where: { telegramId: DEMO_SELLER_TELEGRAM_ID },
+    create: { telegramId: DEMO_SELLER_TELEGRAM_ID, firstName: 'Пётр', lastName: 'Демидов' },
+    update: {},
+  });
+
+  for (const demo of DEMO_LISTINGS) {
+    const category = await prisma.category.findUniqueOrThrow({ where: { slug: demo.categorySlug } });
+    const { categorySlug, ...data } = demo;
+
+    const listing = await prisma.listing.upsert({
+      where: { slug: demo.slug },
+      create: { ...data, userId: demoSeller.id, status: 'ACTIVE', publishedAt: new Date() },
+      update: { ...data, status: 'ACTIVE' },
+    });
+
+    await prisma.listingCategory.deleteMany({ where: { listingId: listing.id } });
+    await prisma.listingCategory.create({
+      data: { listingId: listing.id, categoryId: category.id },
+    });
+  }
+  console.log(`  объявлений: ${DEMO_LISTINGS.length}`);
 
   if (adminTelegramIds.length > 0) {
     console.log('Назначаю администраторов...');

@@ -6,9 +6,9 @@
  * что указан в TEST_BOT_TOKEN. Сброс: npm run test:e2e:reset -w @app/api
  */
 const { createHmac } = require('node:crypto');
-const { execSync } = require('node:child_process');
+const { execFileSync } = require('node:child_process');
 
-const BASE = 'http://localhost:3000/api';
+const BASE = process.env.API_URL || 'http://localhost:3000/api';
 const BOT_TOKEN = process.env.TEST_BOT_TOKEN || '123456:TEST-TOKEN-FOR-VERIFICATION';
 const PSQL = process.env.PSQL_BIN || 'psql';
 const DB_URL = process.env.DATABASE_URL || 'postgresql://app:app@localhost:5432/tgspec';
@@ -64,7 +64,9 @@ const login = async (id, firstName) => {
   return body;
 };
 
-const sql = (query) => execSync(`${PSQL} "${DB_URL}" -tAc "${query}"`, { encoding: 'utf8' }).trim();
+// Через execFileSync, а не execSync: оболочка съедает кавычки вокруг
+// имён столбцов, и PostgreSQL перестаёт узнавать "telegramId".
+const sql = (query) => execFileSync(PSQL, [DB_URL, '-tAc', query], { encoding: 'utf8' }).trim();
 
 async function main() {
   const MASTER_TG = 810000001;
@@ -143,29 +145,16 @@ async function main() {
   });
 
   let categoryIds;
-  await check('анкета без способа связи отклоняется', async () => {
+  await check('анкета без категории отклоняется, категории загружаются', async () => {
     const { body: cats } = await req('/categories');
     categoryIds = [cats.find((c) => c.slug === 'beauty').id];
 
-    const { status, body } = await req('/me/specialist', {
-      method: 'POST',
-      token: masterToken,
-      body: JSON.stringify({
-        displayName: 'Мастер Без Связи',
-        city: 'Казань',
-        categoryIds,
-        services: [],
-      }),
-    });
-    assert(status === 400, `статус ${status}`);
-    assert(/способ связи/i.test(body.message), `сообщение: ${body.message}`);
-  });
-
-  await check('анкета без категории отклоняется', async () => {
+    // Контакты в анкете больше не собираются — связь идёт через чат,
+    // поэтому прежнее требование «укажите способ связи» отменено.
     const { status } = await req('/me/specialist', {
       method: 'POST',
       token: masterToken,
-      body: JSON.stringify({ displayName: 'Мастер', city: 'Казань', phone: '+79000000000', categoryIds: [], services: [] }),
+      body: JSON.stringify({ displayName: 'Мастер', city: 'Казань', categoryIds: [], services: [] }),
     });
     assert(status === 400, `статус ${status}`);
   });
@@ -195,8 +184,6 @@ async function main() {
         city: 'Казань',
         address: 'ул. Баумана, 10',
         lat: 55.7903, lng: 49.1221,
-        phone: '+7 900 555-11-22',
-        telegram: '@irina_hair',
         categoryIds,
         services: [
           { name: 'Женская стрижка', price: 2000, priceIsFrom: false },
@@ -244,7 +231,7 @@ async function main() {
   console.log('\nМодерация анкеты:\n');
 
   await login(ADMIN_TG, 'Админ');
-  sql(`UPDATE users SET role='ADMIN' WHERE \\"telegramId\\"=${ADMIN_TG}`);
+  sql(`UPDATE users SET role='ADMIN' WHERE \"telegramId\"=${ADMIN_TG}`);
   const adminAuth = await login(ADMIN_TG, 'Админ');
   const adminToken = adminAuth.token;
 
@@ -279,8 +266,7 @@ async function main() {
     const { status, body } = await req('/me/specialist', {
       method: 'PUT', token: masterToken,
       body: JSON.stringify({
-        displayName: 'Ирина Кузнецова', headline: 'Парикмахер-стилист', city: 'Казань',
-        phone: '+7 900 555-11-22', photoUrl: 'https://example.com/photo.jpg',
+        displayName: 'Ирина Кузнецова', headline: 'Парикмахер-стилист', city: 'Казань', photoUrl: 'https://example.com/photo.jpg',
         categoryIds, services: [{ name: 'Женская стрижка', price: 2000, priceIsFrom: false }],
       }),
     });
@@ -306,8 +292,7 @@ async function main() {
     const { body } = await req('/me/specialist', {
       method: 'PUT', token: masterToken,
       body: JSON.stringify({
-        displayName: 'Ирина Кузнецова', headline: 'Парикмахер-стилист, 10 лет опыта', city: 'Казань',
-        phone: '+7 900 555-11-22', categoryIds,
+        displayName: 'Ирина Кузнецова', headline: 'Парикмахер-стилист, 10 лет опыта', city: 'Казань', categoryIds,
         services: [{ name: 'Женская стрижка', price: 2500, priceIsFrom: false }],
       }),
     });
@@ -380,7 +365,6 @@ async function main() {
       body: JSON.stringify({
         displayName: 'Передумавший Заказчик',
         city: 'Тверь',
-        phone: '+7 900 321-00-00',
         categoryIds: [cats.find((c) => c.slug === 'repair').id],
         services: [],
       }),

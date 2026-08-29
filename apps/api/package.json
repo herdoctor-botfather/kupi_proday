@@ -18,7 +18,11 @@
     "test:admin": "node test/admin.test.js",
     "test:onboarding": "node test/onboarding.test.js",
     "test:uploads": "node test/uploads.test.js",
-    "test:reports": "node test/reports.test.js"
+    "test:reports": "node test/reports.test.js",
+    "test:chat": "node test/chat.test.js",
+    "test:contacts": "node test/contacts.test.js",
+    "test:listings": "node test/listings.test.js",
+    "test:all": "bash test/run-all.sh"
   },
   "prisma": {
     "seed": "dotenv -e ../../.env -- ts-node --transpile-only prisma/seed.ts"

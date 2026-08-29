@@ -30,7 +30,13 @@ export function OnboardingPage() {
       markRoleChosen();
       // У кого анкета уже есть — сразу к ней, а не к пустой форме.
       const target =
-        role === 'CLIENT' ? '/' : updated.hasSpecialistProfile ? '/profile/my-card' : '/profile/application';
+        role === 'MARKET'
+          ? '/market'
+          : role === 'CLIENT'
+            ? '/'
+            : updated.hasSpecialistProfile
+              ? '/profile/my-card'
+              : '/profile/application';
       // Без replace: иначе история состоит из одной записи, и кнопка «Назад»
       // на форме анкеты видна, но возвращаться ей некуда.
       navigate(target);
@@ -105,6 +111,25 @@ export function OnboardingPage() {
           </span>
         </button>
       </div>
+
+        <button
+          type="button"
+          className={`role-card${user?.onboardedAs === 'MARKET' ? ' role-card--previous' : ''}`}
+          onClick={() => choose('MARKET')}
+          disabled={saving !== null}
+        >
+          {user?.onboardedAs === 'MARKET' && <span className="role-card__mark">Прошлый выбор</span>}
+          <span className="role-card__emoji" aria-hidden>
+            🛍
+          </span>
+          <span className="role-card__title">Купи-продай</span>
+          <span className="role-card__text">
+            Объявления о продаже вещей: купить у людей рядом или продать своё
+          </span>
+          <span className="role-card__action">
+            {saving === 'MARKET' ? 'Открываем...' : 'Открыть объявления →'}
+          </span>
+        </button>
 
       <p className="onboarding__note">
         Отдельная регистрация не нужна: вы уже вошли через Telegram. Пароли приложение не хранит.

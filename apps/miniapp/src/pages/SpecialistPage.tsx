@@ -1,25 +1,16 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { SpecialistContacts } from '@app/shared';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { AsyncContent } from '../components/states';
 import { Rating, RatingBreakdown } from '../components/Rating';
 import { ReviewForm, ReviewList } from '../components/Reviews';
-import { contactToUrl, formatDistance, formatPrice } from '../lib/format';
-import { haptic, openExternal, tg } from '../lib/telegram';
+import { formatDistance, formatPrice } from '../lib/format';
+import { haptic } from '../lib/telegram';
 import { useIsAuthenticated } from '../lib/auth';
 import { FavoriteButton } from '../components/FavoriteButton';
 import { ReportButton } from '../components/ReportButton';
 import { ShareButton } from '../components/ShareButton';
-
-const CONTACT_META: Record<keyof SpecialistContacts, { icon: string; label: string }> = {
-  phone: { icon: '📞', label: 'Позвонить' },
-  telegram: { icon: '✈️', label: 'Написать в Telegram' },
-  whatsapp: { icon: '💬', label: 'Написать в WhatsApp' },
-  instagram: { icon: '📷', label: 'Instagram' },
-  website: { icon: '🌐', label: 'Сайт' },
-};
 
 /** Полный профиль специалиста: контакты, услуги, галерея, отзывы. */
 export function SpecialistPage() {
@@ -60,13 +51,11 @@ export function SpecialistPage() {
               <ShareButton slug={specialist.slug} displayName={specialist.displayName} />
             </div>
 
-            <div className="contacts">
-              {(Object.keys(CONTACT_META) as (keyof SpecialistContacts)[]).map((kind) => {
-                const value = specialist.contacts[kind];
-                if (!value) return null;
-                return <ContactRow key={kind} kind={kind} value={value} />;
-              })}
-            </div>
+            <ContactAction
+              specialistId={specialist.id}
+              isAuthenticated={isAuthenticated}
+              canChat={specialist.canChat}
+            />
 
             {specialist.about && (
               <>
@@ -164,45 +153,67 @@ export function SpecialistPage() {
   );
 }
 
-/** Строка контакта: тап открывает мессенджер, долгий тап копирует значение. */
-function ContactRow({ kind, value }: { kind: keyof SpecialistContacts; value: string }) {
-  const [copied, setCopied] = useState(false);
-  const meta = CONTACT_META[kind];
-  const url = contactToUrl(kind, value);
+/**
+ * Единственный способ связаться — чат внутри приложения.
+ *
+ * Контакты в карточке больше не показываются: общение остаётся на площадке,
+ * поэтому видно, о чём договорились, и спорную ситуацию можно разобрать.
+ */
+function ContactAction({
+  specialistId,
+  isAuthenticated,
+  canChat,
+}: {
+  specialistId: string;
+  isAuthenticated: boolean;
+  canChat: boolean;
+}) {
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const open = () => {
-    if (!url) return;
-    haptic.tap();
-    // tel: обрабатывает сама система, остальное — через SDK Telegram.
-    if (url.startsWith('tel:')) window.location.href = url;
-    else openExternal(url);
-  };
+  if (!isAuthenticated) {
+    return (
+      <div className="contact-note">
+        Откройте приложение в Telegram, чтобы написать специалисту.
+      </div>
+    );
+  }
 
-  const copy = async (event: React.MouseEvent) => {
-    event.stopPropagation();
+  // Кнопка, которая заведомо откажет, хуже её отсутствия: человек нажимает,
+  // получает ошибку и не понимает, что сделал не так.
+  if (!canChat) {
+    return (
+      <div className="contact-note" style={{ marginBottom: 18 }}>
+        Этот специалист ещё не подключил чат. Карточка размещена администрацией,
+        и написать по ней пока нельзя.
+      </div>
+    );
+  }
+
+  const write = async () => {
+    setBusy(true);
+    setError(null);
     try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      haptic.success();
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // Буфер обмена может быть недоступен — показываем значение в системном окне.
-      tg()?.showAlert(value);
+      haptic.tap();
+      const conversation = await api.startConversation(specialistId);
+      navigate(`/chat/${conversation.id}`);
+    } catch (err) {
+      haptic.error();
+      setError(err instanceof Error ? err.message : 'Не удалось открыть переписку');
+      setBusy(false);
     }
   };
 
   return (
-    <button type="button" className="contact" onClick={open}>
-      <span className="contact__icon" aria-hidden>
-        {meta.icon}
-      </span>
-      <span className="contact__value">
-        <div>{value}</div>
-        <div style={{ fontSize: 12, color: 'var(--text-hint)' }}>{meta.label}</div>
-      </span>
-      <span className="contact__action" onClick={copy} role="button" tabIndex={0}>
-        {copied ? 'Скопировано' : 'Копировать'}
-      </span>
-    </button>
+    <div style={{ marginBottom: 18 }}>
+      <button type="button" className="button" onClick={write} disabled={busy}>
+        {busy ? 'Открываем...' : '💬 Написать специалисту'}
+      </button>
+      {error && <div className="field__error" style={{ marginTop: 6 }}>{error}</div>}
+      <div className="contact-note">
+        Общение внутри приложения: переписка сохраняется, и в спорной ситуации есть на что сослаться
+      </div>
+    </div>
   );
 }

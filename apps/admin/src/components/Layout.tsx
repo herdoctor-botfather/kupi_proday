@@ -15,6 +15,7 @@ export function Layout() {
   const pendingReviews = stats.data?.reviews.pending ?? 0;
   // Новые анкеты и правки опубликованных — обе группы требуют решения.
   const pendingApplications = (stats.data?.specialists.pending ?? 0) + (stats.data?.specialists.changed ?? 0);
+  const pendingListings = stats.data?.listings.pending ?? 0;
 
   return (
     <div className="layout">
@@ -45,6 +46,10 @@ export function Layout() {
             <NavLink to="/applications" className={navClass}>
               <span aria-hidden>📨</span> Заявки
               {pendingApplications > 0 && <span className="nav-item__badge">{pendingApplications}</span>}
+            </NavLink>
+            <NavLink to="/listings" className={navClass}>
+              <span aria-hidden>🏷</span> Объявления
+              {pendingListings > 0 && <span className="nav-item__badge">{pendingListings}</span>}
             </NavLink>
             <NavLink to="/specialists" className={navClass}>
               <span aria-hidden>👥</span> Специалисты

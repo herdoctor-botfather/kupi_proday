@@ -7,7 +7,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "setup": "ts-node --transpile-only src/setup.ts"
+    "setup": "ts-node --transpile-only src/setup.ts",
+    "check:messages": "ts-node --transpile-only src/check-messages.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

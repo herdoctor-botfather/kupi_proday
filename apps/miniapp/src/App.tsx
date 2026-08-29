@@ -1,22 +1,31 @@
-import { useEffect } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth';
 import { TabBar } from './components/TabBar';
 import { CatalogPage } from './pages/CatalogPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { ApplicationPage } from './pages/ApplicationPage';
 import { MyCardPage } from './pages/MyCardPage';
+import { ChatsPage } from './pages/ChatsPage';
+import { ChatPage } from './pages/ChatPage';
+import { MarketPage } from './pages/MarketPage';
+import { MarketCatalogPage } from './pages/MarketCatalogPage';
+import { MarketBrowsePage } from './pages/MarketBrowsePage';
+import { ListingPage } from './pages/ListingPage';
+import { MyListingsPage } from './pages/MyListingsPage';
+import { SellPage } from './pages/SellPage';
 import { SpecialistsPage } from './pages/SpecialistsPage';
 import { SpecialistPage } from './pages/SpecialistPage';
 import { MapPage } from './pages/MapPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { EmptyState } from './components/states';
 import { useBackButtonEffect } from './lib/telegram';
-import { isRoleChosenThisSession } from './lib/session';
+import { isRoleChosenThisSession, markRoleChosen } from './lib/session';
+import { clearStartRoute, startRoute } from './lib/start-param';
 import { useGoBack } from './lib/navigation';
 
 /** Корневые вкладки — на них системная кнопка «Назад» не показывается. */
-const ROOT_ROUTES = new Set(['/', '/map', '/profile']);
+const ROOT_ROUTES = new Set(['/', '/map', '/chats', '/profile', '/market']);
 
 export function App() {
   return (
@@ -29,6 +38,35 @@ export function App() {
 function Root() {
   const { status } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  /**
+   * Бот может открыть приложение сразу на нужном экране. Такая ссылка
+   * заменяет собой выбор роли: человек уже сказал, зачем пришёл, и просить
+   * его выбрать ещё раз значило бы не услышать.
+   *
+   * Переход делаем эффектом, а не прямо в разметке. В режиме разработки
+   * React отрисовывает дерево дважды и результат первого прохода
+   * отбрасывает — вместе с ним пропадал бы и переход, а человек оставался
+   * бы на главной, что бы он ни нажал в боте.
+   */
+  const [pendingRoute, setPendingRoute] = useState(() => startRoute());
+
+  useEffect(() => {
+    if (!pendingRoute) return;
+    // Ждём токен: экраны вроде «моя анкета» запрашивают данные сразу
+    // при появлении, и без токена первый же запрос вернул бы отказ.
+    if (status === 'loading') return;
+
+    markRoleChosen();
+    clearStartRoute();
+    setPendingRoute(null);
+    if (location.pathname !== pendingRoute) navigate(pendingRoute, { replace: true });
+  }, [pendingRoute, status, location.pathname, navigate]);
+
+  // Мгновение до перехода показываем пустой экран: иначе успел бы мелькнуть
+  // экран выбора роли, который мы как раз собираемся пропустить.
+  if (pendingRoute) return <div className="app" />;
 
   // Экран выбора показывается при каждом открытии приложения, а не только
   // при первом. Запомненный в профиле выбор лишь подсвечивает прежний ответ:
@@ -78,6 +116,14 @@ function Shell() {
       <Route path="/specialists" element={<SpecialistsPage />} />
       <Route path="/specialist/:idOrSlug" element={<SpecialistPage />} />
       <Route path="/map" element={<MapPage />} />
+      <Route path="/market" element={<MarketPage />} />
+      <Route path="/market/browse" element={<MarketCatalogPage />} />
+      <Route path="/market/listings" element={<MarketBrowsePage />} />
+      <Route path="/market/my" element={<MyListingsPage />} />
+      <Route path="/market/sell" element={<SellPage />} />
+      <Route path="/listing/:idOrSlug" element={<ListingPage />} />
+      <Route path="/chats" element={<ChatsPage />} />
+      <Route path="/chat/:id" element={<ChatPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/profile/application" element={<ApplicationPage />} />
       <Route path="/profile/my-card" element={<MyCardPage />} />

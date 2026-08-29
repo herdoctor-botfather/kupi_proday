@@ -13,12 +13,14 @@ import {
 } from '@nestjs/common';
 import {
   moderateReviewSchema,
+  moderateListingSchema,
   moderateSpecialistSchema,
   paginationSchema,
   upsertCategorySchema,
   upsertSpecialistSchema,
   upsertSubscriptionSchema,
   type ModerateReviewDto,
+  type ModerateListingDto,
   type ModerateSpecialistDto,
   type UpsertCategoryDto,
   type UpsertSpecialistDto,
@@ -82,6 +84,22 @@ export class AdminController {
     @CurrentUser() user: RequestUser,
   ) {
     return this.admin.moderateSpecialist(id, dto, user.id);
+  }
+
+  // ─── Объявления ───
+
+  @Get('listings/pending')
+  pendingListings() {
+    return this.admin.pendingListings();
+  }
+
+  @Patch('listings/:id/moderate')
+  moderateListing(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(moderateListingSchema)) dto: ModerateListingDto,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.admin.moderateListing(id, dto, user.id);
   }
 
   // ─── Специалисты ───

@@ -78,6 +78,18 @@ export function DashboardPage() {
                 </div>
               </div>
 
+              <div className={`stat${data.listings.pending > 0 ? ' stat--attention' : ''}`}>
+                <div className="stat__label">Объявления на проверке</div>
+                <div className="stat__value">{data.listings.pending}</div>
+                <div className="stat__hint">
+                  {data.listings.pending > 0 ? (
+                    <Link to="/listings">Проверить →</Link>
+                  ) : (
+                    `на витрине: ${data.listings.active}`
+                  )}
+                </div>
+              </div>
+
               <div className="stat">
                 <div className="stat__label">Опубликовано</div>
                 <div className="stat__value">{data.specialists.active}</div>

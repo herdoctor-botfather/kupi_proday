@@ -1632,3 +1632,574 @@ body::before {
   font-size: 12px;
   color: var(--text-hint);
 }
+
+/* ─── Список переписок ─── */
+
+.chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-card);
+  color: var(--text);
+}
+
+.chat-row__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--text-hint);
+}
+
+.chat-row__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-row__top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.chat-row__name {
+  font-weight: 620;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-row__time {
+  font-size: 12px;
+  color: var(--text-hint);
+  flex-shrink: 0;
+}
+
+.chat-row__preview {
+  font-size: 13.5px;
+  color: var(--text-hint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-row__context {
+  font-size: 11.5px;
+  color: var(--text-hint);
+  opacity: 0.75;
+}
+
+.chat-row__badge {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 650;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tabbar__icon {
+  position: relative;
+}
+
+.tabbar__badge {
+  position: absolute;
+  top: -4px;
+  left: 60%;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--destructive);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* ─── Экран переписки ─── */
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  /* Поле ввода прижато к таб-бару, а не спрятано под ним. */
+  padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+}
+
+.chat__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px var(--page-padding);
+  border-bottom: 1px solid var(--hairline);
+  background: var(--bg);
+}
+
+.chat__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--text-hint);
+  flex-shrink: 0;
+}
+
+.chat__name {
+  font-weight: 620;
+}
+
+.chat__link {
+  font-size: 12.5px;
+}
+
+.chat__messages {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 14px var(--page-padding);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat__empty,
+.chat__older {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-hint);
+  padding: 12px;
+}
+
+.bubble {
+  max-width: 78%;
+  padding: 9px 12px 6px;
+  border-radius: 16px 16px 16px 4px;
+  background: var(--bg-secondary);
+  align-self: flex-start;
+}
+
+.bubble--mine {
+  align-self: flex-end;
+  border-radius: 16px 16px 4px 16px;
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.bubble__text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.bubble__time {
+  font-size: 10.5px;
+  opacity: 0.6;
+  text-align: right;
+  margin-top: 2px;
+}
+
+.chat__composer {
+  padding: 10px var(--page-padding);
+  border-top: 1px solid var(--hairline);
+  background: var(--bg);
+}
+
+.chat__input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.chat__input {
+  flex: 1;
+  max-height: 120px;
+  padding: 10px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-raised);
+  color: var(--text);
+  outline: none;
+  resize: none;
+  /* iOS зумит поле при фокусе, если шрифт меньше 16px. */
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.chat__input:focus {
+  border-color: var(--accent);
+}
+
+.chat__send {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 19px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.chat__send:disabled {
+  opacity: 0.45;
+}
+
+.chat__warning,
+.chat__error,
+.chat__blocked {
+  font-size: 12.5px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  line-height: 1.35;
+}
+
+.chat__warning {
+  background: color-mix(in srgb, #f59e0b 16%, transparent);
+  color: var(--text);
+}
+
+.chat__error {
+  background: color-mix(in srgb, var(--destructive) 12%, transparent);
+  color: var(--destructive);
+}
+
+.chat__blocked {
+  margin: 0 var(--page-padding) 10px;
+  text-align: center;
+  background: var(--bg-secondary);
+  color: var(--text-hint);
+}
+
+/* ─── Пояснения вместо контактов ─── */
+
+.contact-note {
+  font-size: 12.5px;
+  color: var(--text-hint);
+  line-height: 1.4;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.form-note {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  font-size: 13px;
+  color: var(--text-hint);
+  line-height: 1.4;
+  margin: 18px 0;
+}
+
+/* ─── Витрина объявлений ─── */
+
+.listing-grid {
+  display: grid;
+  /* Две колонки на телефоне: товар узнают по фотографии,
+     а список в одну колонку заставляет листать вдвое дольше. */
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.listing-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text);
+}
+
+.listing-card__photo {
+  aspect-ratio: 1;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.listing-card__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.listing-card__no-photo {
+  font-size: 34px;
+  opacity: 0.4;
+}
+
+.listing-card__price {
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.listing-card__negotiable {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-hint);
+}
+
+.listing-card__title {
+  font-size: 13.5px;
+  line-height: 1.3;
+  /* Две строки максимум: иначе карточки в сетке разной высоты. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.listing-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-hint);
+}
+
+/* ─── Карточка товара ─── */
+
+.listing-photos__main {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+}
+
+.listing-photos__strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin-top: 8px;
+  scrollbar-width: none;
+}
+
+.listing-photos__strip::-webkit-scrollbar {
+  display: none;
+}
+
+.listing-photos__thumb {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  opacity: 0.55;
+  transition: opacity 0.12s;
+}
+
+.listing-photos__thumb--active {
+  opacity: 1;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.listing-photos__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.listing-photos__empty {
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  opacity: 0.4;
+}
+
+.listing-price {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 26px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  margin-top: 16px;
+}
+
+.listing-price__negotiable {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-hint);
+}
+
+.listing-title {
+  margin: 4px 0 10px;
+  font-size: 19px;
+  font-weight: 620;
+  line-height: 1.25;
+}
+
+.listing-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.listing-meta--muted {
+  font-size: 12.5px;
+  color: var(--text-hint);
+}
+
+.badge-condition {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  color: var(--text-hint);
+}
+
+.seller {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.seller__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--text-hint);
+  flex-shrink: 0;
+}
+
+.seller__name {
+  font-weight: 620;
+}
+
+/* ─── Свои объявления ─── */
+
+.my-listing {
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-card);
+}
+
+.my-listing__head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.my-listing__photo {
+  width: 62px;
+  height: 62px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  opacity: 0.9;
+}
+
+.my-listing__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.my-listing__title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-listing__price {
+  font-weight: 680;
+}
+
+.listing-status {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.my-listing__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+/* ─── Строка формы в два поля ─── */
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.form-row .field {
+  flex: 1;
+}
+
+/* Пять вкладок теснее четырёх: подписи мельче, отступы уже. */
+.tabbar__item {
+  font-size: 10.5px;
+  padding: 0 2px;
+}
+
+.tabbar__icon {
+  font-size: 19px;
+}

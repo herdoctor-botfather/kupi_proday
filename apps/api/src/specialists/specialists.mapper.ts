@@ -47,13 +47,11 @@ export function toDetail(
     ...toListItem(row as ListRow),
     about: row.about,
     address: row.address,
-    contacts: {
-      phone: row.phone,
-      telegram: row.telegram,
-      whatsapp: row.whatsapp,
-      instagram: row.instagram,
-      website: row.website,
-    },
+    // Писать можно только владельцу карточки: у заведённых администрацией
+    // аккаунта нет, и сообщение ушло бы в никуда.
+    canChat: row.userId !== null,
+    // Контакты наружу не отдаются: общение идёт через чат приложения.
+    // В базе они остаются — администрации они нужны для поддержки.
     services: row.services.map((s) => ({
       id: s.id,
       name: s.name,

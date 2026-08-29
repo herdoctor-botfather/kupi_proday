@@ -12,6 +12,11 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const PARENT_ROUTE: Array<[RegExp, string]> = [
   [/^\/profile\/application$/, '/profile/my-card'],
   [/^\/profile\/my-card$/, '/profile'],
+  [/^\/chat\//, '/chats'],
+  [/^\/market\/sell/, '/market/my'],
+  [/^\/market\/listings/, '/market/browse'],
+  [/^\/market\/(browse|my)/, '/market'],
+  [/^\/listing\//, '/market/listings'],
   [/^\/specialist\//, '/specialists'],
   [/^\/specialists/, '/'],
 ];

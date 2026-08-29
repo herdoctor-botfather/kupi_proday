@@ -1,57 +1,98 @@
 import { Bot, InlineKeyboard } from 'grammy';
 import { config } from './config';
 import { currentMiniAppUrl } from './miniapp-url';
+import { fetchCounts } from './stats';
+import * as messages from './messages';
 
 /**
  * Бот-обёртка вокруг Mini App.
  *
  * Вся содержательная работа происходит внутри Mini App; задача бота —
  * дать точку входа, отвечать на команды и обрабатывать deep link вида
- * https://t.me/<bot>?start=specialist_<slug>, по которому пользователь
- * попадает сразу в нужный профиль.
+ * https://t.me/имя_бота?start=specialist_адрес-карточки, по которому
+ * пользователь попадает сразу в нужный профиль.
  */
 
 const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 
-const openAppKeyboard = (startParam?: string) => {
+/** Адрес Mini App с параметром запуска: по нему приложение откроет нужный экран. */
+const appUrl = (startParam?: string): string => {
   const base = currentMiniAppUrl();
-  const url = startParam ? `${base}?tgWebAppStartParam=${encodeURIComponent(startParam)}` : base;
-  return new InlineKeyboard().webApp('🔎 Открыть каталог', url);
+  return startParam ? `${base}?tgWebAppStartParam=${encodeURIComponent(startParam)}` : base;
 };
+
+/**
+ * Три двери вместо одной.
+ *
+ * Раньше кнопка была одна — «Открыть каталог», и человек попадал на экран
+ * выбора роли, ничего ещё не зная о разделах. Разложив вход по кнопкам,
+ * мы заодно рассказываем, что здесь есть: заказ услуг, барахолка и своя
+ * анкета. Выбор из бота приложение принимает как ответ на вопрос о роли
+ * и экран выбора не показывает.
+ */
+const mainKeyboard = () =>
+  new InlineKeyboard()
+    .webApp('🔎 Найти исполнителя', appUrl('catalog'))
+    .webApp('🛍 Купи-продай', appUrl('market'))
+    .row()
+    .webApp('💼 Стать исполнителем', appUrl('apply'));
+
+const marketKeyboard = () =>
+  new InlineKeyboard()
+    .webApp('🛍 Смотреть витрину', appUrl('buy'))
+    .row()
+    .webApp('🏷 Разместить объявление', appUrl('sell'));
+
+const singleButton = (text: string, startParam: string) =>
+  new InlineKeyboard().webApp(text, appUrl(startParam));
 
 bot.command('start', async (ctx) => {
   // Полезная нагрузка deep link: /start specialist_anna-manicure
   const payload = ctx.match?.trim();
 
   if (payload?.startsWith('specialist_')) {
-    await ctx.reply('Открываю профиль специалиста:', { reply_markup: openAppKeyboard(payload) });
+    await ctx.reply(messages.OPENING_SPECIALIST, {
+      reply_markup: singleButton('👤 Смотреть карточку', payload),
+    });
     return;
   }
 
-  await ctx.reply(
-    'Привет! Здесь собраны проверенные специалисты сферы услуг.\n\n' +
-      '• Поиск по категориям и услугам\n' +
-      '• Рейтинги и отзывы клиентов\n' +
-      '• Карта — видно, кто работает рядом\n\n' +
-      'Нажмите кнопку ниже, чтобы открыть каталог.',
-    { reply_markup: openAppKeyboard(payload) },
-  );
+  if (payload?.startsWith('listing_')) {
+    await ctx.reply(messages.OPENING_LISTING, {
+      reply_markup: singleButton('📦 Смотреть объявление', payload),
+    });
+    return;
+  }
+
+  // Индикатор набора стоит первым: пока считаются числа, в чате видно,
+  // что бот отвечает, а не молчит.
+  await ctx.replyWithChatAction('typing');
+  const counts = await fetchCounts();
+
+  await ctx.reply(messages.welcome(ctx.from?.first_name?.trim(), counts), {
+    parse_mode: 'HTML',
+    reply_markup: mainKeyboard(),
+  });
+});
+
+bot.command('market', async (ctx) => {
+  await ctx.replyWithChatAction('typing');
+  const counts = await fetchCounts();
+
+  await ctx.reply(messages.market(counts), {
+    parse_mode: 'HTML',
+    reply_markup: marketKeyboard(),
+  });
 });
 
 bot.command('help', async (ctx) => {
-  await ctx.reply(
-    'Команды:\n' +
-      '/start — открыть каталог\n' +
-      '/help — эта справка\n\n' +
-      'Хотите разместить свою анкету? Напишите администратору.',
-    { reply_markup: openAppKeyboard() },
-  );
+  await ctx.reply(messages.HELP, { parse_mode: 'HTML', reply_markup: mainKeyboard() });
 });
 
-// Любое сообщение вне команд возвращает пользователя к кнопке запуска,
+// Любое сообщение вне команд возвращает пользователя к кнопкам запуска,
 // иначе диалог с ботом выглядит как тупик.
 bot.on('message', async (ctx) => {
-  await ctx.reply('Каталог открывается по кнопке ниже.', { reply_markup: openAppKeyboard() });
+  await ctx.reply(messages.FALLBACK, { reply_markup: mainKeyboard() });
 });
 
 bot.catch((error) => {

@@ -9,7 +9,7 @@ const { createHmac } = require('node:crypto');
 const { existsSync } = require('node:fs');
 const { resolve } = require('node:path');
 
-const BASE = 'http://localhost:3000/api';
+const BASE = process.env.API_URL || 'http://localhost:3000/api';
 const BOT_TOKEN = process.env.TEST_BOT_TOKEN || '123456:TEST-TOKEN-FOR-VERIFICATION';
 const UPLOADS_DIR = process.env.UPLOADS_DIR || resolve(__dirname, '../uploads');
 
@@ -159,7 +159,7 @@ async function main() {
     firstAvatarPath = keyToPath(body.photoUrl);
     assert(existsSync(firstAvatarPath), `файла нет: ${firstAvatarPath}`);
 
-    const response = await fetch(`http://localhost:3000${body.photoUrl}`);
+    const response = await fetch(`${BASE.replace(/\/api$/, '')}${body.photoUrl}`);
     assert(response.status === 200, `статус отдачи: ${response.status}`);
     assert(response.headers.get('content-type')?.includes('image/png'), 'неверный content-type');
   });

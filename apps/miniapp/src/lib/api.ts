@@ -2,8 +2,16 @@ import type {
   ApiError,
   AuthResponse,
   Category,
+  ChatMessage,
+  ConversationSummary,
+  ConversationThread,
+  CategoryKind,
   CreateReportDto,
   CreateReviewDto,
+  ListingDetail,
+  ListingDto,
+  ListingListItem,
+  MyListing,
   CurrentUser,
   MapBoundsQuery,
   MySpecialistProfile,
@@ -125,7 +133,7 @@ export const api = {
   authTelegram: (initData: string) =>
     request<AuthResponse>('/auth/telegram', { method: 'POST', body: JSON.stringify({ initData }) }),
 
-  categories: () => request<Category[]>('/categories'),
+  categories: (kind: CategoryKind = 'SERVICE') => request<Category[]>(`/categories${qs({ kind })}`),
 
   /** Города с опубликованными карточками — для подсказки в поле города. */
   cities: (q?: string) => request<{ name: string; count: number }[]>(`/specialists/cities${qs({ q })}`),
@@ -171,6 +179,47 @@ export const api = {
 
   hideProfile: () => request<MySpecialistProfile>('/me/specialist/hide', { method: 'POST' }),
   publishProfile: () => request<MySpecialistProfile>('/me/specialist/publish', { method: 'POST' }),
+
+  // ─── Объявления ───
+  listings: (filters: Record<string, unknown>) =>
+    request<Paginated<ListingListItem>>(`/listings${qs(filters)}`),
+  listing: (idOrSlug: string) => request<ListingDetail>(`/listings/${idOrSlug}`),
+  listingCities: (q?: string) => request<{ name: string; count: number }[]>(`/listings/cities${qs({ q })}`),
+
+  myListings: () => request<MyListing[]>('/me/listings'),
+  myListing: (id: string) => request<MyListing>(`/me/listings/${id}`),
+  createListing: (dto: ListingDto) =>
+    request<MyListing>('/me/listings', { method: 'POST', body: JSON.stringify(dto) }),
+  updateListing: (id: string, dto: ListingDto) =>
+    request<MyListing>(`/me/listings/${id}`, { method: 'PUT', body: JSON.stringify(dto) }),
+  markListingSold: (id: string) => request<MyListing>(`/me/listings/${id}/sold`, { method: 'POST' }),
+  hideListing: (id: string) => request<MyListing>(`/me/listings/${id}/hide`, { method: 'POST' }),
+  publishListing: (id: string) => request<MyListing>(`/me/listings/${id}/publish`, { method: 'POST' }),
+  deleteListing: (id: string) => request<void>(`/me/listings/${id}`, { method: 'DELETE' }),
+  addListingPhoto: (id: string, file: Blob) => upload<MyListing>(`/me/listings/${id}/photos`, file),
+  removeListingPhoto: (photoId: string) =>
+    request<void>(`/me/listings/photos/${photoId}`, { method: 'DELETE' }),
+
+  // ─── Переписка ───
+  conversations: () => request<ConversationSummary[]>('/chat/conversations'),
+  unreadCount: () => request<{ count: number }>('/chat/unread'),
+  startConversation: (specialistId: string) =>
+    request<ConversationSummary>('/chat/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ specialistId }),
+    }),
+  startListingConversation: (listingId: string) =>
+    request<ConversationSummary>('/chat/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ listingId }),
+    }),
+  thread: (conversationId: string, before?: string) =>
+    request<ConversationThread>(`/chat/conversations/${conversationId}${qs({ before })}`),
+  sendMessage: (conversationId: string, text: string) =>
+    request<ChatMessage>(`/chat/conversations/${conversationId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    }),
 
   history: () => request<ProfileViewItem[]>('/me/history'),
   clearHistory: () => request<void>('/me/history', { method: 'DELETE' }),

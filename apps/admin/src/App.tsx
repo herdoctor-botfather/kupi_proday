@@ -7,6 +7,7 @@ import { ReviewsPage } from './pages/ReviewsPage';
 import { SpecialistsPage } from './pages/SpecialistsPage';
 import { ApplicationsPage } from './pages/ApplicationsPage';
 import { ReportsPage } from './pages/ReportsPage';
+import { ListingsPage } from './pages/ListingsPage';
 import { SpecialistEditPage } from './pages/SpecialistEditPage';
 import { CategoriesPage } from './pages/CategoriesPage';
 import { EmptyState } from './components/states';
@@ -41,6 +42,7 @@ function Router() {
         <Route path="reports" element={<ReportsPage />} />
         {/* Управление каталогом — только администраторам; модератор видит лишь отзывы. */}
         <Route path="applications" element={<AdminOnly><ApplicationsPage /></AdminOnly>} />
+        <Route path="listings" element={<AdminOnly><ListingsPage /></AdminOnly>} />
         <Route path="specialists" element={<AdminOnly><SpecialistsPage /></AdminOnly>} />
         <Route path="specialists/:id" element={<AdminOnly><SpecialistEditPage /></AdminOnly>} />
         <Route path="categories" element={<AdminOnly><CategoriesPage /></AdminOnly>} />

@@ -30,11 +30,6 @@ interface FormState {
   address: string;
   lat: string;
   lng: string;
-  phone: string;
-  telegram: string;
-  whatsapp: string;
-  instagram: string;
-  website: string;
   categoryIds: string[];
   services: ServiceRow[];
 }
@@ -48,11 +43,6 @@ const EMPTY: FormState = {
   address: '',
   lat: '',
   lng: '',
-  phone: '',
-  telegram: '',
-  whatsapp: '',
-  instagram: '',
-  website: '',
   categoryIds: [],
   services: [],
 };
@@ -273,59 +263,10 @@ export function ApplicationPage() {
               {geo.error && <div className="field__error">{geo.error}</div>}
             </Field>
 
-            <h2 className="form-section">Как с вами связаться</h2>
-            <p className="field__hint" style={{ marginTop: -8, marginBottom: 10 }}>
-              Нужен хотя бы один способ — иначе клиент не сможет написать
-            </p>
-            {errors.phone && <div className="field__error">{errors.phone}</div>}
-
-            <Field label="Телефон">
-              <input
-                className="form-input"
-                value={form.phone}
-                onChange={(e) => set('phone', e.target.value)}
-                placeholder="+7 900 000-00-00"
-                inputMode="tel"
-              />
-            </Field>
-
-            <Field label="Telegram">
-              <input
-                className="form-input"
-                value={form.telegram}
-                onChange={(e) => set('telegram', e.target.value)}
-                placeholder={user?.username ? `@${user.username}` : '@username'}
-              />
-            </Field>
-
-            <Field label="WhatsApp" hint="Номер в международном формате">
-              <input
-                className="form-input"
-                value={form.whatsapp}
-                onChange={(e) => set('whatsapp', e.target.value)}
-                placeholder="79000000000"
-                inputMode="tel"
-              />
-            </Field>
-
-            <Field label="Instagram">
-              <input
-                className="form-input"
-                value={form.instagram}
-                onChange={(e) => set('instagram', e.target.value)}
-                placeholder="@username"
-              />
-            </Field>
-
-            <Field label="Сайт" error={errors.website}>
-              <input
-                className="form-input"
-                value={form.website}
-                onChange={(e) => set('website', e.target.value)}
-                placeholder="https://..."
-                inputMode="url"
-              />
-            </Field>
+            <div className="form-note">
+              Телефон и мессенджеры в анкете не указываются: клиенты пишут вам через чат
+              приложения. Так переписка сохраняется, и в спорной ситуации есть на что сослаться.
+            </div>
 
             <h2 className="form-section">Услуги и цены</h2>
             <p className="field__hint" style={{ marginTop: -8, marginBottom: 10 }}>
@@ -425,11 +366,6 @@ function toForm(profile: MySpecialistProfile): FormState {
     address: profile.address ?? '',
     lat: profile.lat === null ? '' : String(profile.lat),
     lng: profile.lng === null ? '' : String(profile.lng),
-    phone: profile.contacts.phone ?? '',
-    telegram: profile.contacts.telegram ?? '',
-    whatsapp: profile.contacts.whatsapp ?? '',
-    instagram: profile.contacts.instagram ?? '',
-    website: profile.contacts.website ?? '',
     categoryIds: profile.categories.map((c) => c.id),
     services: profile.services.map((service) => ({
       name: service.name,
@@ -453,11 +389,6 @@ function toDto(form: FormState): unknown {
     address: orNull(form.address),
     lat: form.lat.trim() ? Number(form.lat) : null,
     lng: form.lng.trim() ? Number(form.lng) : null,
-    phone: orNull(form.phone),
-    telegram: orNull(form.telegram),
-    whatsapp: orNull(form.whatsapp),
-    instagram: orNull(form.instagram),
-    website: orNull(form.website),
     categoryIds: form.categoryIds,
     services: form.services
       // Пустые строки, добавленные и не заполненные, просто отбрасываем.

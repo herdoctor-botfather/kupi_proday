@@ -2212,3 +2212,181 @@ body::before {
 .tabbar__icon {
   font-size: 19px;
 }
+
+/* ─── Витрина барахолки на главной ─── */
+
+.market-teaser-block {
+  margin-top: 28px;
+}
+
+.market-teaser-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.market-teaser-head__title {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.market-teaser-head__all {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.market-teaser-head__hint {
+  margin: 2px 0 12px;
+  font-size: 12.5px;
+  color: var(--text-hint);
+}
+
+/*
+ * Полоса выходит за поля экрана и уходит под правый край: обрезанная
+ * карточка — единственный честный признак того, что список продолжается
+ * вбок. Ровно закончившийся ряд читается как «здесь всё».
+ */
+.market-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding: 2px var(--page-padding) 2px 0;
+  margin: 0 calc(-1 * var(--page-padding));
+  padding-left: var(--page-padding);
+  scrollbar-width: none;
+}
+
+.market-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.market-strip__item {
+  flex: 0 0 116px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--text);
+  scroll-snap-align: start;
+}
+
+.market-strip__photo {
+  aspect-ratio: 1;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 3px;
+}
+
+.market-strip__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/*
+ * Заглушка для объявления без фотографии: тот же оттенок, что у плитки
+ * этой категории в каталоге. Полоса из одинаковых серых квадратов
+ * выглядела бы поломкой, а не витриной.
+ */
+.market-strip__photo--tinted {
+  background: linear-gradient(
+    155deg,
+    hsl(var(--tile-hue, 220) 90% 96%),
+    hsl(var(--tile-hue, 220) 85% 91%)
+  );
+  font-size: 34px;
+}
+
+[data-theme='dark'] .market-strip__photo--tinted {
+  background: linear-gradient(
+    155deg,
+    hsl(var(--tile-hue, 220) 42% 20%),
+    hsl(var(--tile-hue, 220) 45% 15%)
+  );
+}
+
+.market-strip__price {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.market-strip__title {
+  font-size: 12.5px;
+  line-height: 1.25;
+  color: var(--text-hint);
+  /* Одна строка: подпись здесь — намёк, а не описание. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.market-strip__more {
+  flex: 0 0 116px;
+  /* Ровно высота квадратного фото: иначе плитка «дальше» торчит из ряда. */
+  height: 116px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-card);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  scroll-snap-align: start;
+}
+
+.market-strip__more-icon {
+  font-size: 22px;
+}
+
+/* Пустая витрина: карусель показывать нечем, зато можно позвать продавца. */
+.market-teaser {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-card);
+  color: var(--text);
+}
+
+.market-teaser__badge {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.market-teaser__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.market-teaser__title {
+  display: block;
+  font-weight: 600;
+}
+
+.market-teaser__text {
+  display: block;
+  font-size: 12.5px;
+  color: var(--text-hint);
+  line-height: 1.35;
+}
+
+.market-teaser__chevron {
+  font-size: 22px;
+  color: var(--text-hint);
+}

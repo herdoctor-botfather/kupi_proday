@@ -9,6 +9,7 @@ import { haptic } from '../lib/telegram';
 import { pluralize } from '../lib/format';
 import { categoryStyle } from '../lib/category-colors';
 import { useAuth } from '../lib/auth';
+import { MarketTeaser } from '../components/MarketTeaser';
 
 /** Главный экран: категории услуг, поиск и переход к поиску рядом. */
 /** Приветствие по времени суток — мелочь, но приложение перестаёт быть безликим. */
@@ -102,6 +103,11 @@ export function CatalogPage() {
           )
         }
       </AsyncContent>
+
+      {/* Барахолка живёт в соседней вкладке, и пришедший за мастером
+          человек о ней не узнаёт — тем более если открыл приложение
+          сразу в каталоге по кнопке из бота. */}
+      <MarketTeaser />
 
       {/* Вход в исполнители с главной.
           Раньше единственной дверью туда был стартовый экран выбора роли,

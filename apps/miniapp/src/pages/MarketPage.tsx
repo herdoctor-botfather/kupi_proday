@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { haptic } from '../lib/telegram';
-import { useIsAuthenticated } from '../lib/auth';
+import { useAuth, useIsAuthenticated } from '../lib/auth';
 
 /**
  * Вход в раздел объявлений: покупаю или продаю.
@@ -12,6 +12,7 @@ import { useIsAuthenticated } from '../lib/auth';
  */
 export function MarketPage() {
   const isAuthenticated = useIsAuthenticated();
+  const { user } = useAuth();
   // Счётчик своих объявлений подсказывает, что уже размещено.
   const myListings = useAsync(
     () => (isAuthenticated ? api.myListings() : Promise.resolve([])),
@@ -61,6 +62,53 @@ export function MarketPage() {
         Покупатель и продавец общаются в чате приложения — переписка сохраняется, и в спорной
         ситуации есть на что сослаться.
       </p>
+
+      {/* Выходы в соседний раздел.
+          Открыв «Купи-продай» прямо из бота, человек минует стартовый экран
+          выбора роли — и возвращаться ему некуда: он там ни разу не был.
+          Без этих ссылок барахолка выглядела бы отдельным приложением,
+          из которого до услуг не добраться. */}
+      <h2 className="section-title">Не только вещи</h2>
+
+      <Link to="/" className="profile-cta" onClick={() => haptic.tap()}>
+        <span className="profile-cta__icon" aria-hidden>
+          🔎
+        </span>
+        <span className="profile-cta__body">
+          <span className="profile-cta__title">Найти исполнителя</span>
+          <span className="profile-cta__text">
+            Мастера по категориям — с отзывами, ценами и картой
+          </span>
+        </span>
+        <span className="profile-cta__chevron" aria-hidden>
+          ›
+        </span>
+      </Link>
+
+      {isAuthenticated && (
+        <Link
+          to={user?.hasSpecialistProfile ? '/profile/my-card' : '/profile/application'}
+          className="profile-cta"
+          onClick={() => haptic.tap()}
+        >
+          <span className="profile-cta__icon" aria-hidden>
+            🛠
+          </span>
+          <span className="profile-cta__body">
+            <span className="profile-cta__title">
+              {user?.hasSpecialistProfile ? 'Моя анкета исполнителя' : 'Стать исполнителем'}
+            </span>
+            <span className="profile-cta__text">
+              {user?.hasSpecialistProfile
+                ? 'Статус публикации, просмотры и редактирование'
+                : 'Разместите анкету — вас будут находить клиенты'}
+            </span>
+          </span>
+          <span className="profile-cta__chevron" aria-hidden>
+            ›
+          </span>
+        </Link>
+      )}
     </div>
   );
 }

@@ -63,7 +63,7 @@ export function ProfilePage() {
       </div>
 
       <Link
-        to="/profile/my-card"
+        to={user.hasSpecialistProfile ? '/profile/my-card' : '/profile/application'}
         className="profile-cta"
         onClick={() => haptic.tap()}
       >

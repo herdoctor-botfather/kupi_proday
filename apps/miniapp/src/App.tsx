@@ -24,8 +24,16 @@ import { isRoleChosenThisSession, markRoleChosen } from './lib/session';
 import { clearStartRoute, startRoute } from './lib/start-param';
 import { useGoBack } from './lib/navigation';
 
-/** Корневые вкладки — на них системная кнопка «Назад» не показывается. */
+/** Вкладки нижней навигации: с них не «возвращаются», на них переключаются. */
 const ROOT_ROUTES = new Set(['/', '/map', '/chats', '/profile', '/market']);
+
+/**
+ * Есть ли куда возвращаться.
+ *
+ * React Router держит позицию в истории в window.history.state.idx.
+ * Ноль означает, что текущий экран — первый за запуск приложения.
+ */
+const hasHistory = (): boolean => ((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0;
 
 export function App() {
   return (
@@ -103,7 +111,13 @@ function Shell() {
   const isRoot = ROOT_ROUTES.has(location.pathname);
 
   // Кнопка «Назад» в шапке Telegram заменяет собой браузерную навигацию.
-  useEffect(() => useBackButtonEffect(goBack, !isRoot), [isRoot, goBack]);
+  //
+  // На вкладке она нужна не всегда, но и скрывать её там нельзя: в каталог
+  // можно прийти не с самого начала, а из барахолки — и тогда без кнопки
+  // экран становится тупиком, из которого выход только через перезапуск.
+  // Поэтому решает не тип экрана, а наличие истории за спиной.
+  const showBack = !isRoot || hasHistory();
+  useEffect(() => useBackButtonEffect(goBack, showBack), [showBack, goBack, location.key]);
 
   // Новый экран всегда открывается сверху, а не с позиции прокрутки предыдущего.
   useEffect(() => {

@@ -85,20 +85,27 @@ export function MyCardPage() {
 
       {actionError && <div className="alert alert--error">{actionError}</div>}
 
-      <AsyncContent state={state}>
+      {/* Пустое состояние передаём отдельно: AsyncContent не пускает null
+          внутрь, и написанная там ветка «анкеты пока нет» не отрисовывалась
+          никогда — вместо приглашения заполнить анкету человек видел
+          безликое «Ничего не найдено» и упирался в тупик. */}
+      <AsyncContent
+        state={state}
+        empty={
+          <>
+            <EmptyState
+              icon="🛠"
+              title="Анкеты пока нет"
+              hint="Расскажите о своих услугах — и вас начнут находить клиенты"
+            />
+            <Link to="/profile/application" className="button">
+              Заполнить анкету
+            </Link>
+          </>
+        }
+      >
         {(profile) =>
-          !profile ? (
-            <>
-              <EmptyState
-                icon="🛠"
-                title="Анкеты пока нет"
-                hint="Разместите её, чтобы вас находили клиенты"
-              />
-              <Link to="/profile/application" className="button">
-                Заполнить анкету
-              </Link>
-            </>
-          ) : (
+          !profile ? null : (
             <>
               <div className={`status-card ${STATUS_VIEW[profile.status].tone}`}>
                 <div className="status-card__icon" aria-hidden>

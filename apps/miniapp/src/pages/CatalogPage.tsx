@@ -109,7 +109,11 @@ export function CatalogPage() {
           что ищет мастера. Без этой ссылки он не узнал бы, что здесь можно
           и разместить свою анкету. */}
       {status === 'authenticated' && (
-        <Link to="/profile/my-card" className="profile-cta" onClick={() => haptic.tap()}>
+        <Link
+          to={user?.hasSpecialistProfile ? '/profile/my-card' : '/profile/application'}
+          className="profile-cta profile-cta--standalone"
+          onClick={() => haptic.tap()}
+        >
           <span className="profile-cta__icon" aria-hidden>
             🛠
           </span>

@@ -1,0 +1,48 @@
+# Caddy сам получает и продлевает сертификат Let's Encrypt — отдельного
+# certbot и заданий в cron не нужно. Для этого ему требуются порты 80 и 443
+# и домен, A-запись которого указывает на этот сервер.
+
+{
+	email {$ACME_EMAIL}
+}
+
+# ─── Mini App ───
+{$APP_DOMAIN} {
+	encode zstd gzip
+
+	# Загруженные фотографии и API идут на сервер приложения, всё
+	# остальное — статика. Порядок важен: handle разбирается сверху вниз.
+	handle /api/* {
+		reverse_proxy api:3000
+	}
+
+	handle /uploads/* {
+		reverse_proxy api:3000
+	}
+
+	handle {
+		root * /srv/miniapp
+		# Одностраничное приложение: маршрут разбирает уже загруженный
+		# код, поэтому любой неизвестный путь отдаёт index.html.
+		# Без этого прямая ссылка на /specialist/anna вернёт 404.
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# ─── Админка ───
+# Отдельным поддоменом, а не путём внутри основного: так её проще закрыть
+# по IP или снять целиком, не задев приложение.
+{$ADMIN_DOMAIN} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy api:3000
+	}
+
+	handle {
+		root * /srv/admin
+		try_files {path} /index.html
+		file_server
+	}
+}

@@ -1,0 +1,98 @@
+# Боевой запуск: docker compose -f docker-compose.prod.yml up -d --build
+#
+# Четыре службы: база, API, бот и веб-сервер со статикой. API и бот подняты
+# отдельно намеренно — перезапуск одного не роняет другого, а падение бота
+# не должно уносить с собой приложение.
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте пароль в .env}
+      POSTGRES_DB: ${POSTGRES_DB:-tgspec}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # Порт наружу не публикуется: база доступна только другим службам
+    # внутри сети compose.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-tgspec}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      target: app
+      args:
+        VITE_TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME}
+        VITE_YANDEX_MAPS_API_KEY: ${VITE_YANDEX_MAPS_API_KEY:-}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-tgspec}
+      # Путь абсолютный: приложение запускается из корня образа, и
+      # относительный «./uploads» указал бы мимо подключённого тома.
+      STORAGE_LOCAL_DIR: /app/apps/api/uploads
+    volumes:
+      - uploads:/app/apps/api/uploads
+    # Только на локальном адресе: наружу API отдаёт Caddy, а этот порт
+    # нужен боту, который работает в хостовой сети и до сети compose
+    # не дотягивается.
+    ports:
+      - '127.0.0.1:3000:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  bot:
+    build:
+      context: .
+      target: app
+    restart: unless-stopped
+    env_file: .env
+    # Сеть хоста, а не мостовая.
+    #
+    # На сервере обнаружилось, что из сети Docker адреса Telegram
+    # не отвечают вовсе, тогда как с самого хоста открываются мгновенно.
+    # Причина в маршрутизации провайдера, изнутри её не исправить.
+    # Хостовая сеть обходит вопрос без прокси и лишних зависимостей.
+    network_mode: host
+    environment:
+      NODE_ENV: production
+      # В хостовой сети имена служб compose недоступны — API берём
+      # по опубликованному локальному порту.
+      API_PROXY_TARGET: http://127.0.0.1:3000
+    command: ['node', 'apps/bot/dist/index.js']
+    depends_on:
+      - api
+
+  web:
+    build:
+      context: .
+      target: web
+      args:
+        VITE_TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME}
+        VITE_YANDEX_MAPS_API_KEY: ${VITE_YANDEX_MAPS_API_KEY:-}
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?домен приложения обязателен}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?домен админки обязателен}
+      ACME_EMAIL: ${ACME_EMAIL:?почта для Let's Encrypt обязательна}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+
+volumes:
+  db-data:
+  uploads:
+  caddy-data:
+  caddy-config:

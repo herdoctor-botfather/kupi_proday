@@ -1,0 +1,25 @@
+# Без этого в контекст сборки уедут сотни мегабайт: node_modules соберутся
+# внутри образа заново, а загруженные пользователями файлы там не нужны вовсе.
+node_modules
+**/node_modules
+dist
+**/dist
+build
+**/build
+*.tsbuildinfo
+
+.git
+.github
+.vscode
+.idea
+
+.env
+.env.*
+!.env.example
+
+apps/api/uploads
+.demo-photos-tmp
+*.log
+.logs
+.tunnel.log
+.DS_Store

@@ -3,6 +3,7 @@ import { config } from './config';
 import { currentMiniAppUrl } from './miniapp-url';
 import { fetchCounts } from './stats';
 import * as messages from './messages';
+import { replyWithBanner } from './banner';
 
 /**
  * Бот-обёртка вокруг Mini App.
@@ -69,24 +70,33 @@ bot.command('start', async (ctx) => {
   await ctx.replyWithChatAction('typing');
   const counts = await fetchCounts();
 
-  await ctx.reply(messages.welcome(ctx.from?.first_name?.trim(), counts), {
-    parse_mode: 'HTML',
-    reply_markup: mainKeyboard(),
-  });
+  const name = ctx.from?.first_name?.trim();
+  await replyWithBanner(
+    ctx,
+    'welcome',
+    messages.welcomeCaption(name, counts),
+    mainKeyboard(),
+    // Запасной текст на случай, если картинка не ушла: он несёт то же,
+    // что нарисовано на баннере, — иначе человек останется без объяснения.
+    messages.welcome(name, counts),
+  );
 });
 
 bot.command('market', async (ctx) => {
   await ctx.replyWithChatAction('typing');
   const counts = await fetchCounts();
 
-  await ctx.reply(messages.market(counts), {
-    parse_mode: 'HTML',
-    reply_markup: marketKeyboard(),
-  });
+  await replyWithBanner(
+    ctx,
+    'market',
+    messages.marketCaption(counts),
+    marketKeyboard(),
+    messages.market(counts),
+  );
 });
 
 bot.command('help', async (ctx) => {
-  await ctx.reply(messages.HELP, { parse_mode: 'HTML', reply_markup: mainKeyboard() });
+  await replyWithBanner(ctx, 'help', messages.HELP_CAPTION, mainKeyboard(), messages.HELP);
 });
 
 // Любое сообщение вне команд возвращает пользователя к кнопкам запуска,

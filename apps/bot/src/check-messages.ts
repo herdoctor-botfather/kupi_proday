@@ -20,6 +20,11 @@ import * as messages from './messages';
 const NOWHERE = 1;
 
 const SAMPLES: Array<[string, string]> = [
+  ['подпись баннера: имя и числа', messages.welcomeCaption('Денис', { specialists: 5, listings: 7 })],
+  ['подпись баннера: без имени', messages.welcomeCaption(undefined, null)],
+  ['подпись баннера: имя с < и &', messages.welcomeCaption('Вася <b>&', { specialists: 1, listings: 1 })],
+  ['подпись барахолки', messages.marketCaption({ specialists: 5, listings: 21 })],
+  ['подпись справки', messages.HELP_CAPTION],
   ['приветствие: имя и живые числа', messages.welcome('Денис', { specialists: 5, listings: 7 })],
   ['приветствие: без имени, API молчит', messages.welcome(undefined, null)],
   ['приветствие: имя с < и &', messages.welcome('Вася <b>&', { specialists: 1, listings: 1 })],

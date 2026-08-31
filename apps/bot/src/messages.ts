@@ -10,6 +10,40 @@ import type { Counts } from './stats';
  * поэтому их разметку можно проверить, ничего никому не отправляя.
  */
 
+/**
+ * Короткая подпись под баннером.
+ *
+ * Всё, что раньше перечислялось строками с эмодзи, теперь нарисовано
+ * на картинке — повторять то же самое словами значит заставлять читать
+ * дважды. Здесь остаётся только обращение и живые числа.
+ */
+export function welcomeCaption(name: string | undefined, counts: Counts | null): string {
+  const hello = name ? `Привет, ${escapeHtml(name)}!` : 'Привет!';
+
+  return (
+    `${hello} 👋\n` +
+    '\n' +
+    `Сейчас здесь ${describeSpecialists(counts?.specialists).toLowerCase()} ` +
+    `и ${describeListings(counts?.listings).toLowerCase()}.\n` +
+    '\n' +
+    '<i>С чего начнём?</i>'
+  );
+}
+
+export function marketCaption(counts: Counts | null): string {
+  return (
+    `${describeListings(counts?.listings)} — техника, мебель, детское, инструменты, хобби.\n` +
+    '\n' +
+    'Продаёте? Название, цена, фотографии — и объявление уходит на проверку.'
+  );
+}
+
+export const HELP_CAPTION =
+  'Переписка идёт внутри приложения: телефоны и ссылки в сообщениях скрываются, ' +
+  'а история договорённостей остаётся у обеих сторон.\n' +
+  '\n' +
+  'Команды: /start — начало, /market — барахолка, /help — эта справка.';
+
 export function welcome(name: string | undefined, counts: Counts | null): string {
   const hello = name ? `Привет, ${escapeHtml(name)}!` : 'Привет!';
 

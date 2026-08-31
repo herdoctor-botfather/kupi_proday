@@ -2464,8 +2464,7 @@ body::before {
 
   .chat__header,
   .chat__composer,
-  .map-sheet,
-  .map__filters {
+  .map-sheet {
     background: var(--glass-bg-strong);
     -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(190%);
     backdrop-filter: blur(var(--glass-blur-strong)) saturate(190%);
@@ -2546,7 +2545,6 @@ body::before {
     .chat__header,
     .chat__composer,
     .map-sheet,
-    .map__filters,
     .bubble {
       background: var(--surface-raised);
       -webkit-backdrop-filter: none;
@@ -3239,4 +3237,18 @@ body {
 
 .map__locate:active {
   background: rgba(8, 9, 10, 0.34);
+}
+
+/*
+ * Панель над картой — не поверхность, а держатель кнопки: фон и рамка
+ * рисовали вокруг круглой кнопки квадрат. Прозрачна целиком, видимая
+ * форма остаётся только у самой кнопки.
+ */
+.map__filters {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  padding: 0;
 }

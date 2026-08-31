@@ -3377,3 +3377,37 @@ body {
   color: hsl(var(--tile-hue, 220) 70% 72%);
   margin-top: 2px;
 }
+
+/* ─── Кнопка со сценой на фоне ─── */
+
+/*
+ * Снимок уходит в фон, а не выносится отдельной полосой: кнопке нужен
+ * намёк на смысл, а не иллюстрация во всю ширину. Поверх лежит плотное
+ * затемнение — текст на кнопке важнее картинки, и читаться он должен
+ * без усилий.
+ */
+.role-card--scene {
+  position: relative;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center right;
+}
+
+.role-card--scene::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Слева плотнее: там начинается текст. Справа снимок остаётся
+     различимым — иначе непонятно, зачем он вообще нужен. */
+  background: linear-gradient(
+    to right,
+    rgba(8, 9, 10, 0.94) 0%,
+    rgba(8, 9, 10, 0.86) 45%,
+    rgba(8, 9, 10, 0.55) 100%
+  );
+}
+
+.role-card--scene > * {
+  position: relative;
+  z-index: 1;
+}

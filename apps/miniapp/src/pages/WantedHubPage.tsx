@@ -32,12 +32,10 @@ export function WantedHubPage() {
       <div className="role-cards">
         <Link
           to={isAuthenticated ? '/wanted/new' : '/profile'}
-          className="role-card"
+          className="role-card role-card--scene"
+          style={{ backgroundImage: 'url(/cards/wanted-new.jpg)' }}
           onClick={() => haptic.tap()}
         >
-          <span className="role-card__emoji" aria-hidden>
-            📝
-          </span>
           <span className="role-card__title">Создать запрос на покупку</span>
           <span className="role-card__text">
             Опишите, что ищете и сколько готовы заплатить, — продавцы напишут сами
@@ -45,10 +43,12 @@ export function WantedHubPage() {
           <span className="role-card__action">Заполнить форму →</span>
         </Link>
 
-        <Link to="/wanted/browse" className="role-card" onClick={() => haptic.tap()}>
-          <span className="role-card__emoji" aria-hidden>
-            🔎
-          </span>
+        <Link
+          to="/wanted/browse"
+          className="role-card role-card--scene"
+          style={{ backgroundImage: 'url(/cards/wanted-browse.jpg)' }}
+          onClick={() => haptic.tap()}
+        >
           <span className="role-card__title">Запросы пользователей</span>
           <span className="role-card__text">
             Что ищут другие: по категориям, с поиском и фильтрами — вдруг это у вас есть

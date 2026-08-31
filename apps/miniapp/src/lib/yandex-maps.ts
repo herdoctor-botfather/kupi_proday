@@ -1,16 +1,24 @@
 /**
- * Загрузка JS API Яндекс.Карт.
+ * Загрузка JS API Яндекс.Карт версии 2.1.
  *
- * Провайдер карт изолирован в этом модуле и в компоненте SpecialistsMap:
- * чтобы перейти на Google или OpenStreetMap, достаточно заменить эти два файла,
+ * Провайдер карт изолирован в этом модуле и в компоненте карты: чтобы
+ * перейти на другого поставщика, достаточно заменить эти два файла,
  * остальное приложение работает с обычными координатами.
  *
- * Ключ выдаётся в кабинете разработчика Яндекса и указывается
- * в переменной VITE_YANDEX_MAPS_API_KEY.
+ * Почему 2.1, а не 3. Ключ, выданный в кабинете Яндекса на «JavaScript API
+ * и HTTP Геокодер», третью версию не открывает — она отдельный продукт
+ * со своим ключом. Вдобавок в 2.1 группировка близких меток встроена,
+ * а в 3 её пришлось бы писать руками. Для нашей задачи 2.1 удобнее.
+ *
+ * Ключ указывается в переменной VITE_YANDEX_MAPS_API_KEY.
  */
 
-/** Координата в порядке, принятом в API Яндекса: [долгота, широта]. */
-export type LngLat = [number, number];
+/**
+ * Координата в порядке, принятом в API Яндекса версии 2.1:
+ * [широта, долгота]. В третьей версии порядок обратный — если когда-нибудь
+ * будете переходить, это первое место, где всё сломается молча.
+ */
+export type LatLng = [number, number];
 
 export interface MapBounds {
   north: number;
@@ -19,39 +27,60 @@ export interface MapBounds {
   west: number;
 }
 
-interface Ymaps3Location {
-  center: LngLat;
-  zoom: number;
-  bounds: [LngLat, LngLat];
+/** Прямоугольник видимой области: [[юг, запад], [север, восток]]. */
+export type YmapsBounds = [LatLng, LatLng];
+
+interface YmapsEvent {
+  get(name: string): unknown;
 }
 
-export interface YandexMap {
-  addChild(child: unknown): YandexMap;
-  removeChild(child: unknown): YandexMap;
-  setLocation(location: { center?: LngLat; zoom?: number; duration?: number }): void;
+export interface YmapsGeoObject {
+  events: { add(type: string, handler: (event: YmapsEvent) => void): void };
+}
+
+export interface YmapsClusterer extends YmapsGeoObject {
+  add(objects: YmapsGeoObject[]): void;
+  removeAll(): void;
+}
+
+export interface YmapsMap {
+  geoObjects: {
+    add(object: YmapsGeoObject): void;
+    remove(object: YmapsGeoObject): void;
+    removeAll(): void;
+  };
+  events: { add(type: string, handler: () => void): void };
+  getBounds(): YmapsBounds;
+  setCenter(center: LatLng, zoom?: number, options?: { duration?: number }): void;
   destroy(): void;
+  container: { fitToViewport(): void };
 }
 
-export interface Ymaps3Api {
-  ready: Promise<void>;
-  YMap: new (container: HTMLElement, props: { location: { center: LngLat; zoom: number } }) => YandexMap;
-  YMapDefaultSchemeLayer: new (props?: Record<string, unknown>) => unknown;
-  YMapDefaultFeaturesLayer: new (props?: Record<string, unknown>) => unknown;
-  YMapMarker: new (props: { coordinates: LngLat; draggable?: boolean }, element: HTMLElement) => unknown;
-  YMapListener: new (props: {
-    onUpdate?: (event: { location: Ymaps3Location }) => void;
-  }) => unknown;
+export interface YmapsApi {
+  ready(callback: () => void): void;
+  Map: new (
+    container: HTMLElement,
+    state: { center: LatLng; zoom: number; controls?: string[] },
+    options?: Record<string, unknown>,
+  ) => YmapsMap;
+  Placemark: new (
+    coordinates: LatLng,
+    properties?: Record<string, unknown>,
+    options?: Record<string, unknown>,
+  ) => YmapsGeoObject;
+  Clusterer: new (options?: Record<string, unknown>) => YmapsClusterer;
+  templateLayoutFactory: { createClass(template: string): unknown };
 }
 
 declare global {
   interface Window {
-    ymaps3?: Ymaps3Api;
+    ymaps?: YmapsApi;
   }
 }
 
-const SCRIPT_ID = 'yandex-maps-v3';
+const SCRIPT_ID = 'yandex-maps-2';
 
-let loader: Promise<Ymaps3Api> | null = null;
+let loader: Promise<YmapsApi> | null = null;
 
 export class MapsUnavailableError extends Error {}
 
@@ -59,7 +88,7 @@ export class MapsUnavailableError extends Error {}
  * Подключает скрипт карт один раз за сессию и дожидается готовности API.
  * Повторные вызовы переиспользуют тот же промис.
  */
-export function loadYandexMaps(): Promise<Ymaps3Api> {
+export function loadYandexMaps(): Promise<YmapsApi> {
   if (loader) return loader;
 
   const apiKey = import.meta.env.VITE_YANDEX_MAPS_API_KEY;
@@ -74,25 +103,27 @@ export function loadYandexMaps(): Promise<Ymaps3Api> {
     return loader;
   }
 
-  loader = new Promise<Ymaps3Api>((resolve, reject) => {
-    const existing = document.getElementById(SCRIPT_ID);
-    if (existing && window.ymaps3) {
-      void window.ymaps3.ready.then(() => resolve(window.ymaps3!));
+  loader = new Promise<YmapsApi>((resolve, reject) => {
+    const finish = () => {
+      const api = window.ymaps;
+      if (!api) {
+        reject(new MapsUnavailableError('Скрипт карт загрузился, но API недоступно'));
+        return;
+      }
+      // ready вызывается после того, как API догрузит свои модули.
+      api.ready(() => resolve(api));
+    };
+
+    if (document.getElementById(SCRIPT_ID) && window.ymaps) {
+      finish();
       return;
     }
 
     const script = document.createElement('script');
     script.id = SCRIPT_ID;
-    script.src = `https://api-maps.yandex.ru/v3/?apikey=${encodeURIComponent(apiKey)}&lang=ru_RU`;
+    script.src = `https://api-maps.yandex.ru/2.1/?apikey=${encodeURIComponent(apiKey)}&lang=ru_RU`;
     script.async = true;
-    script.onload = () => {
-      const api = window.ymaps3;
-      if (!api) {
-        reject(new MapsUnavailableError('Скрипт карт загрузился, но API недоступно'));
-        return;
-      }
-      void api.ready.then(() => resolve(api));
-    };
+    script.onload = finish;
     script.onerror = () =>
       reject(new MapsUnavailableError('Не удалось загрузить карты. Проверьте соединение и ключ API.'));
 
@@ -107,8 +138,8 @@ export function loadYandexMaps(): Promise<Ymaps3Api> {
  * Порядок углов в ответе не гарантирован, поэтому берём минимум и максимум,
  * а не полагаемся на то, какой угол пришёл первым.
  */
-export function normalizeBounds(bounds: [LngLat, LngLat]): MapBounds {
-  const [[lng1, lat1], [lng2, lat2]] = bounds;
+export function normalizeBounds(bounds: YmapsBounds): MapBounds {
+  const [[lat1, lng1], [lat2, lng2]] = bounds;
   return {
     north: Math.max(lat1, lat2),
     south: Math.min(lat1, lat2),

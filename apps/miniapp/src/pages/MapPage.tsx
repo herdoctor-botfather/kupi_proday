@@ -5,10 +5,11 @@ import { api } from '../lib/api';
 import {
   loadYandexMaps,
   normalizeBounds,
-  type LngLat,
+  type LatLng,
   type MapBounds,
-  type YandexMap,
-  type Ymaps3Api,
+  type YmapsApi,
+  type YmapsClusterer,
+  type YmapsMap,
 } from '../lib/yandex-maps';
 import { ErrorState, LoadingState } from '../components/states';
 import { Rating } from '../components/Rating';
@@ -16,25 +17,32 @@ import { useGeolocation } from '../lib/geolocation';
 import { haptic } from '../lib/telegram';
 
 /** Центр карты по умолчанию — Москва, если геолокация недоступна. */
-const DEFAULT_CENTER: LngLat = [37.6173, 55.7558];
+const DEFAULT_CENTER: LatLng = [55.7558, 37.6173];
 const DEFAULT_ZOOM = 11;
 
 /**
- * Экран карты. Маркеры подгружаются под текущую область просмотра,
- * а не все сразу — иначе на большом каталоге карта встанет.
+ * Экран карты.
+ *
+ * Метки подгружаются под текущую область просмотра, а не все сразу —
+ * иначе на большом каталоге карта встанет. Близкие метки собираются
+ * в группы: два десятка мастеров в одном районе иначе превращаются
+ * в нечитаемую кучу, из которой нельзя выбрать ни одного.
  */
 export function MapPage() {
   const [searchParams] = useSearchParams();
   const focusId = searchParams.get('focus');
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<YandexMap | null>(null);
-  const markersRef = useRef<unknown[]>([]);
-  const apiRef = useRef<Ymaps3Api | null>(null);
+  const mapRef = useRef<YmapsMap | null>(null);
+  const clustererRef = useRef<YmapsClusterer | null>(null);
+  const apiRef = useRef<YmapsApi | null>(null);
+  /** Разметка метки и группы: создаётся один раз, после готовности API. */
+  const layoutsRef = useRef<{ marker: unknown; cluster: unknown } | null>(null);
 
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState<string | null>(null);
   const [bounds, setBounds] = useState<MapBounds | null>(null);
+  const [specialists, setSpecialists] = useState<SpecialistListItem[]>([]);
   const [selected, setSelected] = useState<SpecialistListItem | null>(null);
   const geo = useGeolocation();
 
@@ -43,22 +51,46 @@ export function MapPage() {
     let cancelled = false;
 
     loadYandexMaps()
-      .then((ymaps3) => {
+      .then((ymaps) => {
         if (cancelled || !containerRef.current) return;
 
-        const map = new ymaps3.YMap(containerRef.current, {
-          location: { center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM },
-        });
-        map.addChild(new ymaps3.YMapDefaultSchemeLayer());
-        map.addChild(new ymaps3.YMapDefaultFeaturesLayer());
-        map.addChild(
-          new ymaps3.YMapListener({
-            onUpdate: (event) => setBounds(normalizeBounds(event.location.bounds)),
-          }),
+        // Свои шаблоны вместо готовых значков: оформление приложения тёмное
+        // с кислотным акцентом, и стандартные синие капли в нём выглядят
+        // чужеродно. Внешний вид задаётся обычным CSS.
+        layoutsRef.current = {
+          marker: ymaps.templateLayoutFactory.createClass(
+            '<div class="map-marker">{{ properties.label }}</div>',
+          ),
+          cluster: ymaps.templateLayoutFactory.createClass(
+            '<div class="map-cluster">{{ properties.geoObjects.length }}</div>',
+          ),
+        };
+
+        const map = new ymaps.Map(
+          containerRef.current,
+          { center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM, controls: ['zoomControl'] },
+          { suppressMapOpenBlock: true },
         );
 
-        apiRef.current = ymaps3;
+        const clusterer = new ymaps.Clusterer({
+          clusterIconLayout: layoutsRef.current.cluster,
+          clusterIconShape: { type: 'Circle', coordinates: [0, 0], radius: 22 },
+          // Нажатие на группу приближает карту, а не открывает список:
+          // на телефоне список внутри всплывающего окна неудобен.
+          clusterDisableClickZoom: false,
+          clusterOpenBalloonOnClick: false,
+          gridSize: 64,
+        });
+
+        map.geoObjects.add(clusterer);
+        // Первое событие приходит не сразу — задаём границы вручную,
+        // иначе метки не загрузятся, пока карту не сдвинут.
+        map.events.add('boundschange', () => setBounds(normalizeBounds(map.getBounds())));
+        setBounds(normalizeBounds(map.getBounds()));
+
+        apiRef.current = ymaps;
         mapRef.current = map;
+        clustererRef.current = clusterer;
         setStatus('ready');
       })
       .catch((err: unknown) => {
@@ -71,13 +103,11 @@ export function MapPage() {
       cancelled = true;
       mapRef.current?.destroy();
       mapRef.current = null;
-      markersRef.current = [];
+      clustererRef.current = null;
     };
   }, []);
 
-  // ─── Загрузка маркеров под текущую область ───
-  const [specialists, setSpecialists] = useState<SpecialistListItem[]>([]);
-
+  // ─── Загрузка меток под текущую область ───
   useEffect(() => {
     if (!bounds) return;
     let cancelled = false;
@@ -88,7 +118,7 @@ export function MapPage() {
         if (!cancelled) setSpecialists(items);
       })
       .catch(() => {
-        // Ошибку подгрузки маркеров не показываем модально: карта остаётся рабочей.
+        // Ошибку подгрузки меток не показываем модально: карта остаётся рабочей.
       });
 
     return () => {
@@ -96,31 +126,43 @@ export function MapPage() {
     };
   }, [bounds]);
 
-  // ─── Отрисовка маркеров ───
+  // ─── Отрисовка меток ───
   const renderMarkers = useCallback(() => {
-    const ymaps3 = apiRef.current;
-    const map = mapRef.current;
-    if (!ymaps3 || !map) return;
+    const ymaps = apiRef.current;
+    const clusterer = clustererRef.current;
+    const layouts = layoutsRef.current;
+    if (!ymaps || !clusterer || !layouts) return;
 
-    for (const marker of markersRef.current) map.removeChild(marker);
-    markersRef.current = [];
+    clusterer.removeAll();
 
-    for (const specialist of specialists) {
-      if (specialist.lat === null || specialist.lng === null) continue;
+    const placemarks = specialists
+      .filter((s) => s.lat !== null && s.lng !== null)
+      .map((specialist) => {
+        const label =
+          specialist.ratingCount > 0
+            ? `★ ${specialist.ratingAvg.toFixed(1)}`
+            : specialist.displayName.split(' ')[0];
 
-      const element = document.createElement('div');
-      element.className = 'map-marker';
-      element.textContent =
-        specialist.ratingCount > 0 ? `★ ${specialist.ratingAvg.toFixed(1)}` : specialist.displayName.slice(0, 12);
-      element.addEventListener('click', () => {
-        haptic.tap();
-        setSelected(specialist);
+        const placemark = new ymaps.Placemark(
+          [specialist.lat as number, specialist.lng as number],
+          { label },
+          {
+            iconLayout: layouts.marker,
+            // Область нажатия задаётся отдельно от разметки: без неё
+            // API считает метку точкой и попасть по ней нельзя.
+            iconShape: { type: 'Rectangle', coordinates: [[-30, -18], [30, 18]] },
+          },
+        );
+
+        placemark.events.add('click', () => {
+          haptic.tap();
+          setSelected(specialist);
+        });
+
+        return placemark;
       });
 
-      const marker = new ymaps3.YMapMarker({ coordinates: [specialist.lng, specialist.lat] }, element);
-      map.addChild(marker);
-      markersRef.current.push(marker);
-    }
+    clusterer.add(placemarks);
   }, [specialists]);
 
   useEffect(() => {
@@ -132,7 +174,7 @@ export function MapPage() {
     if (!focusId || !mapRef.current) return;
     const target = specialists.find((s) => s.id === focusId);
     if (target?.lat && target.lng) {
-      mapRef.current.setLocation({ center: [target.lng, target.lat], zoom: 15, duration: 300 });
+      mapRef.current.setCenter([target.lat, target.lng], 15, { duration: 300 });
       setSelected(target);
     }
   }, [focusId, specialists]);
@@ -140,7 +182,7 @@ export function MapPage() {
   // ─── Центрирование по геолокации ───
   useEffect(() => {
     if (!geo.coords || !mapRef.current) return;
-    mapRef.current.setLocation({ center: [geo.coords.lng, geo.coords.lat], zoom: 14, duration: 300 });
+    mapRef.current.setCenter([geo.coords.lat, geo.coords.lng], 14, { duration: 300 });
   }, [geo.coords]);
 
   if (status === 'error') {
@@ -167,6 +209,11 @@ export function MapPage() {
         >
           {geo.loading ? '...' : '📍 Я здесь'}
         </button>
+        {specialists.length > 0 && (
+          <span className="map__count">
+            {specialists.length} на карте
+          </span>
+        )}
       </div>
 
       {selected && (

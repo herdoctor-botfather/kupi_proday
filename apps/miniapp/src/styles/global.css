@@ -3065,3 +3065,90 @@ body {
 .card {
   color: var(--text);
 }
+
+/* ─── Группа меток на карте ─── */
+
+/*
+ * Близкие метки Яндекс собирает в одну — в кружке число собранных.
+ * Оформление своё: стандартные синие значки в тёмной теме с кислотным
+ * акцентом выглядят чужеродно, будто карту вставили из другого приложения.
+ */
+.map-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 44px;
+  height: 44px;
+  /* Шаблон вставляется в точку привязки, поэтому сдвигаем сами. */
+  margin: -22px 0 0 -22px;
+  border-radius: 50%;
+
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), 0 0 0 4px rgba(204, 255, 51, 0.18);
+}
+
+/* Счётчик рядом с кнопкой «я здесь». */
+.map__count {
+  align-self: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--glass-bg-strong, var(--surface-raised));
+  border: 1px solid var(--hairline);
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
+  color: var(--text-hint);
+  white-space: nowrap;
+}
+
+/* ─── Панель над картой ─── */
+
+/*
+ * Управление картой Яндекс ставит слева сверху, поэтому свои кнопки
+ * уводим вправо: иначе они наезжают на «плюс» и «минус» масштаба.
+ */
+.map__filters {
+  left: auto;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  /* Панель не должна перехватывать нажатия по карте между кнопками. */
+  pointer-events: none;
+}
+
+.map__filters > * {
+  pointer-events: auto;
+}
+
+/* Метка на карте: подпись под точкой не помещалась, потому что шаблон
+   вставляется в саму точку привязки — сдвигаем вверх и влево от неё. */
+.map-marker {
+  background: var(--surface-raised);
+  border-color: var(--hairline);
+  color: var(--text);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+}
+
+/*
+ * Яндекс вставляет шаблон метки в свой контейнер и задаёт ему размер
+ * по области нажатия — подпись при этом обрезается до первой буквы.
+ * Выводим метку из потока и разрешаем ей быть шире контейнера.
+ */
+.map-marker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: max-content;
+}
+
+[class*='placemark-overlay'],
+[class*='placemark__content'] {
+  overflow: visible !important;
+}

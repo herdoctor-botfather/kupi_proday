@@ -64,8 +64,8 @@ export function OnboardingPage() {
           disabled={saving !== null}
         >
           {user?.onboardedAs === 'CLIENT' && <span className="role-card__mark">Прошлый выбор</span>}
-          <span className="role-card__emoji" aria-hidden>
-            🔍
+          <span className="role-card__photo">
+            <img src="/doors/catalog.jpg" alt="Мужчина у сломанной машины ищет помощь в телефоне" loading="lazy" />
           </span>
           <span className="role-card__title">Я ищу специалиста</span>
           <span className="role-card__text">
@@ -83,8 +83,8 @@ export function OnboardingPage() {
           disabled={saving !== null}
         >
           {user?.onboardedAs === 'SPECIALIST' && <span className="role-card__mark">Прошлый выбор</span>}
-          <span className="role-card__emoji" aria-hidden>
-            🛠
+          <span className="role-card__photo">
+            <img src="/doors/apply.jpg" alt="Мастер за работой в мастерской" loading="lazy" />
           </span>
           <span className="role-card__title">Я оказываю услуги</span>
           <span className="role-card__text">
@@ -108,8 +108,8 @@ export function OnboardingPage() {
           disabled={saving !== null}
         >
           {user?.onboardedAs === 'MARKET' && <span className="role-card__mark">Прошлый выбор</span>}
-          <span className="role-card__emoji" aria-hidden>
-            🛍
+          <span className="role-card__photo">
+            <img src="/doors/market.jpg" alt="Вещи, разложенные для продажи" loading="lazy" />
           </span>
           <span className="role-card__title">Купи-продай</span>
           <span className="role-card__text">
@@ -133,8 +133,8 @@ export function OnboardingPage() {
           disabled={saving !== null}
         >
           {user?.onboardedAs === 'WANTED' && <span className="role-card__mark">Прошлый выбор</span>}
-          <span className="role-card__emoji" aria-hidden>
-            🔎
+          <span className="role-card__photo">
+            <img src="/doors/wanted.jpg" alt="Человек ищет нужное в телефоне" loading="lazy" />
           </span>
           <span className="role-card__title">Люди ищут прямо сейчас</span>
           <span className="role-card__text">

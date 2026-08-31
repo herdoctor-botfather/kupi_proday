@@ -3252,3 +3252,67 @@ body {
   backdrop-filter: none;
   padding: 0;
 }
+
+/* ─── Снимок на карточке выбора роли ─── */
+
+/*
+ * Карточка теперь начинается со снимка: сцена объясняет раздел быстрее,
+ * чем значок с подписью — человек узнаёт в ней свою ситуацию.
+ *
+ * Снимок выходит за поля карточки и обрезается её скруглением, поэтому
+ * карточке нужен overflow: hidden, а внутренние отступы переезжают
+ * с самой карточки на текст под снимком.
+ */
+.role-card {
+  overflow: hidden;
+  padding: 0;
+}
+
+.role-card__photo {
+  display: block;
+  position: relative;
+  width: 100%;
+  /* Полоса, а не квадрат: четыре карточки со снимками во весь рост
+     не поместились бы на экран, и выбор потерял бы обзорность. */
+  aspect-ratio: 21 / 9;
+  background: var(--bg-secondary);
+}
+
+.role-card__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Затемнение к низу: под снимком идёт заголовок, и без перехода
+   он упирался бы в светлый край фотографии. */
+.role-card__photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 45%, var(--surface-raised));
+}
+
+.role-card__title,
+.role-card__text,
+.role-card__action {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.role-card__title {
+  margin-top: -6px;
+}
+
+.role-card__action {
+  padding-bottom: 16px;
+}
+
+/* Пометка о прошлом выборе лежала в потоке — поверх снимка ей нужен слой. */
+.role-card__mark {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+}

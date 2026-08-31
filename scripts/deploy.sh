@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+#
+# Обновление сервера из репозитория.
+#
+#   cd /opt/tgspec && ./scripts/deploy.sh
+#
+# Забирает свежий код, пересобирает образы и поднимает службы. Если сборка
+# или запуск не удались — возвращает предыдущее состояние кода, чтобы
+# сервер не остался с наполовину применённым обновлением.
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+COMPOSE="docker compose -f docker-compose.prod.yml"
+
+say() { printf '\n\033[1m→ %s\033[0m\n' "$1"; }
+
+[ -f .env ] || { echo "Нет файла .env — сервер не настроен" >&2; exit 1; }
+
+say "Запоминаю текущее состояние"
+BEFORE=$(git rev-parse HEAD)
+echo "  $BEFORE $(git log -1 --pretty=%s)"
+
+say "Забираю обновления"
+git fetch --quiet origin
+AFTER=$(git rev-parse origin/main)
+
+if [ "$BEFORE" = "$AFTER" ]; then
+  echo "  уже последняя версия, пересобирать нечего"
+  exit 0
+fi
+
+git log --oneline "$BEFORE..$AFTER" | sed 's/^/  /'
+git merge --ff-only origin/main --quiet
+
+# Откат при неудаче: код возвращаем на прежний коммит и поднимаем то,
+# что работало. Полработы хуже, чем неначатая работа.
+rollback() {
+  say "Не получилось — возвращаю прежнюю версию"
+  git reset --hard "$BEFORE" --quiet
+  $COMPOSE up -d --build 2>&1 | tail -5
+  echo "  вернулись на $BEFORE"
+  exit 1
+}
+trap rollback ERR
+
+say "Собираю и запускаю"
+$COMPOSE up -d --build 2>&1 | tail -15
+
+say "Проверяю, что API отвечает"
+for attempt in $(seq 1 30); do
+  if curl -sf --max-time 5 http://127.0.0.1:3000/api/health > /dev/null; then
+    echo "  отвечает"
+    trap - ERR
+    say "Готово: $(git log -1 --pretty='%h %s')"
+    exit 0
+  fi
+  sleep 2
+done
+
+echo "  API не ответил за минуту" >&2
+rollback

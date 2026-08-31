@@ -3272,9 +3272,12 @@ body {
   display: block;
   position: relative;
   width: 100%;
-  /* Полоса, а не квадрат: четыре карточки со снимками во весь рост
-     не поместились бы на экран, и выбор потерял бы обзорность. */
-  aspect-ratio: 21 / 9;
+  /* Высота задана числом, а не пропорцией: карточка — колонка flex,
+     и блок с одной лишь пропорцией она сжимает до полоски. Снимок
+     при этом почти исчезает, а на его месте остаётся чёрное поле. */
+  height: 150px;
+  flex: none;
+  overflow: hidden;
   background: var(--bg-secondary);
 }
 
@@ -3291,7 +3294,9 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, transparent 45%, var(--surface-raised));
+  /* Затемнение только у нижней трети: выше него снимок должен
+     оставаться самим собой, а не уходить в темноту. */
+  background: linear-gradient(to bottom, transparent 62%, var(--surface-raised));
 }
 
 .role-card__title,

@@ -3263,7 +3263,10 @@ body {
  * карточке нужен overflow: hidden, а внутренние отступы переезжают
  * с самой карточки на текст под снимком.
  */
-.role-card {
+/* Отступы снимаются только у карточек со снимком-полосой: он должен
+   доходить до самого края. У остальных карточек этого вида отступы
+   нужны — без них текст прилипает к верхнему краю. */
+.role-card--banner {
   overflow: hidden;
   padding: 0;
 }
@@ -3299,18 +3302,18 @@ body {
   background: linear-gradient(to bottom, transparent 62%, var(--surface-raised));
 }
 
-.role-card__title,
-.role-card__text,
-.role-card__action {
+.role-card--banner .role-card__title,
+.role-card--banner .role-card__text,
+.role-card--banner .role-card__action {
   padding-left: 16px;
   padding-right: 16px;
 }
 
-.role-card__title {
+.role-card--banner .role-card__title {
   margin-top: -6px;
 }
 
-.role-card__action {
+.role-card--banner .role-card__action {
   padding-bottom: 16px;
 }
 
@@ -3410,4 +3413,27 @@ body {
 .role-card--scene > * {
   position: relative;
   z-index: 1;
+}
+
+/* Кнопка со сценой крупнее обычной: на фоне снимка тесная карточка
+   выглядит зажатой, а строки текста сливаются с картинкой. */
+.role-card--scene {
+  min-height: 132px;
+  padding: 18px;
+  gap: 6px;
+  justify-content: center;
+}
+
+.role-card--scene .role-card__title {
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.role-card--scene .role-card__text {
+  /* Текст не должен заезжать на светлую часть снимка справа. */
+  max-width: 78%;
+}
+
+.role-card--scene .role-card__action {
+  margin-top: 4px;
 }

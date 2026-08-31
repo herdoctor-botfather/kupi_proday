@@ -59,7 +59,7 @@ export function OnboardingPage() {
       <div className="role-cards">
         <button
           type="button"
-          className={`role-card${user?.onboardedAs === 'CLIENT' ? ' role-card--previous' : ''}`}
+          className={`role-card role-card--banner${user?.onboardedAs === 'CLIENT' ? ' role-card--previous' : ''}`}
           onClick={() => choose('CLIENT')}
           disabled={saving !== null}
         >
@@ -78,7 +78,7 @@ export function OnboardingPage() {
 
         <button
           type="button"
-          className={`role-card${user?.onboardedAs === 'SPECIALIST' ? ' role-card--previous' : ''}`}
+          className={`role-card role-card--banner${user?.onboardedAs === 'SPECIALIST' ? ' role-card--previous' : ''}`}
           onClick={() => choose('SPECIALIST')}
           disabled={saving !== null}
         >
@@ -103,7 +103,7 @@ export function OnboardingPage() {
 
         <button
           type="button"
-          className={`role-card${user?.onboardedAs === 'MARKET' ? ' role-card--previous' : ''}`}
+          className={`role-card role-card--banner${user?.onboardedAs === 'MARKET' ? ' role-card--previous' : ''}`}
           onClick={() => choose('MARKET')}
           disabled={saving !== null}
         >
@@ -128,7 +128,7 @@ export function OnboardingPage() {
         */}
         <button
           type="button"
-          className={`role-card${user?.onboardedAs === 'WANTED' ? ' role-card--previous' : ''}`}
+          className={`role-card role-card--banner${user?.onboardedAs === 'WANTED' ? ' role-card--previous' : ''}`}
           onClick={() => choose('WANTED')}
           disabled={saving !== null}
         >

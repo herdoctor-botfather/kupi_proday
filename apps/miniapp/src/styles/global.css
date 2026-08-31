@@ -3205,3 +3205,21 @@ body {
   padding: 5px 10px;
   text-align: center;
 }
+
+/*
+ * Кнопка «где я» почти прозрачная: она висит поверх карты, и плотная
+ * плашка закрывала бы то, ради чего карту и открыли. Читаемость держат
+ * не фон, а тень под стрелкой и её собственный цвет.
+ */
+.map__locate {
+  background: rgba(8, 9, 10, 0.42);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* Счётчик убран из разметки — правила ему больше не нужны. */
+.map__count {
+  display: none;
+}

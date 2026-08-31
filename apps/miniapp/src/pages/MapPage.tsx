@@ -222,7 +222,6 @@ export function MapPage() {
         >
           {geo.loading ? <span className="map__locate-wait" aria-hidden /> : <IconLocate />}
         </button>
-        {specialists.length > 0 && <span className="map__count">{specialists.length}</span>}
       </div>
 
       {selected && (

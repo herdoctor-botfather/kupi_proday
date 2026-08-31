@@ -38,6 +38,61 @@ export function marketCaption(counts: Counts | null): string {
   );
 }
 
+/**
+ * Четыре двери, каждая — отдельное сообщение с картинкой и одной кнопкой.
+ * У кнопок Telegram картинок не бывает, поэтому иначе связать снимок
+ * с конкретным разделом нельзя.
+ */
+export const DOORS = [
+  {
+    banner: 'door-catalog',
+    caption:
+      '<b>Я ищу специалиста</b>\n' +
+      'Мастера с отзывами и ценами. Поиск по категориям или сразу по тем, кто рядом.',
+    button: '🔎 Найти исполнителя',
+    param: 'catalog',
+  },
+  {
+    banner: 'door-apply',
+    caption:
+      '<b>Я оказываю услуги</b>\n' +
+      'Разместите анкету — она попадёт в каталог и на карту, и вас начнут находить.',
+    button: '💼 Стать исполнителем',
+    param: 'apply',
+  },
+  {
+    banner: 'door-market',
+    caption:
+      '<b>Купи-продай</b>\n' +
+      'Вещи от людей поблизости: купить нужное или продать своё. Без посредников.',
+    button: '🛍 Открыть барахолку',
+    param: 'market',
+  },
+  {
+    banner: 'door-wanted',
+    caption:
+      '<b>Люди ищут прямо сейчас</b>\n' +
+      'Кому-то нужна вещь, которая у вас уже лежит без дела. Посмотрите и предложите.',
+    button: '🔍 Смотреть запросы',
+    param: 'wanted',
+  },
+] as const;
+
+/** Короткое вступление перед дверями: числа живые, из API. */
+export function greeting(name: string | undefined, counts: Counts | null): string {
+  const hello = name ? `Привет, ${escapeHtml(name)}!` : 'Привет!';
+
+  return (
+    `${hello} 👋\n` +
+    '\n' +
+    `Здесь находят мастеров и продают вещи — не выходя из Telegram. ` +
+    `Сейчас ${describeSpecialists(counts?.specialists).toLowerCase()} ` +
+    `и ${describeListings(counts?.listings).toLowerCase()}.\n` +
+    '\n' +
+    '<i>Выберите, с чего начать:</i>'
+  );
+}
+
 export const HELP_CAPTION =
   'Переписка идёт внутри приложения: телефоны и ссылки в сообщениях скрываются, ' +
   'а история договорённостей остаётся у обеих сторон.\n' +

@@ -20,6 +20,9 @@ import * as messages from './messages';
 const NOWHERE = 1;
 
 const SAMPLES: Array<[string, string]> = [
+  ['вступление: имя и числа', messages.greeting('Денис', { specialists: 5, listings: 7 })],
+  ['вступление: имя с < и &', messages.greeting('Вася <b>&', null)],
+  ...messages.DOORS.map((d) => [`дверь: ${d.button}`, d.caption] as [string, string]),
   ['подпись баннера: имя и числа', messages.welcomeCaption('Денис', { specialists: 5, listings: 7 })],
   ['подпись баннера: без имени', messages.welcomeCaption(undefined, null)],
   ['подпись баннера: имя с < и &', messages.welcomeCaption('Вася <b>&', { specialists: 1, listings: 1 })],

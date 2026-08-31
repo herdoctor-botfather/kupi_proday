@@ -24,7 +24,8 @@ const ASSETS = resolve(__dirname, '..', 'assets');
 /** Идентификаторы уже загруженных картинок, по имени файла. */
 const uploaded = new Map<string, string>();
 
-export type BannerName = 'welcome' | 'market' | 'help';
+/** Имя файла без расширения в apps/bot/assets. */
+export type BannerName = string;
 
 export async function replyWithBanner(
   ctx: Context,

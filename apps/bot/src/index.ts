@@ -71,15 +71,20 @@ bot.command('start', async (ctx) => {
   const counts = await fetchCounts();
 
   const name = ctx.from?.first_name?.trim();
-  await replyWithBanner(
-    ctx,
-    'welcome',
-    messages.welcomeCaption(name, counts),
-    mainKeyboard(),
-    // Запасной текст на случай, если картинка не ушла: он несёт то же,
-    // что нарисовано на баннере, — иначе человек останется без объяснения.
-    messages.welcome(name, counts),
-  );
+  await ctx.reply(messages.greeting(name, counts), { parse_mode: 'HTML' });
+
+  // Каждая дверь — отдельное сообщение: у кнопок Telegram картинок нет,
+  // и связать снимок с конкретным разделом иначе нечем. Отправляем
+  // по очереди, а не разом: параллельная отправка перемешивает порядок.
+  for (const door of messages.DOORS) {
+    await replyWithBanner(
+      ctx,
+      door.banner,
+      door.caption,
+      singleButton(door.button, door.param),
+      door.caption,
+    );
+  }
 });
 
 bot.command('market', async (ctx) => {

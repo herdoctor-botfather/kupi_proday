@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { haptic } from '../lib/telegram';
 import { api } from '../lib/api';
 import { useAuth, useIsAuthenticated } from '../lib/auth';
@@ -25,6 +25,7 @@ const UNREAD_POLL_MS = 20000;
 
 export function TabBar() {
   const isAuthenticated = useIsAuthenticated();
+  const location = useLocation();
   const [unread, setUnread] = useState(0);
   const [creating, setCreating] = useState(false);
 
@@ -60,7 +61,9 @@ export function TabBar() {
         Вкладки отвечают на вопрос «куда пойти», а это — действие, и его
         видно с любого экрана: и продавец, и мастер начинают отсюда.
       */}
-      {isAuthenticated && (
+      {/* На карте кнопку прячем: она приходится ровно на карточку
+          выбранного мастера и перекрывает «Открыть профиль». */}
+      {isAuthenticated && location.pathname !== '/map' && (
         <button
           type="button"
           className="fab"

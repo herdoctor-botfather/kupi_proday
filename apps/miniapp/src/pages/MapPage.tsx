@@ -16,6 +16,18 @@ import { Rating } from '../components/Rating';
 import { useGeolocation } from '../lib/geolocation';
 import { haptic } from '../lib/telegram';
 
+/**
+ * Стрелка «где я» — тот же знак, что в любом навигаторе.
+ * Подпись словами занимала пол-экрана и выглядела поверх карты инородно.
+ */
+function IconLocate() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 2.6 20.2 20a.9.9 0 0 1-1.2 1.2L12 18l-7 3.2A.9.9 0 0 1 3.8 20L12 2.6Z" />
+    </svg>
+  );
+}
+
 /** Центр карты по умолчанию — Москва, если геолокация недоступна. */
 const DEFAULT_CENTER: LatLng = [55.7558, 37.6173];
 const DEFAULT_ZOOM = 11;
@@ -202,18 +214,15 @@ export function MapPage() {
       <div className="map__filters">
         <button
           type="button"
-          className="button button--secondary"
-          style={{ width: 'auto', padding: '10px 14px' }}
+          className="map__locate"
           onClick={() => geo.request()}
           disabled={geo.loading}
+          aria-label="Показать, где я"
+          title="Показать, где я"
         >
-          {geo.loading ? '...' : '📍 Я здесь'}
+          {geo.loading ? <span className="map__locate-wait" aria-hidden /> : <IconLocate />}
         </button>
-        {specialists.length > 0 && (
-          <span className="map__count">
-            {specialists.length} на карте
-          </span>
-        )}
+        {specialists.length > 0 && <span className="map__count">{specialists.length}</span>}
       </div>
 
       {selected && (

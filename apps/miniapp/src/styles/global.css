@@ -3152,3 +3152,56 @@ body {
 [class*='placemark__content'] {
   overflow: visible !important;
 }
+
+/* ─── Кнопка «где я» на карте ─── */
+
+/*
+ * Круглая кнопка со стрелкой вместо надписи словами: подпись занимала
+ * пол-экрана и читалась как инородная плашка поверх карты. Стрелка —
+ * привычный по навигаторам знак, объяснять его не нужно.
+ */
+.map__locate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+
+  background: var(--glass-bg-strong, var(--surface-raised));
+  border: 1px solid var(--hairline);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  color: var(--accent);
+  transition: transform 0.12s ease;
+}
+
+.map__locate:active {
+  transform: scale(0.92);
+}
+
+.map__locate:disabled {
+  color: var(--text-hint);
+}
+
+/* Пока определяется положение — вращающийся ободок вместо стрелки. */
+.map__locate-wait {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--hairline);
+  border-top-color: var(--accent);
+  animation: map-locate-spin 0.8s linear infinite;
+}
+
+@keyframes map-locate-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Счётчик стал коротким — только число, слова рядом со стрелкой лишние. */
+.map__count {
+  min-width: 44px;
+  padding: 5px 10px;
+  text-align: center;
+}

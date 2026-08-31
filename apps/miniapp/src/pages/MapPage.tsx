@@ -23,7 +23,13 @@ import { haptic } from '../lib/telegram';
 function IconLocate() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M12 2.6 20.2 20a.9.9 0 0 1-1.2 1.2L12 18l-7 3.2A.9.9 0 0 1 3.8 20L12 2.6Z" />
+      {/* Наклон вправо: в навигаторах стрелка «где я» смотрит не строго
+          вверх, а под углом — так она читается как направление,
+          а не как указатель «наверх». */}
+      <path
+        d="M12 2.6 20.2 20a.9.9 0 0 1-1.2 1.2L12 18l-7 3.2A.9.9 0 0 1 3.8 20L12 2.6Z"
+        transform="rotate(38 12 12)"
+      />
     </svg>
   );
 }

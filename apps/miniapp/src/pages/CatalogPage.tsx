@@ -125,16 +125,18 @@ export function CatalogPage() {
                 <button
                   key={category.id}
                   type="button"
-                  className="category"
-                  style={categoryStyle(category.slug)}
+                  className="category category--photo"
+                  style={{
+                    ...categoryStyle(category.slug),
+                    // Снимок задаётся фоном, а не тегом img: плитке нужен
+                    // именно фон, поверх которого лежит затемнение и текст.
+                    backgroundImage: `url(/categories/${category.slug}.jpg)`,
+                  }}
                   onClick={() => {
                     haptic.tap();
                     navigate(`/specialists?category=${category.slug}`);
                   }}
                 >
-                  <span className="category__icon" aria-hidden>
-                    {category.icon}
-                  </span>
                   <span className="category__name">{category.name}</span>
                   <span className="category__count">
                     {category.itemCount}{' '}

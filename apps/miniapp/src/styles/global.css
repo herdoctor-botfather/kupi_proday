@@ -3321,3 +3321,59 @@ body {
   right: 10px;
   z-index: 2;
 }
+
+/* ─── Плитка категории со снимком ─── */
+
+/*
+ * Фотография вместо значка: в маленькой плитке сцена узнаётся быстрее,
+ * чем эмодзи, — глаз цепляется за предмет, а не за пиктограмму.
+ *
+ * Цвет категории при этом никуда не делся: он остался в подписи и в
+ * тонкой рамке, поэтому плитки по-прежнему различаются между собой,
+ * даже когда снимки похожи по тону.
+ */
+.category--photo {
+  position: relative;
+  justify-content: flex-end;
+  min-height: 116px;
+  padding: 10px;
+  overflow: hidden;
+
+  background-size: cover;
+  background-position: center;
+  border: 1px solid hsla(var(--tile-hue, 220) 60% 60% / 0.28);
+}
+
+/* Затемнение снизу вверх — под подписью оно плотное, у верхнего края
+   почти прозрачное, чтобы снимок остался виден. */
+.category--photo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(6, 7, 8, 0.92) 0%,
+    rgba(6, 7, 8, 0.55) 42%,
+    rgba(6, 7, 8, 0.12) 100%
+  );
+}
+
+.category--photo .category__name,
+.category--photo .category__count {
+  position: relative;
+  z-index: 1;
+  text-align: left;
+  width: 100%;
+}
+
+.category--photo .category__name {
+  color: #f1f3ef;
+  font-size: 13.5px;
+  line-height: 1.2;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.category--photo .category__count {
+  color: hsl(var(--tile-hue, 220) 70% 72%);
+  margin-top: 2px;
+}

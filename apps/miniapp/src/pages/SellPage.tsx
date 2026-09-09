@@ -22,6 +22,7 @@ interface FormState {
   description: string;
   price: string;
   isNegotiable: boolean;
+  exchangeFor: string;
   condition: ListingCondition;
   city: string;
   categoryIds: string[];
@@ -32,6 +33,7 @@ const EMPTY: FormState = {
   description: '',
   price: '',
   isNegotiable: false,
+  exchangeFor: '',
   condition: 'USED',
   city: '',
   categoryIds: [],
@@ -125,6 +127,7 @@ export function SellPage() {
         // В базе копейки, в форме рубли.
         price: String(listing.priceAmount / 100),
         isNegotiable: listing.isNegotiable,
+        exchangeFor: listing.exchangeFor ?? '',
         condition: listing.condition,
         city: listing.city,
         categoryIds: listing.categories.map((c) => c.id),
@@ -148,6 +151,7 @@ export function SellPage() {
       description: form.description.trim() || null,
       price: form.price.trim() ? Number(form.price) : Number.NaN,
       isNegotiable: form.isNegotiable,
+      exchangeFor: form.exchangeFor.trim() || null,
       condition: form.condition,
       city: form.city.trim(),
       categoryIds: form.categoryIds,
@@ -328,6 +332,26 @@ export function SellPage() {
                 торг
               </label>
             </div>
+
+            {/*
+              Обмен предлагает тот, кто ищет, — у продавца этого поля нет:
+              что взять взамен, решает покупатель, а не он.
+
+              Поле необязательное и стоит после цены, а не вместо неё:
+              обмен здесь дополнение к деньгам, и большинство запросов
+              останется денежными.
+            */}
+            {wanted && (
+              <Field label="Готов обменять на" hint="Необязательно. Что предложите взамен">
+                <input
+                  className="form-input"
+                  value={form.exchangeFor}
+                  onChange={(e) => set('exchangeFor', e.target.value)}
+                  placeholder="Обменяю на велосипед или доплачу"
+                  maxLength={200}
+                />
+              </Field>
+            )}
 
             <Field label={wanted ? 'Какое состояние устроит' : 'Состояние'}>
               <div className="chips">

@@ -26,6 +26,7 @@ export function toListItem(row: ListRow): ListingListItem {
     priceAmount: row.priceAmount,
     currency: row.currency,
     isNegotiable: row.isNegotiable,
+    exchangeFor: row.exchangeFor,
     condition: row.condition,
     city: row.city,
     coverUrl: row.photos[0]?.url ?? null,

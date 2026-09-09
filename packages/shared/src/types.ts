@@ -145,6 +145,11 @@ export interface ListingListItem {
   priceAmount: number;
   currency: string;
   isNegotiable: boolean;
+  /**
+   * Что автор запроса готов отдать взамен. Только у запросов на покупку;
+   * null — сделка только за деньги.
+   */
+  exchangeFor: string | null;
   condition: ListingCondition;
   city: string;
   /** Первое фото: в списке показывается только оно. */

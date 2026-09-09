@@ -77,6 +77,19 @@ export function ListingPage() {
                 ))}
               </div>
 
+              {/*
+                Обмен стоит выше города и даты и отдельным блоком: это
+                условие сделки, а не справка о запросе. Кто способен
+                предложить вещь взамен, должен увидеть это до того,
+                как решит писать.
+              */}
+              {listing.exchangeFor && (
+                <div className="listing-exchange">
+                  <span className="listing-exchange__label">Готов обменять на</span>
+                  {listing.exchangeFor}
+                </div>
+              )}
+
               <div className="listing-meta listing-meta--muted">
                 {listing.city} · {formatDate(listing.createdAt)} ·{' '}
                 {listing.viewCount} {pluralize(listing.viewCount, ['просмотр', 'просмотра', 'просмотров'])}

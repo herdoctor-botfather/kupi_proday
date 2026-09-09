@@ -3854,3 +3854,36 @@ body {
   flex: none;
   padding-inline: 20px;
 }
+
+/* ─── Обмен в запросе ─── */
+
+/* Пометка в списке — рядом с «торг», тем же весом: оба говорят
+   об условиях сделки, и выделять одно из них незачем. */
+.listing-card__exchange {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* На странице запроса — отдельной строкой с рамкой: это условие,
+   от которого зависит, писать ли автору вообще. */
+.listing-exchange {
+  margin: 14px 0 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  font-size: 14.5px;
+  line-height: 1.4;
+}
+
+.listing-exchange__label {
+  display: block;
+  margin-bottom: 3px;
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
+  color: var(--text-hint);
+}

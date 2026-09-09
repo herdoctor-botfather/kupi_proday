@@ -361,6 +361,9 @@ export class ListingsService {
       // В форме рубли, в базе копейки.
       priceAmount: dto.price * 100,
       isNegotiable: dto.isNegotiable,
+      // Обмен предлагает тот, кто ищет; у объявления о продаже это поле
+      // не имеет смысла, и присланное значение молча отбрасывается.
+      exchangeFor: dto.kind === 'BUY' ? clean(dto.exchangeFor) : null,
       condition: dto.condition,
       city: dto.city.trim(),
     };

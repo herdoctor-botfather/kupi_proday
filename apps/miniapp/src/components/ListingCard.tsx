@@ -32,6 +32,9 @@ export function ListingCard({ listing }: { listing: ListingListItem }) {
         {listing.kind === 'BUY' && <span className="listing-card__negotiable">до</span>}
         {formatPrice(listing.priceAmount, listing.currency)}
         {listing.isNegotiable && <span className="listing-card__negotiable">торг</span>}
+        {/* Готовность к обмену — на карточке пометкой, а не текстом:
+            в списке её замечают, а строку «обменяю на…» читать некогда. */}
+        {listing.exchangeFor && <span className="listing-card__exchange">обмен</span>}
       </div>
       <div className="listing-card__title">{listing.title}</div>
       <div className="listing-card__meta">

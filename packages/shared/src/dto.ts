@@ -180,6 +180,14 @@ export const listingSchema = z.object({
   /** Цена вводится в рублях, хранится в копейках. */
   price: z.coerce.number().int().min(0).max(MAX_PRICE_RUB, 'Проверьте цену'),
   isNegotiable: z.boolean().default(false),
+  /**
+   * Что автор готов отдать взамен. Только для запросов: в объявлении
+   * о продаже обменом распоряжается покупатель, а не продавец.
+   *
+   * Пустое поле означает «только за деньги» — обмен здесь дополнение
+   * к цене, а не замена ей, поэтому цена остаётся обязательной.
+   */
+  exchangeFor: z.string().trim().max(200).nullable().optional(),
   condition: z.enum(['NEW', 'USED_PERFECT', 'USED']).default('USED'),
   city: z.string().trim().min(2, 'Укажите город').max(100),
   categoryIds: z.array(z.string()).min(1, 'Выберите категорию').max(3, 'Не больше трёх категорий'),

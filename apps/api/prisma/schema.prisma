@@ -302,6 +302,11 @@ model Listing {
   /// Цена договорная: сумма показывается как ориентир.
   isNegotiable Boolean @default(false)
 
+  /// Что автор запроса готов отдать взамен. Заполняется только у запросов
+  /// на покупку: в объявлении о продаже обменом распоряжается покупатель.
+  /// Пусто — сделка только за деньги.
+  exchangeFor String?
+
   condition ListingCondition @default(USED)
   city      String
 

@@ -11,6 +11,8 @@ import {
   LISTING_FREE_PER_MONTH,
   LISTING_PROMOTIONS,
   SPECIALIST_PLANS,
+  TOPUP_MAX_STARS,
+  TOPUP_MIN_STARS,
   isListingPromotion,
   isSpecialistPlan,
   isTopupAmount,
@@ -296,9 +298,14 @@ export class PaymentsService {
   private async describeOrder(userId: string, dto: CreateInvoiceDto) {
     if (dto.purpose === 'WALLET_TOPUP') {
       const stars = dto.stars ?? 0;
-      // Сумму берём не на веру: иначе счёт на одну звезду пополнил бы
-      // баланс на любое число, которое пришлёт клиент.
-      if (!isTopupAmount(stars)) throw new BadRequestException('Такой суммы пополнения нет');
+      // Сумму проверяем и здесь, а не только в поле ввода: до сервера
+      // запрос доходит и без приложения, и тогда единственная защита
+      // от «пополнить на миллион за одну звезду» — вот эта строка.
+      if (!isTopupAmount(stars)) {
+        throw new BadRequestException(
+          `Сумма пополнения — от ${TOPUP_MIN_STARS} до ${TOPUP_MAX_STARS} ★ целым числом`,
+        );
+      }
       return {
         stars,
         title: `Пополнение на ${stars} ★`,

@@ -3832,3 +3832,25 @@ body {
     padding-bottom: 10px;
   }
 }
+
+/* Своя сумма пополнения: поле и кнопка в одну строку. */
+.topup-custom {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  margin-bottom: 4px;
+}
+
+.topup-custom__input {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+/* Кнопка по содержимому, а не во всю ширину: во всю ширину она читалась
+   бы как главное действие экрана, тогда как главное здесь — наборы. */
+.topup-custom__submit {
+  width: auto;
+  flex: none;
+  padding-inline: 20px;
+}

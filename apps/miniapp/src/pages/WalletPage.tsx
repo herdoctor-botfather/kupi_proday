@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { TOPUP_PACKS } from '@app/shared';
+import { TOPUP_MAX_STARS, TOPUP_MIN_STARS, TOPUP_PACKS, isTopupAmount } from '@app/shared';
 import { api, type Wallet } from '../lib/api';
 import { usePurchase } from '../lib/usePurchase';
 
@@ -18,6 +18,12 @@ export function WalletPage() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [custom, setCustom] = useState('');
+
+  // Пустая строка и число вне границ дают одно и то же — ноль,
+  // и кнопка остаётся выключенной, пока сумму нельзя принять.
+  const parsed = Number(custom);
+  const customStars = isTopupAmount(parsed) ? parsed : 0;
 
   const load = useCallback(async () => {
     const fresh = await api.wallet();
@@ -67,6 +73,42 @@ export function WalletPage() {
           </button>
         ))}
       </div>
+
+      {/*
+        Своя сумма стоит после наборов, а не до них: набор отвечает на
+        вопрос «сколько нужно» за человека, и предлагать сначала ввести
+        число значило бы вернуть ему вопрос, ради которого наборы и
+        сделаны. Тому, кто знает свою сумму, поле здесь не помешает.
+      */}
+      <form
+        className="topup-custom"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (customStars) void purchase.buy({ purpose: 'WALLET_TOPUP', stars: customStars });
+        }}
+      >
+        <input
+          className="form-input topup-custom__input"
+          // inputMode подсказывает телефону цифровую клавиатуру, а type=text
+          // оставляет поле управляемым: у type=number «e», «+» и точка
+          // проходят внутрь, но читаются из него как пустая строка.
+          type="text"
+          inputMode="numeric"
+          value={custom}
+          placeholder="Своя сумма"
+          onChange={(event) => setCustom(event.target.value.replace(/\D/g, '').slice(0, 5))}
+          aria-label="Своя сумма пополнения в звёздах"
+        />
+        <button type="submit" className="button topup-custom__submit" disabled={!customStars || purchase.busy}>
+          Пополнить
+        </button>
+      </form>
+
+      <p className="form-hint">
+        {custom && !customStars
+          ? `Сумма — от ${TOPUP_MIN_STARS} до ${TOPUP_MAX_STARS} ★`
+          : `Своя сумма — от ${TOPUP_MIN_STARS} до ${TOPUP_MAX_STARS} ★`}
+      </p>
 
       {purchase.state === 'waiting' && <p className="form-hint">Оплата прошла, зачисляем…</p>}
       {purchase.state === 'done' && <p className="form-hint">Зачислено.</p>}

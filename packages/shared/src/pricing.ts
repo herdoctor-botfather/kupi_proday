@@ -79,7 +79,28 @@ export const TOPUP_PACKS = [
 
 export const TOPUP_STARS = TOPUP_PACKS.map((pack) => pack.stars);
 
-export const isTopupAmount = (value: number): boolean => TOPUP_STARS.includes(value as never);
+/**
+ * Границы произвольной суммы.
+ *
+ * Нижняя отсекает пополнения, на которые всё равно ничего не купить:
+ * человек отдал бы звёзды и остался ни с чем. Верхняя — защита от
+ * опечатки в лишний ноль, а заодно от суммы, которую Telegram может
+ * не пропустить: за его ограничениями мы не следим, а своё держим
+ * заведомо ниже.
+ */
+export const TOPUP_MIN_STARS = 50;
+export const TOPUP_MAX_STARS = 10_000;
+
+/**
+ * Сумма пополнения допустима.
+ *
+ * Готовые наборы — подсказка, а не ограничение: свою сумму назвать можно,
+ * но целым числом и в разумных границах. Проверка одна на приложение
+ * и сервер, чтобы поле ввода и счёт не расходились в том, что считать
+ * правильным.
+ */
+export const isTopupAmount = (value: number): boolean =>
+  Number.isInteger(value) && value >= TOPUP_MIN_STARS && value <= TOPUP_MAX_STARS;
 
 /** За что именно платят. Хранится в базе и разбирается при подтверждении оплаты. */
 export const PAYMENT_PURPOSES = [

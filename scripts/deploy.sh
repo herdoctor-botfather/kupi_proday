@@ -35,13 +35,23 @@ main() {
   git fetch --quiet origin
   AFTER=$(git rev-parse origin/main)
 
-  if [ "$BEFORE" = "$AFTER" ]; then
+  # Совпадение с origin/main ещё не значит, что запущено именно оно:
+  # код мог быть забран вручную — например, чтобы снять резервную копию
+  # перед правкой схемы, — и тогда службы работают на прошлой сборке,
+  # а выкладка молча решает, что делать нечего. Ключ --force пересобирает
+  # то, что уже лежит в каталоге.
+  if [ "$BEFORE" = "$AFTER" ] && [ "${1:-}" != "--force" ]; then
     echo "  уже последняя версия, пересобирать нечего"
+    echo "  (пересобрать всё равно: ./scripts/deploy.sh --force)"
     exit 0
   fi
 
-  git log --oneline "$BEFORE..$AFTER" | sed 's/^/  /'
-  git merge --ff-only origin/main --quiet
+  if [ "$BEFORE" != "$AFTER" ]; then
+    git log --oneline "$BEFORE..$AFTER" | sed 's/^/  /'
+    git merge --ff-only origin/main --quiet
+  else
+    echo "  код уже свежий, пересобираю по требованию"
+  fi
 
   # Подъём с запасным заходом.
   #

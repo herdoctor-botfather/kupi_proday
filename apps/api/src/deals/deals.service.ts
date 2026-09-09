@@ -114,7 +114,22 @@ export class DealsService {
    */
   async involvements(userId: string): Promise<Involvement[]> {
     const rows = await this.prisma.conversation.findMany({
-      where: { clientId: userId },
+      where: {
+        clientId: userId,
+        /*
+         * Участие — это разговор или согласие, а не просмотр.
+         *
+         * Переписка заводится уже при нажатии «Написать», поэтому пустые
+         * не считаем: иначе в сделки попадал бы каждый, чью карточку
+         * человек открыл из любопытства, и список переставал бы что-либо
+         * значить. У услуг участие возникает раньше первого сообщения —
+         * в момент, когда мастер принял заявку.
+         */
+        OR: [
+          { lastMessageAt: { not: null } },
+          { specialist: { requests: { some: { clientId: userId, status: 'ACCEPTED' } } } },
+        ],
+      },
       orderBy: { lastMessageAt: 'desc' },
       take: 50,
       select: {

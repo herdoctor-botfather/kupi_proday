@@ -339,11 +339,20 @@ export interface UserReviews {
   listings: number;
   wanted: number;
   specialist: {
+    id: string;
     slug: string;
     displayName: string;
     headline: string | null;
     ratingAvg: number;
     ratingCount: number;
+    /** Прайс-лист: к человеку обращаются отсюда, не уходя в анкету. */
+    services: {
+      id: string;
+      name: string;
+      priceAmount: number | null;
+      currency: string;
+      priceIsFrom: boolean;
+    }[];
   } | null;
 }
 

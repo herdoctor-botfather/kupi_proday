@@ -3,8 +3,10 @@ import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { AsyncContent, EmptyState } from '../components/states';
 import { ListingCard } from '../components/ListingCard';
-import { formatDate, pluralize } from '../lib/format';
+import { ServiceRequestAction } from '../components/ServiceRequestAction';
+import { formatDate, formatPrice, pluralize } from '../lib/format';
 import { haptic } from '../lib/telegram';
+import { useIsAuthenticated } from '../lib/auth';
 
 /**
  * Публичный профиль пользователя.
@@ -20,6 +22,7 @@ import { haptic } from '../lib/telegram';
  */
 export function SellerPage() {
   const { id = '' } = useParams();
+  const isAuthenticated = useIsAuthenticated();
 
   const profile = useAsync(() => api.publicProfile(id), [id]);
   const sell = useAsync(() => api.listings({ kind: 'SELL', sellerId: id, pageSize: 50 }), [id]);
@@ -67,6 +70,42 @@ export function SellerPage() {
                 </span>
               </Link>
             ) : null}
+
+            {/*
+              Услуги — прямо здесь, а не только в анкете.
+
+              Один человек может продавать вещи, что-то искать и работать
+              мастером. Заставлять посетителя догадываться, что «Иван» из
+              объявления и «Иван, электрик» — одно лицо, и искать вторую
+              страницу, чтобы к нему обратиться, незачем: заявку он
+              отправляет отсюда, а анкета остаётся за ссылкой выше.
+            */}
+            {person.specialist && person.specialist.services.length > 0 && (
+              <>
+                <h2 className="section-title">Услуги и цены</h2>
+                <div className="services">
+                  {person.specialist.services.map((service) => {
+                    const price = formatPrice(service.priceAmount, service.currency, service.priceIsFrom);
+                    return (
+                      <div key={service.id} className="service">
+                        <div>{service.name}</div>
+                        {price && <div className="service__price">{price}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {person.specialist && (
+              <ServiceRequestAction
+                specialistId={person.specialist.id}
+                isAuthenticated={isAuthenticated}
+                // Анкета найдена через аккаунт этого человека, значит
+                // владелец у неё есть и писать заведомо есть кому.
+                canChat
+              />
+            )}
 
             {/*
               Оценка по сделкам. Пока сделок нет, прямо об этом говорим:

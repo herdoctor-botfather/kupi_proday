@@ -98,12 +98,21 @@ export class UsersService {
         isBlocked: true,
         specialist: {
           select: {
+            id: true,
             slug: true,
             displayName: true,
             headline: true,
             status: true,
             ratingAvg: true,
             ratingCount: true,
+            // Прайс-лист прямо в профиле: человек, который и продаёт вещи,
+            // и оказывает услуги, — это один человек, и разбираться, где
+            // у него что, посетитель не обязан.
+            services: {
+              orderBy: { sortOrder: 'asc' },
+              take: 6,
+              select: { id: true, name: true, priceAmount: true, currency: true, priceIsFrom: true },
+            },
           },
         },
       },
@@ -129,11 +138,19 @@ export class UsersService {
       wanted,
       specialist: card
         ? {
+            id: card.id,
             slug: card.slug,
             displayName: card.displayName,
             headline: card.headline,
             ratingAvg: card.ratingAvg,
             ratingCount: card.ratingCount,
+            services: card.services.map((service) => ({
+              id: service.id,
+              name: service.name,
+              priceAmount: service.priceAmount,
+              currency: service.currency,
+              priceIsFrom: service.priceIsFrom,
+            })),
           }
         : null,
     };

@@ -42,7 +42,16 @@ export function SellerPage() {
               ) : (
                 <div className="profile__avatar" />
               )}
-              <h1 className="profile__name">{person.name}</h1>
+              <div className="profile__name-row">
+                <h1 className="profile__name">{person.name}</h1>
+                {/*
+                  Отметка исполнителя у самого имени. Человек, который
+                  продаёт плиту, и человек, которого можно позвать чинить
+                  проводку, — один и тот же, и узнать об этом надо там же,
+                  где читают имя, а не пролистав до раздела услуг.
+                */}
+                {person.specialist && <span className="badge-role">🛠 Исполнитель</span>}
+              </div>
               <div className="profile__headline">На площадке с {formatDate(person.joinedAt)}</div>
             </div>
 

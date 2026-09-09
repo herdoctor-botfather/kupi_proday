@@ -131,7 +131,16 @@ export function ListingPage() {
                   </div>
                 )}
                 <div>
-                  <div className="seller__name">{listing.seller.name}</div>
+                  <div className="seller__name">
+                    {listing.seller.name}
+                    {/* Тот же человек может брать работу — об этом стоит
+                        знать сразу, а не открыв его профиль наугад. */}
+                    {listing.seller.specialistSlug && (
+                      <span className="badge-role" style={{ marginLeft: 8 }}>
+                        🛠 Исполнитель
+                      </span>
+                    )}
+                  </div>
                   <div className="card__headline">
                     {listing.kind === 'BUY' ? 'Что ещё он ищет' : 'Другие объявления'}
                   </div>

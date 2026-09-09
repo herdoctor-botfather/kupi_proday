@@ -2225,6 +2225,24 @@ body::before {
   margin-top: 12px;
 }
 
+/* Отметка роли рядом с именем: человек не только продаёт вещи, но и
+   берёт работу. Приглушённая, а не яркая: это уточнение к имени, а не
+   объявление о себе. */
+.badge-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--bg-secondary);
+  color: var(--text-hint);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
 /* Ожидание ответа мастера. Не тревога и не ошибка — просто состояние,
    поэтому спокойный блок, а не красная плашка. */
 .request-wait {

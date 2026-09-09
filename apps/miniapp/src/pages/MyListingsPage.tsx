@@ -17,11 +17,28 @@ const STATUS_VIEW: Record<ListingStatus, { icon: string; label: string; tone: st
   DRAFT: { icon: '📄', label: 'Черновик', tone: 'status--hidden' },
 };
 
+/**
+ * Причины снятия с витрины.
+ *
+ * Продажа и отказ от продажи различаются для площадки, а не для продавца:
+ * ему в обоих случаях нужно одно — убрать объявление. Поэтому спрашиваем
+ * после нажатия, а «продано» стоит первым: это самый частый исход, ради
+ * которого объявление и подавали.
+ */
+const REMOVE_REASONS: { label: string; hint: string; action: 'sold' | 'hide' }[] = [
+  { label: 'Продано', hint: 'Уйдёт с витрины и останется в истории как проданное', action: 'sold' },
+  { label: 'Продал в другом месте', hint: 'Тоже считается проданным', action: 'sold' },
+  { label: 'Передумал продавать', hint: 'Можно вернуть на витрину в любой момент', action: 'hide' },
+  { label: 'Пока недоступно', hint: 'Временно скрыть, вернуть позже', action: 'hide' },
+];
+
 export function MyListingsPage() {
   const navigate = useNavigate();
   const state = useAsync(() => api.myListings(), []);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Объявление, для которого спрашиваем причину снятия. */
+  const [removing, setRemoving] = useState<MyListing | null>(null);
 
   const act = async (listing: MyListing, action: 'sold' | 'hide' | 'publish' | 'delete') => {
     const run = async () => {
@@ -42,12 +59,13 @@ export function MyListingsPage() {
       }
     };
 
+    // Подтверждение осталось только у удаления: оно необратимо. Снятие
+    // с витрины человек уже подтвердил, выбрав причину, и спрашивать
+    // второй раз — не забота, а недоверие.
     const question =
       action === 'delete'
         ? 'Удалить объявление? Вместе с ним пропадут фотографии и переписки.'
-        : action === 'sold'
-          ? 'Пометить проданным? Объявление уйдёт с витрины.'
-          : null;
+        : null;
 
     if (!question) {
       void run();
@@ -142,25 +160,23 @@ export function MyListingsPage() {
                           Изменить
                         </button>
                       )}
+                      {/*
+                        Одна кнопка вместо двух. «Продано» и «Снять» —
+                        не два разных действия, а одно с разной причиной:
+                        объявление в обоих случаях уходит с витрины.
+                        Причину спрашиваем после нажатия — она уточняет
+                        уже принятое решение, а не предлагает выбрать одно
+                        из двух похожих.
+                      */}
                       {listing.status === 'ACTIVE' && (
-                        <>
-                          <button
-                            type="button"
-                            className="button button--secondary button--sm"
-                            onClick={() => act(listing, 'sold')}
-                            disabled={busyId === listing.id}
-                          >
-                            Продано
-                          </button>
-                          <button
-                            type="button"
-                            className="button button--secondary button--sm"
-                            onClick={() => act(listing, 'hide')}
-                            disabled={busyId === listing.id}
-                          >
-                            Снять
-                          </button>
-                        </>
+                        <button
+                          type="button"
+                          className="button button--secondary button--sm"
+                          onClick={() => setRemoving(listing)}
+                          disabled={busyId === listing.id}
+                        >
+                          Снять с витрины
+                        </button>
                       )}
                       {(listing.status === 'HIDDEN' || listing.status === 'SOLD') && (
                         <button
@@ -189,6 +205,37 @@ export function MyListingsPage() {
           )
         }
       </AsyncContent>
+
+      {removing && (
+        <div className="sheet-backdrop" onClick={() => setRemoving(null)}>
+          <div className="sheet" onClick={(event) => event.stopPropagation()}>
+            <div className="sheet__grip" aria-hidden />
+            <h2 className="sheet__title">Почему снимаете</h2>
+
+            {REMOVE_REASONS.map((reason) => (
+              <button
+                key={reason.label}
+                type="button"
+                className="sheet__option"
+                onClick={() => {
+                  const listing = removing;
+                  setRemoving(null);
+                  void act(listing, reason.action);
+                }}
+              >
+                <span className="sheet__option-body">
+                  <span className="sheet__option-title">{reason.label}</span>
+                  <span className="sheet__option-text">{reason.hint}</span>
+                </span>
+              </button>
+            ))}
+
+            <button type="button" className="sheet__cancel" onClick={() => setRemoving(null)}>
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -42,7 +42,7 @@ export function MarketPage() {
           <span className="role-card__action">Открыть каталог →</span>
         </Link>
 
-        <Link to="/market/my" className="role-card" onClick={() => haptic.tap()}>
+        <Link to="/market/selling" className="role-card" onClick={() => haptic.tap()}>
           <span className="role-card__emoji" aria-hidden>
             🏷
           </span>

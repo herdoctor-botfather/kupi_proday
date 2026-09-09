@@ -17,6 +17,7 @@ import { WantedHubPage } from './pages/WantedHubPage';
 import { WantedPage } from './pages/WantedPage';
 import { ListingPage } from './pages/ListingPage';
 import { MyListingsPage } from './pages/MyListingsPage';
+import { SellHubPage } from './pages/SellHubPage';
 import { SellPage } from './pages/SellPage';
 import { SpecialistsPage } from './pages/SpecialistsPage';
 import { SpecialistPage } from './pages/SpecialistPage';
@@ -130,6 +131,7 @@ function Shell() {
       <Route path="/wanted" element={<WantedHubPage />} />
       <Route path="/wanted/browse" element={<WantedPage />} />
       <Route path="/wanted/new" element={<SellPage />} />
+      <Route path="/market/selling" element={<SellHubPage />} />
       <Route path="/market/my" element={<MyListingsPage />} />
       <Route path="/market/sell" element={<SellPage />} />
       <Route path="/listing/:idOrSlug" element={<ListingPage />} />

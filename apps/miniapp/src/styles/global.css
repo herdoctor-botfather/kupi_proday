@@ -3887,3 +3887,107 @@ body {
   text-transform: uppercase;
   color: var(--text-hint);
 }
+
+/* ─── Всплывающая панель выбора ─── */
+
+/*
+ * Возвращена ради выбора причины снятия объявления. Панель снизу, а не
+ * окно посередине: выбор из четырёх строк — это продолжение нажатия
+ * на кнопку, и рука остаётся там же, где была.
+ */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: sheet-fade 0.16s ease;
+}
+
+.sheet {
+  width: 100%;
+  padding: 10px var(--page-padding) calc(env(safe-area-inset-bottom) + 18px);
+  border-radius: 24px 24px 0 0;
+  background: var(--surface-raised);
+  border-top: 1px solid var(--hairline);
+  animation: sheet-rise 0.2s ease;
+}
+
+.sheet__grip {
+  width: 38px;
+  height: 4px;
+  margin: 0 auto 14px;
+  border-radius: 999px;
+  background: var(--hairline);
+}
+
+.sheet__title {
+  margin: 0 0 14px;
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
+  color: var(--text-hint);
+}
+
+.sheet__option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  text-align: left;
+  padding: 14px;
+  margin-bottom: 10px;
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+  border: 1px solid var(--hairline);
+  color: var(--text);
+}
+
+.sheet__option:active {
+  transform: scale(0.99);
+}
+
+.sheet__option-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.sheet__option-title {
+  display: block;
+  font-weight: 600;
+}
+
+.sheet__option-text {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--text-hint);
+}
+
+.sheet__cancel {
+  width: 100%;
+  padding: 13px;
+  border-radius: 999px;
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
+  color: var(--text-hint);
+}
+
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-rise {
+  from {
+    transform: translateY(14px);
+  }
+}

@@ -3,6 +3,7 @@ import type {
   AuthResponse,
   CurrentUser,
   ModerateReviewDto,
+  AdminEditListingDto,
   ModerateListingDto,
   ModerateSpecialistDto,
   Paginated,
@@ -246,6 +247,10 @@ export const api = {
   applications: () => request<ApplicationsQueue>('/admin/applications'),
 
   pendingListings: () => request<ListingsQueue>('/admin/listings/pending'),
+  /** Правка мелочей: опечатка, цена, лишний телефон в описании. */
+  editListing: (id: string, dto: AdminEditListingDto) =>
+    request<ListingRow>(`/admin/listings/${id}`, { method: 'PATCH', body: JSON.stringify(dto) }),
+
   moderateListing: (id: string, dto: ModerateListingDto) =>
     request<ListingRow>(`/admin/listings/${id}/moderate`, { method: 'PATCH', body: JSON.stringify(dto) }),
 

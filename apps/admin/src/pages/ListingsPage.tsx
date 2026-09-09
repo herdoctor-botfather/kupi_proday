@@ -21,6 +21,8 @@ const CONDITION_LABELS: Record<ListingRow['condition'], string> = {
 export function ListingsPage() {
   const queue = useAsync(() => api.pendingListings(), []);
   const [rejecting, setRejecting] = useState<ListingRow | null>(null);
+  /** Объявление, открытое целиком для просмотра и правки. */
+  const [editing, setEditing] = useState<ListingRow | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,6 +124,16 @@ export function ListingsPage() {
           )}
 
           <div className="review-card__actions">
+            {/* Открыть объявление целиком: в строке очереди помещается
+                не всё, а решение принимают по описанию и снимкам. */}
+            <button
+              type="button"
+              className="button button--secondary"
+              onClick={() => setEditing(row)}
+              disabled={busyId === row.id}
+            >
+              Открыть
+            </button>
             <button
               type="button"
               className="button button--success"
@@ -172,6 +184,17 @@ export function ListingsPage() {
           )
         }
       </AsyncContent>
+
+      {editing && (
+        <ListingDialog
+          row={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            queue.reload();
+          }}
+        />
+      )}
 
       {rejecting && (
         <RejectDialog
@@ -256,6 +279,144 @@ function RejectDialog({
           </button>
         ))}
       </div>
+    </Modal>
+  );
+}
+
+/**
+ * Объявление целиком: всё, что есть, и правка мелочей.
+ *
+ * Отклонять ради опечатки или лишнего нуля в цене — терять и время
+ * модератора, и терпение продавца: он ждёт публикации, а получает
+ * возврат из-за запятой. Поэтому текст и цену можно поправить здесь же.
+ *
+ * Фотографии и категории не правятся намеренно: их подмена меняет смысл
+ * объявления, а это уже не редактура. Такое отклоняют с объяснением.
+ */
+function ListingDialog({
+  row,
+  onClose,
+  onSaved,
+}: {
+  row: ListingRow;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [title, setTitle] = useState(row.title);
+  const [description, setDescription] = useState(row.description ?? '');
+  const [price, setPrice] = useState(String(Math.round(row.priceAmount / 100)));
+  const [isNegotiable, setNegotiable] = useState(row.isNegotiable);
+  const [condition, setCondition] = useState(row.condition);
+  const [city, setCity] = useState(row.city);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const save = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.editListing(row.id, {
+        title: title.trim(),
+        description: description.trim() || null,
+        price: Number(price || 0),
+        isNegotiable,
+        condition,
+        city: city.trim(),
+      });
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось сохранить');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal
+      title={row.kind === 'BUY' ? 'Запрос на покупку' : 'Объявление о продаже'}
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className="button button--secondary" onClick={onClose}>
+            Закрыть
+          </button>
+          <button type="button" className="button" disabled={busy} onClick={() => void save()}>
+            {busy ? 'Сохраняем...' : 'Сохранить правки'}
+          </button>
+        </>
+      }
+    >
+      {error && <div className="alert alert--error">{error}</div>}
+
+      {row.photos.length > 0 && (
+        <div className="listing-thumbs" style={{ marginBottom: 14 }}>
+          {row.photos.map((photo) => (
+            <a key={photo.id} href={photo.url} target="_blank" rel="noreferrer">
+              <img src={photo.url} alt="" />
+            </a>
+          ))}
+        </div>
+      )}
+
+      <div className="field">
+        <label className="field__label" htmlFor="l-title">Название</label>
+        <input id="l-title" className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
+      </div>
+
+      <div className="field">
+        <label className="field__label" htmlFor="l-desc">Описание</label>
+        <textarea
+          id="l-desc"
+          className="textarea"
+          rows={6}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+
+      <div className="field">
+        <label className="field__label" htmlFor="l-price">
+          {row.kind === 'BUY' ? 'Готов заплатить, ₽' : 'Цена, ₽'}
+        </label>
+        <input
+          id="l-price"
+          className="input"
+          value={price}
+          inputMode="numeric"
+          onChange={(e) => setPrice(e.target.value.replace(/\D/g, ''))}
+        />
+      </div>
+
+      <label className="checkbox-inline" style={{ marginBottom: 12 }}>
+        <input type="checkbox" checked={isNegotiable} onChange={(e) => setNegotiable(e.target.checked)} />
+        торг уместен
+      </label>
+
+      <div className="field">
+        <label className="field__label" htmlFor="l-condition">Состояние</label>
+        <select
+          id="l-condition"
+          className="input"
+          value={condition}
+          onChange={(e) => setCondition(e.target.value as ListingRow['condition'])}
+        >
+          {(Object.keys(CONDITION_LABELS) as ListingRow['condition'][]).map((value) => (
+            <option key={value} value={value}>
+              {CONDITION_LABELS[value]}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="field">
+        <label className="field__label" htmlFor="l-city">Город</label>
+        <input id="l-city" className="input" value={city} onChange={(e) => setCity(e.target.value)} />
+      </div>
+
+      <p className="cell-muted" style={{ marginBottom: 0 }}>
+        Категории и фотографии здесь не меняются: их подмена меняет смысл объявления.
+        Если дело в них — отклоните с объяснением.
+      </p>
     </Modal>
   );
 }

@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { haptic } from '../lib/telegram';
 import { api } from '../lib/api';
 import { useIsAuthenticated } from '../lib/auth';
+import { markRoleChosen } from '../lib/session';
 import { IconChats, IconMap, IconProfile, IconWallet } from './TabIcons';
 
 const TABS = [
@@ -64,7 +65,15 @@ export function TabBar() {
             key={tab.to}
             to={tab.to}
             end={tab.end}
-            onClick={() => haptic.tap()}
+            onClick={() => {
+              haptic.tap();
+              // Стартовый экран возвращает к себе любой переход, пока роль
+              // не выбрана, — иначе его можно было бы просто пролистнуть.
+              // Но нажатие на вкладку и есть выбор: человек сказал, куда
+              // хочет. Без этой отметки панель на стартовом экране была бы
+              // нарисована, но не работала.
+              markRoleChosen();
+            }}
             className={({ isActive }) => `tabbar__item${isActive ? ' tabbar__item--active' : ''}`}
           >
             <span className="tabbar__icon">

@@ -384,3 +384,21 @@ export const confirmPaymentSchema = z.object({
   telegramUserId: z.string().trim().regex(/^\d+$/, 'Только цифры').max(20),
 });
 export type ConfirmPaymentDto = z.infer<typeof confirmPaymentSchema>;
+
+// ─────────────────────────── Сделки ───────────────────────────
+
+/**
+ * Отметка продажи. Покупатель необязателен: продали мимо площадки —
+ * объявление всё равно надо снять, просто без права на отзыв.
+ */
+export const markSoldSchema = z.object({
+  buyerId: z.string().trim().max(40).nullable().optional(),
+});
+export type MarkSoldDto = z.infer<typeof markSoldSchema>;
+
+/** Отзыв о второй стороне сделки. */
+export const dealReviewSchema = z.object({
+  rating: z.coerce.number().int().min(RATING_MIN).max(RATING_MAX),
+  text: z.string().trim().max(REVIEW_TEXT_MAX).nullable().optional(),
+});
+export type DealReviewDto = z.infer<typeof dealReviewSchema>;

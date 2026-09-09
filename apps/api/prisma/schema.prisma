@@ -74,6 +74,10 @@ model User {
   listings      Listing[]
   payments      Payment[]
   walletEntries WalletEntry[]
+  dealsAsSeller Deal[]       @relation("DealsAsSeller")
+  dealsAsBuyer  Deal[]       @relation("DealsAsBuyer")
+  writtenUserReviews  UserReview[] @relation("WrittenUserReviews")
+  receivedUserReviews UserReview[] @relation("ReceivedUserReviews")
 
   /// Остаток звёзд на балансе. Хранится числом ради скорости: считать
   /// его по всем движениям на каждый показ экрана слишком дорого.
@@ -337,6 +341,7 @@ model Listing {
   categories    ListingCategory[]
   photos        ListingPhoto[]
   conversations Conversation[]
+  deals         Deal[]
   payments      Payment[]
 
   @@index([kind, status, createdAt])
@@ -475,6 +480,68 @@ model Subscription {
 
   @@index([specialistId, endsAt])
   @@map("subscriptions")
+}
+
+/// Состоявшаяся сделка по объявлению.
+///
+/// Право на отзыв даёт только она: без этого площадку зальют местью
+/// и накрутками, а оценка перестанет что-либо значить. Сделку отмечает
+/// продавец, когда снимает объявление с пометкой «продано» и выбирает
+/// покупателя из тех, кто ему писал, — то есть из людей, с которыми
+/// разговор действительно был.
+///
+/// Пара «объявление и покупатель» уникальна: продать одну вещь дважды
+/// одному человеку нельзя, а две записи дали бы два отзыва за одну сделку.
+model Deal {
+  id String @id @default(cuid())
+
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  sellerId String
+  seller   User   @relation("DealsAsSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyerId  String
+  buyer    User   @relation("DealsAsBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  reviews UserReview[]
+
+  @@unique([listingId, buyerId])
+  @@index([sellerId])
+  @@index([buyerId])
+  @@map("deals")
+}
+
+/// Отзыв одного участника сделки о другом.
+///
+/// Виден не сразу: пока вторая сторона не ответила своим отзывом,
+/// он скрыт от всех, кроме автора. Иначе получивший единицу отвечает
+/// тем же, и оценки превращаются в обмен ударами. Ждать бесконечно
+/// тоже нельзя — через две недели отзыв открывается сам, даже если
+/// вторая сторона промолчала.
+model UserReview {
+  id String @id @default(cuid())
+
+  dealId String
+  deal   Deal   @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation("WrittenUserReviews", fields: [authorId], references: [id], onDelete: Cascade)
+  targetId String
+  target   User   @relation("ReceivedUserReviews", fields: [targetId], references: [id], onDelete: Cascade)
+
+  rating Int
+  text   String? @db.Text
+
+  /// Момент, с которого отзыв виден всем. Пусто — ещё скрыт.
+  revealedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  /// Один отзыв на сделку от каждой стороны.
+  @@unique([dealId, authorId])
+  @@index([targetId, revealedAt])
+  @@map("user_reviews")
 }
 
 // ─────────────────────────── Оплата ───────────────────────────

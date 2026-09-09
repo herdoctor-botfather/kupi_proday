@@ -25,9 +25,14 @@ const STATUS_VIEW: Record<ListingStatus, { icon: string; label: string; tone: st
  * после нажатия, а «продано» стоит первым: это самый частый исход, ради
  * которого объявление и подавали.
  */
-const REMOVE_REASONS: { label: string; hint: string; action: 'sold' | 'hide' }[] = [
-  { label: 'Продано', hint: 'Уйдёт с витрины и останется в истории как проданное', action: 'sold' },
-  { label: 'Продал в другом месте', hint: 'Тоже считается проданным', action: 'sold' },
+const REMOVE_REASONS: { label: string; hint: string; action: 'sold' | 'hide'; asksBuyer?: boolean }[] = [
+  {
+    label: 'Продано здесь',
+    hint: 'Спросим, кому — и вы сможете оценить друг друга',
+    action: 'sold',
+    asksBuyer: true,
+  },
+  { label: 'Продал в другом месте', hint: 'Считается проданным, но без отзывов', action: 'sold' },
   { label: 'Передумал продавать', hint: 'Можно вернуть на витрину в любой момент', action: 'hide' },
   { label: 'Пока недоступно', hint: 'Временно скрыть, вернуть позже', action: 'hide' },
 ];
@@ -39,13 +44,16 @@ export function MyListingsPage() {
   const [error, setError] = useState<string | null>(null);
   /** Объявление, для которого спрашиваем причину снятия. */
   const [removing, setRemoving] = useState<MyListing | null>(null);
+  /** Объявление, для которого выбираем покупателя. */
+  const [askingBuyer, setAskingBuyer] = useState<MyListing | null>(null);
 
   const act = async (listing: MyListing, action: 'sold' | 'hide' | 'publish' | 'delete') => {
     const run = async () => {
       setBusyId(listing.id);
       setError(null);
       try {
-        if (action === 'sold') await api.markListingSold(listing.id);
+        // Продажу отмечаем через сделки: там же решается, кому продали.
+        if (action === 'sold') await api.markSold(listing.id, null);
         else if (action === 'hide') await api.hideListing(listing.id);
         else if (action === 'publish') await api.publishListing(listing.id);
         else await api.deleteListing(listing.id);
@@ -206,6 +214,17 @@ export function MyListingsPage() {
         }
       </AsyncContent>
 
+      {askingBuyer && (
+        <BuyerPicker
+          listing={askingBuyer}
+          onClose={() => setAskingBuyer(null)}
+          onDone={() => {
+            setAskingBuyer(null);
+            state.reload();
+          }}
+        />
+      )}
+
       {removing && (
         <div className="sheet-backdrop" onClick={() => setRemoving(null)}>
           <div className="sheet" onClick={(event) => event.stopPropagation()}>
@@ -220,7 +239,12 @@ export function MyListingsPage() {
                 onClick={() => {
                   const listing = removing;
                   setRemoving(null);
-                  void act(listing, reason.action);
+                  // Продажу через площадку ведём дальше: спросим, кому
+                  // продали. Это единственный момент, когда продавец
+                  // об этом помнит, и единственный способ дать сторонам
+                  // право оценить друг друга.
+                  if (reason.action === 'sold' && reason.asksBuyer) setAskingBuyer(listing);
+                  else void act(listing, reason.action);
                 }}
               >
                 <span className="sheet__option-body">
@@ -236,6 +260,95 @@ export function MyListingsPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Кому продали.
+ *
+ * Список — те, кто писал по объявлению: продавец выбирает из людей,
+ * с которыми разговор действительно был, а не указывает произвольного
+ * человека. Кнопка «покупатель не отсюда» обязательна: продать мимо
+ * площадки — нормально, и заставлять выбирать из чужих нельзя.
+ */
+function BuyerPicker({
+  listing,
+  onClose,
+  onDone,
+}: {
+  listing: MyListing;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const candidates = useAsync(() => api.dealCandidates(listing.id), [listing.id]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const choose = async (buyerId: string | null) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.markSold(listing.id, buyerId);
+      haptic.success();
+      onDone();
+    } catch (err) {
+      haptic.error();
+      setError(err instanceof Error ? err.message : 'Не удалось отметить продажу');
+      setBusy(false);
+    }
+  };
+
+  const people = candidates.data ?? [];
+
+  return (
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="sheet" onClick={(event) => event.stopPropagation()}>
+        <div className="sheet__grip" aria-hidden />
+        <h2 className="sheet__title">Кому продали</h2>
+
+        {error && <div className="alert alert--error">{error}</div>}
+
+        {people.map((person) => (
+          <button
+            key={person.id}
+            type="button"
+            className="sheet__option"
+            disabled={busy}
+            onClick={() => void choose(person.id)}
+          >
+            {person.photoUrl ? (
+              <img className="seller__avatar" src={person.photoUrl} alt="" />
+            ) : (
+              <span className="sheet__option-icon" aria-hidden>
+                👤
+              </span>
+            )}
+            <span className="sheet__option-body">
+              <span className="sheet__option-title">{person.name}</span>
+              <span className="sheet__option-text">Писал вам по этому объявлению</span>
+            </span>
+          </button>
+        ))}
+
+        {!candidates.loading && people.length === 0 && (
+          <p className="form-hint">По этому объявлению вам никто не писал.</p>
+        )}
+
+        <button type="button" className="sheet__option" disabled={busy} onClick={() => void choose(null)}>
+          <span className="sheet__option-icon" aria-hidden>
+            🤷
+          </span>
+          <span className="sheet__option-body">
+            <span className="sheet__option-title">Покупатель не отсюда</span>
+            <span className="sheet__option-text">Снимем с витрины, отзывов не будет</span>
+          </span>
+        </button>
+
+        <button type="button" className="sheet__cancel" onClick={onClose}>
+          Отмена
+        </button>
+      </div>
     </div>
   );
 }

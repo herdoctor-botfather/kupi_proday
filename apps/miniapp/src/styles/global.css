@@ -4105,3 +4105,40 @@ body {
 .seller--link .profile-cta__chevron {
   margin-left: auto;
 }
+
+/* ─── Сделки и оценки по ним ─── */
+
+.deal-card {
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border-radius: 16px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+}
+
+.deal-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+/* Оценка человека — крупно и один раз, до самих отзывов: сначала
+   ответ на вопрос «стоит ли иметь дело», потом подробности. */
+.seller-rating {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 16px 0 4px;
+}
+
+.seller-rating__value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--star);
+}
+
+.seller-rating__count {
+  font-size: 13px;
+  color: var(--text-hint);
+}

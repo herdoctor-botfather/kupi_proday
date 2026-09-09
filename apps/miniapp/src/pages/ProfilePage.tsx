@@ -1,20 +1,23 @@
 import { useRef, useState } from 'react';
-import { api } from '../lib/api';
+import { api, type PendingDeal } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { ChipsRow } from '../components/ChipsRow';
 import { useAuth } from '../lib/auth';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SpecialistCard } from '../components/SpecialistCard';
 import { ImageError, prepareImage } from '../lib/image';
+import { Stars } from '../components/Rating';
+import { REVIEW_TEXT_MAX } from '@app/shared';
 import { ReviewCard } from '../components/Reviews';
 import { formatDate } from '../lib/format';
 import { Link, useNavigate } from 'react-router-dom';
 import { resetRoleChoice } from '../lib/session';
 import { haptic, tg } from '../lib/telegram';
 
-type Tab = 'history' | 'reviews' | 'favorites';
+type Tab = 'deals' | 'history' | 'reviews' | 'favorites';
 
 const TAB_LABELS: Record<Tab, string> = {
+  deals: 'Сделки',
   history: 'Просмотры',
   reviews: 'Мои отзывы',
   favorites: 'Избранное',
@@ -24,7 +27,7 @@ const TAB_LABELS: Record<Tab, string> = {
 export function ProfilePage() {
   const { user, status, error } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>('history');
+  const [tab, setTab] = useState<Tab>('deals');
 
   if (status === 'loading') {
     return (
@@ -131,6 +134,7 @@ export function ProfilePage() {
         ))}
       </ChipsRow>
 
+      {tab === 'deals' && <DealsTab />}
       {tab === 'history' && <HistoryTab />}
       {tab === 'reviews' && <MyReviewsTab />}
       {tab === 'favorites' && <FavoritesTab />}
@@ -290,6 +294,107 @@ function ProfileAvatar({ photoUrl }: { photoUrl: string | null }) {
       />
 
       {error && <span className="profile__avatar-error">{error}</span>}
+    </div>
+  );
+}
+
+/**
+ * Сделки, которые ждут оценки.
+ *
+ * Оценить можно только состоявшуюся сделку — это и есть защита от мести
+ * и накруток: написать «мошенник» первому встречному нельзя, потому что
+ * права на отзыв без сделки не возникает.
+ *
+ * Отзыв не публикуется сразу: пока вторая сторона не ответила своим,
+ * он виден только автору. Об этом сказано прямо — иначе человек решит,
+ * что отзыв пропал.
+ */
+function DealsTab() {
+  const state = useAsync(() => api.pendingDeals(), []);
+
+  return (
+    <AsyncContent state={state}>
+      {(deals) =>
+        deals.length === 0 ? (
+          <EmptyState
+            icon="🤝"
+            title="Сделок пока нет"
+            hint="Оценить человека можно только после покупки или продажи через площадку"
+          />
+        ) : (
+          <div>
+            {deals.map((deal) => (
+              <DealReviewForm key={deal.id} deal={deal} onDone={() => state.reload()} />
+            ))}
+          </div>
+        )
+      }
+    </AsyncContent>
+  );
+}
+
+function DealReviewForm({ deal, onDone }: { deal: PendingDeal; onDone: () => void }) {
+  const [rating, setRating] = useState(0);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const send = async () => {
+    if (rating === 0) {
+      setError('Поставьте оценку');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await api.reviewDeal(deal.id, rating, text.trim() || null);
+      haptic.success();
+      onDone();
+    } catch (err) {
+      haptic.error();
+      setError(err instanceof Error ? err.message : 'Не удалось отправить');
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="deal-card">
+      <div className="deal-card__head">
+        {deal.counterpart.photoUrl ? (
+          <img className="seller__avatar" src={deal.counterpart.photoUrl} alt="" />
+        ) : (
+          <div className="seller__avatar" aria-hidden>
+            {deal.counterpart.name.charAt(0)}
+          </div>
+        )}
+        <div>
+          <div className="seller__name">{deal.counterpart.name}</div>
+          <div className="card__headline">
+            {deal.role === 'SELLER' ? 'Купил у вас' : 'Продал вам'} · {deal.listingTitle}
+          </div>
+        </div>
+      </div>
+
+      <Stars value={rating} onChange={setRating} />
+
+      <textarea
+        className="textarea"
+        style={{ marginTop: 10 }}
+        value={text}
+        maxLength={REVIEW_TEXT_MAX}
+        placeholder={deal.role === 'SELLER' ? 'Как прошла продажа?' : 'Как прошла покупка?'}
+        onChange={(event) => setText(event.target.value)}
+      />
+
+      {error && <p className="form-error">{error}</p>}
+
+      <button type="button" className="button" style={{ marginTop: 10 }} disabled={busy} onClick={() => void send()}>
+        {busy ? 'Отправляем...' : 'Оценить'}
+      </button>
+
+      <p className="form-hint">
+        Отзыв откроется, когда вторую сторону тоже оценят — или через две недели.
+      </p>
     </div>
   );
 }

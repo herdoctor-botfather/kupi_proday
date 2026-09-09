@@ -25,6 +25,7 @@ export function SellerPage() {
   const sell = useAsync(() => api.listings({ kind: 'SELL', sellerId: id, pageSize: 50 }), [id]);
   const wanted = useAsync(() => api.listings({ kind: 'BUY', sellerId: id, pageSize: 50 }), [id]);
 
+  const reviews = useAsync(() => api.userReviews(id), [id]);
   const wantedItems = wanted.data?.items ?? [];
 
   return (
@@ -65,14 +66,49 @@ export function SellerPage() {
                   ›
                 </span>
               </Link>
+            ) : null}
+
+            {/*
+              Оценка по сделкам. Пока сделок нет, прямо об этом говорим:
+              молчание покупатель истолкует как угодно, и обычно не в
+              пользу продавца.
+            */}
+            {reviews.data && reviews.data.ratingCount > 0 ? (
+              <>
+                <div className="seller-rating">
+                  <span className="seller-rating__value">★ {reviews.data.ratingAvg.toFixed(1)}</span>
+                  <span className="seller-rating__count">
+                    {reviews.data.ratingCount}{' '}
+                    {pluralize(reviews.data.ratingCount, ['оценка', 'оценки', 'оценок'])} по сделкам
+                  </span>
+                </div>
+
+                {reviews.data.items.map((review) => (
+                  <div key={review.id} className="review">
+                    <div className="review__head">
+                      {review.author.photoUrl ? (
+                        <img className="review__avatar" src={review.author.photoUrl} alt="" loading="lazy" />
+                      ) : (
+                        <div className="review__avatar" />
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <div className="review__author">{review.author.name}</div>
+                        <div className="review__date">
+                          {review.authorRole === 'BUYER' ? 'Купил' : 'Продал'} · {review.listingTitle}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="rating" style={{ marginBottom: 4 }}>
+                      <span className="rating__star">{'★'.repeat(review.rating)}</span>
+                      <span style={{ color: 'var(--border)' }}>{'★'.repeat(5 - review.rating)}</span>
+                    </div>
+                    {review.text && <div style={{ whiteSpace: 'pre-line' }}>{review.text}</div>}
+                  </div>
+                ))}
+              </>
             ) : (
-              /*
-                Прямо говорим, что оценок нет, вместо того чтобы молчать:
-                молчание покупатель истолкует как угодно, и обычно не в
-                пользу продавца.
-              */
               <p className="form-hint">
-                Отзывов пока нет: их оставляют специалистам, а этот человек просто продаёт вещи.
+                Оценок пока нет: их ставят друг другу после состоявшейся сделки.
               </p>
             )}
           </>

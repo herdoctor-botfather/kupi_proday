@@ -198,6 +198,28 @@ export const api = {
   updateListing: (id: string, dto: ListingDto) =>
     request<MyListing>(`/me/listings/${id}`, { method: 'PUT', body: JSON.stringify(dto) }),
   markListingSold: (id: string) => request<MyListing>(`/me/listings/${id}/sold`, { method: 'POST' }),
+
+  // ─── Сделки ───
+
+  /** Кому можно отметить продажу: те, кто писал по объявлению. */
+  dealCandidates: (listingId: string) =>
+    request<{ id: string; name: string; photoUrl: string | null }[]>(`/deals/candidates/${listingId}`),
+
+  markSold: (listingId: string, buyerId: string | null) =>
+    request<{ dealId: string | null }>(`/deals/sold/${listingId}`, {
+      method: 'POST',
+      body: JSON.stringify({ buyerId }),
+    }),
+
+  pendingDeals: () => request<PendingDeal[]>('/deals/pending'),
+
+  reviewDeal: (dealId: string, rating: number, text: string | null) =>
+    request<{ revealed: boolean }>(`/deals/${dealId}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ rating, text }),
+    }),
+
+  userReviews: (userId: string) => request<UserReviews>(`/deals/reviews/${userId}`),
   hideListing: (id: string) => request<MyListing>(`/me/listings/${id}/hide`, { method: 'POST' }),
   publishListing: (id: string) => request<MyListing>(`/me/listings/${id}/publish`, { method: 'POST' }),
   deleteListing: (id: string) => request<void>(`/me/listings/${id}`, { method: 'DELETE' }),
@@ -256,8 +278,31 @@ export const api = {
     }),
 };
 
-/** Публичный профиль пользователя. */
-export interface PublicProfile {
+/** Сделка, по которой человек ещё не высказался. */
+export interface PendingDeal {
+  id: string;
+  createdAt: string;
+  listingTitle: string;
+  role: 'SELLER' | 'BUYER';
+  counterpart: { id: string; name: string; photoUrl: string | null };
+}
+
+/** Отзывы о человеке и его средняя оценка. */
+export interface UserReviews {
+  ratingAvg: number;
+  ratingCount: number;
+  items: {
+    id: string;
+    rating: number;
+    text: string | null;
+    createdAt: string;
+    listingTitle: string;
+    authorRole: 'SELLER' | 'BUYER';
+    author: { name: string; photoUrl: string | null };
+  }[];
+}
+
+/** Публичный профиль пользователя. */export interface PublicProfile {
   id: string;
   name: string;
   photoUrl: string | null;

@@ -353,6 +353,8 @@ export interface UserReviews {
       currency: string;
       priceIsFrom: boolean;
     }[];
+    /** Чем занимается — на случай, когда прайс-лист не заполнен. */
+    categories: { name: string; icon: string }[];
   } | null;
 }
 

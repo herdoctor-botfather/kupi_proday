@@ -99,9 +99,16 @@ export function ServiceRequestAction({
             navigate(`/chat/${request.conversationId}`);
           }}
         >
-          💬 Открыть переписку
+          💬 Переписка по услугам
         </button>
-        <div className="contact-note">Вы уже общаетесь — договаривайтесь о деталях в чате</div>
+        {/*
+          Прямо говорим, о чём этот чат. У того же человека может быть
+          разговор о его плите, и два «Открыть переписку» на одной странице
+          выглядели бы одной и той же кнопкой, ведущей в разные места.
+        */}
+        <div className="contact-note">
+          Отдельный разговор о работе. О вещах пишите из самого объявления
+        </div>
       </div>
     );
   }
@@ -178,7 +185,8 @@ export function ServiceRequestAction({
 
       {error && <div className="field__error" style={{ marginTop: 6 }}>{error}</div>}
       <div className="contact-note">
-        Мастер ответит в течение {SERVICE_REQUEST_MINUTES} минут. Переписка откроется, когда он примет заявку
+        Мастер ответит в течение {SERVICE_REQUEST_MINUTES} минут. Переписка о работе откроется, когда он
+        примет заявку — она отдельная от разговоров о его вещах
       </div>
     </div>
   );

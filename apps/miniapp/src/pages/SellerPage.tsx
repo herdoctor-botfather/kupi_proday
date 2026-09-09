@@ -72,39 +72,48 @@ export function SellerPage() {
             ) : null}
 
             {/*
-              Услуги — прямо здесь, а не только в анкете.
+              Услуги — отдельный раздел со своим входом.
 
               Один человек может продавать вещи, что-то искать и работать
-              мастером. Заставлять посетителя догадываться, что «Иван» из
-              объявления и «Иван, электрик» — одно лицо, и искать вторую
-              страницу, чтобы к нему обратиться, незачем: заявку он
-              отправляет отсюда, а анкета остаётся за ссылкой выше.
+              мастером, но это разные дела. О вещи ему пишут прямо из
+              объявления: продавец обязан отвечать на вопросы о том, что
+              сам выставил. Работу он берёт или не берёт, поэтому услуга
+              идёт только через заявку — и разговор о ней ведётся отдельно
+              от разговора о плите, чтобы одно не терялось в другом.
             */}
-            {person.specialist && person.specialist.services.length > 0 && (
-              <>
-                <h2 className="section-title">Услуги и цены</h2>
-                <div className="services">
-                  {person.specialist.services.map((service) => {
-                    const price = formatPrice(service.priceAmount, service.currency, service.priceIsFrom);
-                    return (
-                      <div key={service.id} className="service">
-                        <div>{service.name}</div>
-                        {price && <div className="service__price">{price}</div>}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-
             {person.specialist && (
-              <ServiceRequestAction
-                specialistId={person.specialist.id}
-                isAuthenticated={isAuthenticated}
-                // Анкета найдена через аккаунт этого человека, значит
-                // владелец у неё есть и писать заведомо есть кому.
-                canChat
-              />
+              <>
+                <h2 className="section-title">Услуги</h2>
+
+                {person.specialist.services.length > 0 ? (
+                  <div className="services">
+                    {person.specialist.services.map((service) => {
+                      const price = formatPrice(service.priceAmount, service.currency, service.priceIsFrom);
+                      return (
+                        <div key={service.id} className="service">
+                          <div>{service.name}</div>
+                          {price && <div className="service__price">{price}</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="form-hint" style={{ marginTop: 0 }}>
+                    {person.specialist.categories.length > 0
+                      ? person.specialist.categories.map((c) => `${c.icon} ${c.name}`).join(' · ')
+                      : person.specialist.headline}
+                    {' — цены обсуждаются по заявке.'}
+                  </p>
+                )}
+
+                <ServiceRequestAction
+                  specialistId={person.specialist.id}
+                  isAuthenticated={isAuthenticated}
+                  // Анкета найдена через аккаунт этого человека, значит
+                  // владелец у неё есть и писать заведомо есть кому.
+                  canChat
+                />
+              </>
             )}
 
             {/*

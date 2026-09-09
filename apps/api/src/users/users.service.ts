@@ -113,6 +113,10 @@ export class UsersService {
               take: 6,
               select: { id: true, name: true, priceAmount: true, currency: true, priceIsFrom: true },
             },
+            // Прайс-лист заполняют не все, а сказать, чем человек занимается,
+            // надо в любом случае: без этого раздел услуг выглядит пустым
+            // обещанием.
+            categories: { select: { category: { select: { name: true, icon: true } } } },
           },
         },
       },
@@ -150,6 +154,10 @@ export class UsersService {
               priceAmount: service.priceAmount,
               currency: service.currency,
               priceIsFrom: service.priceIsFrom,
+            })),
+            categories: card.categories.map(({ category }) => ({
+              name: category.name,
+              icon: category.icon,
             })),
           }
         : null,

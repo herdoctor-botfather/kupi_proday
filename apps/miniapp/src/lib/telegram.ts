@@ -18,6 +18,13 @@ interface TelegramWebApp {
   themeParams: Record<string, string>;
   viewportStableHeight: number;
   isExpanded: boolean;
+  /** 'android' | 'ios' | 'tdesktop' | 'macos' | 'weba' | 'webk' | 'unknown' и прочие. */
+  platform?: string;
+  /** Появилось в Bot API 8.0; в старых клиентах поля и методов ниже нет. */
+  isFullscreen?: boolean;
+  requestFullscreen?(): void;
+  exitFullscreen?(): void;
+  onEvent?(event: string, cb: () => void): void;
   ready(): void;
   expand(): void;
   close(): void;
@@ -57,12 +64,37 @@ export const tg = (): TelegramWebApp | null => window.Telegram?.WebApp ?? null;
 /** Приложение действительно запущено внутри Telegram (есть подписанная initData). */
 export const isInsideTelegram = (): boolean => Boolean(tg()?.initData);
 
+/** Настольные клиенты Telegram: там окно мини-аппа фиксированного размера. */
+const DESKTOP_PLATFORMS = new Set(['tdesktop', 'macos', 'linux', 'web', 'weba', 'webk']);
+
 export function initTelegram(): void {
   const app = tg();
   if (!app) return;
   app.ready();
   app.expand();
+  requestDesktopFullscreen(app);
   applyThemeVariables();
+}
+
+/**
+ * На телефоне `expand()` растягивает мини-апп на весь экран, а на компьютере
+ * не делает ничего: там Telegram открывает маленькое окно фиксированного
+ * размера, и приложение в нём выглядит крошечным. Полноэкранный режим
+ * (Bot API 8.0) занимает всё окно клиента и решает это.
+ *
+ * На телефоне его не просим намеренно: там он лезет под системную строку
+ * состояния, и обычного растягивания достаточно. В клиентах старше 8.0
+ * метода просто нет — тогда всё остаётся как было.
+ */
+function requestDesktopFullscreen(app: TelegramWebApp): void {
+  if (!app.requestFullscreen || !DESKTOP_PLATFORMS.has(app.platform ?? '')) return;
+
+  const sync = () => {
+    document.documentElement.dataset.fullscreen = String(Boolean(tg()?.isFullscreen));
+  };
+  app.onEvent?.('fullscreenChanged', sync);
+  app.requestFullscreen();
+  sync();
 }
 
 /**

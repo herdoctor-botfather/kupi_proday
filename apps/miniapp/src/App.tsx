@@ -18,10 +18,9 @@ import { WantedPage } from './pages/WantedPage';
 import { ListingPage } from './pages/ListingPage';
 import { MyListingsPage } from './pages/MyListingsPage';
 import { SellHubPage } from './pages/SellHubPage';
-import { SellerPage } from './pages/SellerPage';
+import { PersonPage } from './pages/PersonPage';
 import { SellPage } from './pages/SellPage';
 import { SpecialistsPage } from './pages/SpecialistsPage';
-import { SpecialistPage } from './pages/SpecialistPage';
 import { MapPage } from './pages/MapPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { EmptyState } from './components/states';
@@ -124,7 +123,10 @@ function Shell() {
     <Routes>
       <Route path="/" element={<CatalogPage />} />
       <Route path="/specialists" element={<SpecialistsPage />} />
-      <Route path="/specialist/:idOrSlug" element={<SpecialistPage />} />
+      {/* Оба адреса ведут на одну и ту же страницу человека: анкета
+          мастера и профиль продавца — это один Иван, и разными людьми
+          он выглядеть не должен. */}
+      <Route path="/specialist/:idOrSlug" element={<PersonPage by="slug" />} />
       <Route path="/map" element={<MapPage />} />
       <Route path="/market" element={<MarketPage />} />
       <Route path="/market/browse" element={<MarketCatalogPage />} />
@@ -136,7 +138,7 @@ function Shell() {
       <Route path="/market/my" element={<MyListingsPage />} />
       <Route path="/market/sell" element={<SellPage />} />
       <Route path="/listing/:idOrSlug" element={<ListingPage />} />
-      <Route path="/seller/:id" element={<SellerPage />} />
+      <Route path="/seller/:id" element={<PersonPage by="user" />} />
       <Route path="/chats" element={<ChatsPage />} />
       <Route path="/chat/:id" element={<ChatPage />} />
       <Route path="/profile" element={<ProfilePage />} />

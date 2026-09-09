@@ -91,16 +91,6 @@ function Root() {
     return <Navigate to="/onboarding" replace />;
   }
 
-  // На стартовом экране таб-бар лишний: он предлагает разделы,
-  // о которых человек ещё ничего не знает.
-  if (location.pathname === '/onboarding') {
-    return (
-      <div className="app">
-        <OnboardingPage />
-      </div>
-    );
-  }
-
   return (
     <div className="app">
       <Shell />

@@ -3357,10 +3357,10 @@ body {
   .onboarding {
     padding-top: 12px;
     /*
-     * Запас под таб-бар здесь лишний: на экране выбора роли навигации нет,
-     * а лишние семьдесят пикселей внизу выталкивали карточки за край.
+     * Запас под таб-бар: панель показывается и здесь, а без запаса
+     * четвёртая дверь уходила бы под неё.
      */
-    padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
+    padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 12px);
     /*
      * И прижимаем к верху: центрирование обрезает содержимое с обеих
      * сторон, как только оно перестаёт помещаться, — и первым исчезает
@@ -3376,7 +3376,7 @@ body {
   /* Снимок тянется за высотой окна, но не мельче 72 пикселей: ниже
      этого он перестаёт читаться как фотография и выглядит полоской. */
   .role-card__photo {
-    height: clamp(56px, 10vh, 108px);
+    height: clamp(48px, 7.5vh, 90px);
   }
 
   /* Пояснение про регистрацию — справка, а не часть выбора.
@@ -3506,7 +3506,7 @@ body {
  */
 @media (max-height: 660px) {
   .role-card__photo {
-    height: clamp(48px, 8.5vh, 80px);
+    height: clamp(40px, 6vh, 64px);
   }
 
   .role-cards {
@@ -3819,4 +3819,16 @@ body {
    которое надо подсвечивать, а норма. Выделяем приход. */
 .wallet-row__sum--out {
   color: var(--text-hint);
+}
+
+/* Панель навигации на стартовом экране съедает высоту, поэтому в тесном
+   окне поля внутри дверей ужимаются ещё сильнее. */
+@media (max-height: 660px) {
+  .onboarding .role-card--banner .role-card__title {
+    margin-top: 4px;
+  }
+
+  .onboarding .role-card--banner .role-card__action {
+    padding-bottom: 10px;
+  }
 }

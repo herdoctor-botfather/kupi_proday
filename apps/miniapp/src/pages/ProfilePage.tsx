@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
+import { ChipsRow } from '../components/ChipsRow';
 import { useAuth } from '../lib/auth';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SpecialistCard } from '../components/SpecialistCard';
@@ -99,7 +100,7 @@ export function ProfilePage() {
         </span>
       </button>
 
-      <div className="chips">
+      <ChipsRow>
         {(Object.keys(TAB_LABELS) as Tab[]).map((key) => (
           <button
             key={key}
@@ -113,7 +114,7 @@ export function ProfilePage() {
             {TAB_LABELS[key]}
           </button>
         ))}
-      </div>
+      </ChipsRow>
 
       {tab === 'history' && <HistoryTab />}
       {tab === 'reviews' && <MyReviewsTab />}

@@ -252,12 +252,11 @@ export class ChatService {
     const recipientId = isClient ? ownerId : conversation.clientId;
     if (!recipientId) return;
 
-    // В уведомлении — то же обозначение, что и в списке диалогов.
-    // Иначе имя из Telegram, спрятанное в приложении, уезжало бы
-    // человеку в чат с ботом, и прятать его было бы бессмысленно.
+    // В уведомлении — то же имя, что и в списке диалогов: человек должен
+    // узнать отправителя, не открывая приложение.
     const senderName = isClient
-      ? 'Покупатель'
-      : (conversation.specialist?.displayName ?? 'Продавец');
+      ? conversation.client.firstName
+      : (conversation.specialist?.displayName ?? conversation.listing?.user.firstName ?? 'Продавец');
 
     this.notifications.notify(
       recipientId,
@@ -294,26 +293,19 @@ export class ChatService {
     const isClient = row.clientId === userId;
 
     /*
-     * Имя из Telegram в переписке не показывается.
+     * Собеседник называется по имени — так переписка выглядит разговором
+     * двух людей, а не обращением в службу поддержки.
      *
-     * Человек не выбирал, что оно станет вывеской на площадке: там у него
-     * может стоять прозвище, шутка или настоящая фамилия, и ни одно из
-     * этого он не собирался сообщать незнакомцу, откликнувшемуся на
-     * объявление. Аватар из Telegram — та же история, поэтому у частных
-     * сторон его тоже нет.
-     *
-     * Исключение одно: специалист. Он завёл публичную карточку и сам
-     * выбрал, как называться, — это уже вывеска, и прятать её незачем.
-     *
-     * Различать диалоги помогает предмет разговора: рядом с обозначением
-     * стороны в списке стоит объявление или карточка специалиста.
+     * Только имя, без фамилии: фамилия для сделки ничего не добавляет,
+     * а называет человека полностью. Специалист — исключение: у него
+     * публичная карточка, и там стоит выбранное им самим название.
      */
     const owner = row.specialist
       ? { id: row.specialist.id, name: row.specialist.displayName, photoUrl: row.specialist.photoUrl }
       : {
           id: row.listing!.id,
-          name: 'Продавец',
-          photoUrl: row.listing!.photos[0]?.url ?? null,
+          name: row.listing!.user.firstName,
+          photoUrl: row.listing!.photos[0]?.url ?? row.listing!.user.photoUrl,
         };
 
     return {
@@ -322,8 +314,8 @@ export class ChatService {
         ? owner
         : {
             id: row.client.id,
-            name: 'Покупатель',
-            photoUrl: null,
+            name: row.client.firstName,
+            photoUrl: row.client.photoUrl,
           },
       specialist: row.specialist
         ? { id: row.specialist.id, slug: row.specialist.slug, displayName: row.specialist.displayName }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
+import { ChipsRow } from '../components/ChipsRow';
 import { usePagedFeed } from '../lib/usePagedFeed';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SearchInput } from '../components/SearchInput';
@@ -107,7 +108,7 @@ export function MarketCatalogPage() {
       {(cities.data?.length ?? 0) > 1 && (
         <>
           <h2 className="section-title">Города</h2>
-          <div className="chips">
+          <ChipsRow>
             {cities.data!.slice(0, CITIES_SHOWN).map((city) => (
               <button
                 key={city.name}
@@ -121,7 +122,7 @@ export function MarketCatalogPage() {
                 {city.name} · {city.count}
               </button>
             ))}
-          </div>
+          </ChipsRow>
         </>
       )}
 

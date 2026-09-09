@@ -10,6 +10,7 @@ import {
 } from '@app/shared';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
+import { ChipsRow } from '../components/ChipsRow';
 import { AsyncContent } from '../components/states';
 import { CityInput } from '../components/CityInput';
 import { ImageError, prepareImage } from '../lib/image';
@@ -354,7 +355,7 @@ export function SellPage() {
             )}
 
             <Field label={wanted ? 'Какое состояние устроит' : 'Состояние'}>
-              <div className="chips">
+              <ChipsRow>
                 {LISTING_CONDITIONS.map((option) => (
                   <button
                     key={option.value}
@@ -365,7 +366,7 @@ export function SellPage() {
                     {option.label}
                   </button>
                 ))}
-              </div>
+              </ChipsRow>
             </Field>
 
             <Field label="Категория" error={errors.categoryIds} required hint="Не больше трёх">

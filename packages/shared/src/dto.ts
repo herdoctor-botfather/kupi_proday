@@ -31,7 +31,14 @@ export const specialistQuerySchema = paginationSchema.extend({
   /** Координаты пользователя для режима «Найти рядом». */
   lat: z.coerce.number().min(-90).max(90).optional(),
   lng: z.coerce.number().min(-180).max(180).optional(),
-  radiusKm: z.coerce.number().min(0.5).max(200).default(NEARBY_RADIUS_DEFAULT_KM),
+  /*
+   * Верхняя граница — половина окружности Земли: столько нужно режиму
+   * «по России», где ограничения нет вовсе, а сортировка по расстоянию
+   * остаётся. Меньшее значение пришлось бы выдавать за «всю страну»,
+   * не будучи ею: от Калининграда до Владивостока больше семи тысяч
+   * километров.
+   */
+  radiusKm: z.coerce.number().min(0.5).max(20_000).default(NEARBY_RADIUS_DEFAULT_KM),
   sort: specialistSortSchema.default('rating'),
 })
   // Сортировка и фильтр по расстоянию бессмысленны без точки отсчёта.

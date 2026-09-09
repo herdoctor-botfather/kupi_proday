@@ -10,6 +10,9 @@ import { SpecialistCard } from '../components/SpecialistCard';
 
 type Sort = NonNullable<SpecialistFilters['sort']>;
 
+/** Радиус, при котором никто не отсекается, а сортировка по расстоянию сохраняется. */
+const WHOLE_COUNTRY_KM = 20_000;
+
 const SORT_LABELS: Record<Sort, string> = {
   rating: 'По рейтингу',
   reviews: 'По отзывам',
@@ -35,13 +38,38 @@ export function SpecialistsPage() {
 
   const sort = (searchParams.get('sort') as Sort | null) ?? (hasCoords ? 'distance' : 'rating');
   const minRating = searchParams.get('minRating');
-  const radiusKm = Number(searchParams.get('radiusKm') ?? 10);
+  /*
+   * Радиус: число, либо «вся страна».
+   *
+   * Отдельное значение, а не отсутствие параметра: пустой параметр
+   * означал бы «по умолчанию», то есть десять километров, и снять
+   * ограничение стало бы нечем.
+   *
+   * При «по России» координаты всё равно уходят на сервер — тогда
+   * ближайшие идут первыми, но никто не отсекается. Это и нужно
+   * в городе, где мастеров мало.
+   */
+  const radiusParam = searchParams.get('radiusKm');
+  /*
+   * Выбранный город отменяет радиус.
+   *
+   * Город и радиус отвечают на один вопрос — где искать, — и вместе
+   * противоречат друг другу: выбрав Нижний Новгород, находясь в Москве,
+   * человек получал пустой список, потому что до Нижнего больше десяти
+   * километров. Виноватым при этом выглядел город, хотя мешал радиус.
+   *
+   * Поэтому при выбранном городе ограничение снимается, а ряд радиусов
+   * не показывается вовсе. Координаты продолжают уходить на сервер:
+   * они нужны сортировке «ближайшие», которая внутри города осмысленна.
+   */
+  const wholeCountry = radiusParam === 'all' || Boolean(city);
+  const radiusKm = wholeCountry ? null : Number(radiusParam ?? 10);
 
   // Догрузка следующих страниц — состояние экрана, а не часть ссылки.
   const [page, setPage] = useState(1);
   const [loadedItems, setLoadedItems] = useState<SpecialistListItem[]>([]);
 
-  const filterKey = [debouncedQuery, categorySlug, city, sort, minRating, lat, lng, radiusKm].join('|');
+  const filterKey = [debouncedQuery, categorySlug, city, sort, minRating, lat, lng, radiusParam ?? ''].join('|');
 
   // Любое изменение фильтров начинает выдачу заново.
   useEffect(() => {
@@ -58,7 +86,7 @@ export function SpecialistsPage() {
         sort,
         minRating: minRating ? Number(minRating) : undefined,
         page,
-        ...(hasCoords ? { lat: Number(lat), lng: Number(lng), radiusKm } : {}),
+        ...(hasCoords ? { lat: Number(lat), lng: Number(lng), ...(radiusKm ? { radiusKm } : { radiusKm: WHOLE_COUNTRY_KM }) } : {}),
       }),
     [filterKey, page],
   );
@@ -126,7 +154,7 @@ export function SpecialistsPage() {
         )}
       </ChipsRow>
 
-      {hasCoords && (
+      {hasCoords && !city && (
         <ChipsRow>
           {NEARBY_RADII_KM.map((value) => (
             <button
@@ -138,6 +166,19 @@ export function SpecialistsPage() {
               до {value} км
             </button>
           ))}
+          {/*
+            Последним — снятие ограничения. В городе, где мастеров мало,
+            любой радиус даёт пустой список, и человеку нужен выход из
+            него, а не совет «попробуйте увеличить радиус». Стоит в конце
+            ряда: это продолжение шкалы, а не отдельный режим.
+          */}
+          <button
+            type="button"
+            className={`chip${!radiusKm ? ' chip--active' : ''}`}
+            onClick={() => setParam('radiusKm', 'all')}
+          >
+            по России
+          </button>
         </ChipsRow>
       )}
 
@@ -148,7 +189,7 @@ export function SpecialistsPage() {
               title="Никого не нашли"
               hint={
                 hasCoords
-                  ? 'Попробуйте увеличить радиус поиска или снять фильтры'
+                  ? 'Попробуйте увеличить радиус поиска, выбрать «по России» или снять фильтры'
                   : 'Попробуйте изменить запрос или снять фильтры'
               }
             />

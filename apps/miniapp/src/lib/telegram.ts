@@ -7,6 +7,9 @@
  * штатным режимом «вне Telegram».
  */
 
+/** Чем закончилось окно оплаты. Значения приходят от Telegram как есть. */
+export type InvoiceStatus = 'paid' | 'cancelled' | 'failed' | 'pending';
+
 interface TelegramWebApp {
   initData: string;
   initDataUnsafe: {
@@ -32,6 +35,11 @@ interface TelegramWebApp {
   openTelegramLink(url: string): void;
   showAlert(message: string, callback?: () => void): void;
   showConfirm(message: string, callback?: (ok: boolean) => void): void;
+  /**
+   * Открывает счёт на оплату. Появился в Bot API 6.1, но в старых
+   * клиентах может отсутствовать — поэтому необязательный.
+   */
+  openInvoice?(url: string, callback?: (status: InvoiceStatus) => void): void;
   HapticFeedback?: {
     impactOccurred(style: 'light' | 'medium' | 'heavy'): void;
     notificationOccurred(type: 'error' | 'success' | 'warning'): void;
@@ -129,6 +137,41 @@ export const haptic = {
   success: () => tg()?.HapticFeedback?.notificationOccurred('success'),
   error: () => tg()?.HapticFeedback?.notificationOccurred('error'),
 };
+
+/**
+ * Открывает окно оплаты и ждёт, чем оно кончится.
+ *
+ * Ответ «paid» означает, что Telegram принял деньги, но купленное
+ * выдаёт сервер — по сообщению, которое Telegram отправит боту. Между
+ * этими двумя событиями проходит секунда-другая, и приложению стоит
+ * перечитать состояние, а не рисовать покупку сразу.
+ *
+ * Вне Telegram и в старых клиентах метода нет — тогда возвращаем 'failed',
+ * чтобы вызывающий код показал понятное объяснение, а не завис в ожидании.
+ */
+export function openInvoice(url: string): Promise<InvoiceStatus> {
+  const app = tg();
+  const open = app?.openInvoice;
+  if (!app || !open) return Promise.resolve('failed');
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (status: InvoiceStatus) => {
+      if (settled) return;
+      settled = true;
+      resolve(status);
+    };
+
+    // Обещание без страховки могло бы не разрешиться никогда: клиент
+    // вправе закрыть окно оплаты, не вызвав обратный вызов.
+    const guard = setTimeout(() => finish('cancelled'), 10 * 60 * 1000);
+
+    open.call(app, url, (status) => {
+      clearTimeout(guard);
+      finish(status);
+    });
+  });
+}
 
 /** Открывает внешнюю ссылку правильным способом: t.me — внутри Telegram, остальное — в браузере. */
 export function openExternal(url: string): void {

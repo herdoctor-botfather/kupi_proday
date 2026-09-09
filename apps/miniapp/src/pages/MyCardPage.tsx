@@ -117,6 +117,21 @@ export function MyCardPage() {
                 </div>
               </div>
 
+              {/*
+                Подписка стоит сразу под состоянием анкеты: одобренная
+                модератором, но неоплаченная анкета в каталоге не видна,
+                и человек должен узнать об этом здесь, а не гадать,
+                почему его не находят.
+              */}
+              <Link className="subscription-row" to="/profile/subscription">
+                <span className="subscription-row__label">Показ в каталоге</span>
+                <span className="subscription-row__value">
+                  {profile.subscriptionEndsAt && new Date(profile.subscriptionEndsAt) > new Date()
+                    ? `оплачено до ${new Date(profile.subscriptionEndsAt).toLocaleDateString('ru-RU')}`
+                    : 'не оплачен'}
+                </span>
+              </Link>
+
               {profile.needsReview && profile.status === 'ACTIVE' && (
                 <div className="alert alert--info">
                   Изменения отправлены на проверку. Анкета остаётся в каталоге — из выдачи она не пропадёт.

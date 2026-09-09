@@ -3704,3 +3704,92 @@ body {
     background: none;
   }
 }
+
+/* ─── Подписка и тарифы ─── */
+
+/* Строка о показе в каталоге на карточке анкеты. Она не кнопка действия,
+   а состояние со ссылкой: сначала сообщает, потом ведёт. */
+.subscription-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.subscription-row__value {
+  color: var(--text-hint);
+  text-align: right;
+}
+
+.subscription-state {
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  margin-bottom: 20px;
+}
+
+.subscription-state__title {
+  font-size: 16px;
+  font-weight: 650;
+  margin-bottom: 6px;
+}
+
+.subscription-state__hint {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--text-hint);
+}
+
+.plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/*
+ * Тариф — сетка в две колонки: слева название и пояснение, справа цена.
+ * Цены выстраиваются в столбец и потому сравниваются взглядом, без
+ * чтения — а выбирают здесь именно по цене.
+ */
+.plan {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  color: var(--text);
+  text-align: left;
+}
+
+.plan:disabled {
+  opacity: 0.6;
+}
+
+.plan__title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.plan__price {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--accent);
+  grid-row: span 2;
+  align-self: center;
+}
+
+.plan__note {
+  font-size: 12.5px;
+  color: var(--text-hint);
+}

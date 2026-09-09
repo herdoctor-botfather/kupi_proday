@@ -65,6 +65,7 @@ model User {
   conversations Conversation[] @relation("ClientConversations")
   messages      Message[]      @relation("SentMessages")
   listings      Listing[]
+  payments      Payment[]
 
   @@index([role])
   @@map("users")
@@ -304,6 +305,11 @@ model Listing {
 
   viewCount Int @default(0)
 
+  /// До какого момента объявление держится в начале списка.
+  /// Пусто — обычное объявление; прошедшая дата — продвижение кончилось.
+  /// Хранится датой, а не флагом, чтобы срок истекал сам, без задания в cron.
+  promotedUntil DateTime?
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   publishedAt DateTime?
@@ -312,8 +318,11 @@ model Listing {
   categories    ListingCategory[]
   photos        ListingPhoto[]
   conversations Conversation[]
+  payments      Payment[]
 
   @@index([kind, status, createdAt])
+  /// Отдельный индекс под выдачу с продвижением наверху.
+  @@index([kind, status, promotedUntil])
   @@index([city, status])
   @@index([userId])
   @@map("listings")
@@ -439,8 +448,85 @@ model Subscription {
   createdByUserId String?
   createdAt DateTime @default(now())
 
+  /// Оплата, которой продлена подписка. Пусто у выданных админом вручную —
+  /// такие выдачи никуда не делись: ими закрывают спорные случаи и
+  /// начисляют компенсации.
+  paymentId String?  @unique
+  payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
   @@index([specialistId, endsAt])
   @@map("subscriptions")
+}
+
+// ─────────────────────────── Оплата ───────────────────────────
+
+/// Что человек покупает.
+enum PaymentPurpose {
+  /// Подписка специалиста: показ анкеты в каталоге и на карте.
+  SPECIALIST_SUBSCRIPTION
+  /// Объявление сверх бесплатного месячного лимита.
+  LISTING_SLOT
+  /// Продвижение объявления: подъём в начало списка на срок.
+  LISTING_PROMOTION
+}
+
+enum PaymentStatus {
+  /// Счёт выставлен, человек его ещё не оплатил. Такие записи живут
+  /// недолго и остаются как след неудавшейся попытки.
+  PENDING
+  /// Деньги получены, купленное выдано.
+  PAID
+  /// Возврат через Telegram. Купленное при этом отзывается.
+  REFUNDED
+}
+
+/// Платёж звёздами Telegram.
+///
+/// Запись создаётся при выставлении счёта и завершается, когда Telegram
+/// сообщит боту об оплате. Так у каждой оплаты есть заранее известное
+/// назначение: подтверждение приходит отдельным сообщением, и без
+/// сохранённого намерения было бы непонятно, за что именно заплатили.
+model Payment {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  purpose PaymentPurpose
+  status  PaymentStatus  @default(PENDING)
+
+  /// Сумма в звёздах. Валюта у Stars одна, но храним явно —
+  /// когда добавится СБП, поле пригодится как есть.
+  stars    Int
+  currency String @default("XTR")
+
+  /// Тариф: 'month' | 'quarter' | 'year' для подписки,
+  /// 'week' | 'month' для продвижения. Для разового объявления пусто.
+  plan String?
+
+  /// Объявление, к которому относится оплата слота или продвижения.
+  listingId String?
+  listing   Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+
+  /// Специалист, чью подписку оплачивают.
+  specialistId String?
+
+  /// Полезная нагрузка счёта: по ней подтверждение находит эту запись.
+  /// Уникальна, чтобы два счёта не сошлись в один платёж.
+  invoicePayload String @unique
+
+  /// Идентификатор платежа со стороны Telegram. Уникален — именно он
+  /// защищает от двойного зачисления, если подтверждение придёт дважды.
+  telegramChargeId String? @unique
+
+  createdAt DateTime  @default(now())
+  paidAt    DateTime?
+  refundedAt DateTime?
+
+  subscription Subscription?
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("payments")
 }
 
 // ─────────────────────────── Переписка ───────────────────────────

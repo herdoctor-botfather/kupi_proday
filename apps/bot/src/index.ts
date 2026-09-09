@@ -4,6 +4,7 @@ import { currentMiniAppUrl } from './miniapp-url';
 import { fetchCounts } from './stats';
 import * as messages from './messages';
 import { replyWithBanner } from './banner';
+import { registerPayments } from './payments';
 
 /**
  * Бот-обёртка вокруг Mini App.
@@ -119,6 +120,11 @@ bot.command('market', async (ctx) => {
 bot.command('help', async (ctx) => {
   await replyWithBanner(ctx, 'help', messages.HELP_CAPTION, mainKeyboard(), messages.HELP);
 });
+
+// Оплата — до общего обработчика сообщений: сообщение об успешном
+// платеже приходит обычным сообщением, и иначе его перехватила бы
+// заглушка «вернитесь к кнопкам».
+registerPayments(bot);
 
 // Любое сообщение вне команд возвращает пользователя к кнопкам запуска,
 // иначе диалог с ботом выглядит как тупик.

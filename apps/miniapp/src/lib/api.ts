@@ -6,6 +6,7 @@ import type {
   ConversationSummary,
   ConversationThread,
   CategoryKind,
+  CreateInvoiceDto,
   CreateReportDto,
   CreateReviewDto,
   ListingDetail,
@@ -228,4 +229,35 @@ export const api = {
   favorites: () => request<SpecialistListItem[]>('/me/favorites'),
   toggleFavorite: (specialistId: string) =>
     request<{ isFavorite: boolean }>(`/me/favorites/${specialistId}`, { method: 'POST' }),
+
+  // ─── Оплата ───
+
+  createInvoice: (dto: CreateInvoiceDto) =>
+    request<{ url: string; paymentId: string }>('/payments/invoice', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    }),
+
+  listingQuota: () => request<ListingQuota>('/payments/listing-quota'),
+
+  paymentHistory: () => request<PaymentHistoryItem[]>('/payments/my'),
 };
+
+/** Сколько объявлений человек может разместить прямо сейчас. */
+export interface ListingQuota {
+  freePerMonth: number;
+  usedThisMonth: number;
+  paidSlots: number;
+  left: number;
+  extraStars: number;
+}
+
+export interface PaymentHistoryItem {
+  id: string;
+  purpose: 'SPECIALIST_SUBSCRIPTION' | 'LISTING_SLOT' | 'LISTING_PROMOTION';
+  plan: string | null;
+  stars: number;
+  status: 'PAID' | 'REFUNDED';
+  paidAt: string | null;
+  listing: { title: string; slug: string } | null;
+}

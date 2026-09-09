@@ -298,3 +298,45 @@ export const upsertSubscriptionSchema = z.object({
   path: ['endsAt'],
 });
 export type UpsertSubscriptionDto = z.infer<typeof upsertSubscriptionSchema>;
+
+// ─────────────────────────── Оплата ───────────────────────────
+
+/**
+ * Запрос на счёт. Назначение и тариф разделены: цену сервер берёт
+ * из общего прейскуранта, а не из того, что прислал клиент, — иначе
+ * счёт можно было бы выставить себе на одну звезду.
+ */
+export const createInvoiceSchema = z
+  .object({
+    purpose: z.enum(['SPECIALIST_SUBSCRIPTION', 'LISTING_SLOT', 'LISTING_PROMOTION']),
+    /** 'month' | 'quarter' | 'year' для подписки, 'week' | 'month' для продвижения. */
+    plan: z.string().trim().min(1).max(32).optional(),
+    listingId: z.string().trim().min(1).max(40).optional(),
+  })
+  .refine((v) => v.purpose === 'LISTING_SLOT' || Boolean(v.plan), {
+    message: 'Не выбран тариф',
+    path: ['plan'],
+  })
+  // Объявление нужно знать только для продвижения: место покупается
+  // заранее и ни к какому объявлению не привязано — человек платит за
+  // право разместить ещё одно, а какое именно, решает потом.
+  .refine((v) => v.purpose !== 'LISTING_PROMOTION' || Boolean(v.listingId), {
+    message: 'Не указано объявление',
+    path: ['listingId'],
+  });
+export type CreateInvoiceDto = z.infer<typeof createInvoiceSchema>;
+
+/**
+ * Подтверждение оплаты от бота.
+ *
+ * Приходит не от пользователя, а от нашего же бота, которому Telegram
+ * сообщил об успешном платеже. Поэтому обязателен внутренний ключ,
+ * а поля проверяются так же строго: сообщение приходит из сети.
+ */
+export const confirmPaymentSchema = z.object({
+  invoicePayload: z.string().trim().min(1).max(128),
+  telegramChargeId: z.string().trim().min(1).max(128),
+  stars: z.coerce.number().int().min(1).max(1_000_000),
+  telegramUserId: z.string().trim().regex(/^\d+$/, 'Только цифры').max(20),
+});
+export type ConfirmPaymentDto = z.infer<typeof confirmPaymentSchema>;

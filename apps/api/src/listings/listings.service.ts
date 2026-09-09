@@ -14,6 +14,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ContactPolicyService } from '../notifications/contact-policy.service';
 import { StorageService } from '../storage/storage.service';
+import { PaymentsService } from '../payments/payments.service';
 import { detailInclude, listInclude, toDetail, toListItem, toMyListing } from './listings.mapper';
 
 /** Больше этого числа снимков в объявлении не пролистают. */
@@ -38,6 +39,7 @@ export class ListingsService {
     private readonly notifications: NotificationsService,
     private readonly contactPolicy: ContactPolicyService,
     private readonly storage: StorageService,
+    private readonly payments: PaymentsService,
   ) {}
 
   // ─────────── Витрина ───────────
@@ -136,6 +138,18 @@ export class ListingsService {
         code: 'TOO_MANY_LISTINGS',
         message: `Одновременно можно разместить не больше ${MAX_ACTIVE_LISTINGS} объявлений`,
       });
+    }
+
+    // Платный лимит — только на продажу. Запросы на покупку бесплатны:
+    // это сторона спроса, ради которой продавцы сюда и приходят.
+    if (dto.kind === 'SELL') {
+      const quota = await this.payments.listingQuota(userId);
+      if (quota.left <= 0) {
+        throw new BadRequestException({
+          code: 'LISTING_QUOTA_EXCEEDED',
+          message: `Бесплатные объявления этого месяца закончились. Следующее — ${quota.extraStars} ★.`,
+        });
+      }
     }
 
     const prepared = this.toData(dto);

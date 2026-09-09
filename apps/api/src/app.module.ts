@@ -12,6 +12,7 @@ import { AdminModule } from './admin/admin.module';
 import { ReportsModule } from './reports/reports.module';
 import { ChatModule } from './chat/chat.module';
 import { ListingsModule } from './listings/listings.module';
+import { PaymentsModule } from './payments/payments.module';
 import { HealthController } from './common/health.controller';
 
 @Module({
@@ -29,6 +30,7 @@ import { HealthController } from './common/health.controller';
     ReportsModule,
     ChatModule,
     ListingsModule,
+    PaymentsModule,
   ],
   controllers: [HealthController],
 })

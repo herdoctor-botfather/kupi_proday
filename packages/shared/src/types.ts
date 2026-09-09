@@ -128,6 +128,12 @@ export interface MySpecialistProfile extends SpecialistDetail {
   viewCount: number;
   createdAt: string;
   publishedAt: string | null;
+  /**
+   * До какого момента оплачен показ анкеты. null — подписки нет.
+   * Хранится датой, а не признаком «активна»: экран должен показывать
+   * не только факт, но и срок, иначе человек не знает, когда платить.
+   */
+  subscriptionEndsAt: string | null;
 }
 
 /** Объявление в списке — краткая карточка витрины. */

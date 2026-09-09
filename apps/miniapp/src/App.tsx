@@ -6,6 +6,7 @@ import { CatalogPage } from './pages/CatalogPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { ApplicationPage } from './pages/ApplicationPage';
 import { MyCardPage } from './pages/MyCardPage';
+import { SubscriptionPage } from './pages/SubscriptionPage';
 import { ChatsPage } from './pages/ChatsPage';
 import { ChatPage } from './pages/ChatPage';
 import { MarketPage } from './pages/MarketPage';
@@ -146,6 +147,7 @@ function Shell() {
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/profile/application" element={<ApplicationPage />} />
       <Route path="/profile/my-card" element={<MyCardPage />} />
+      <Route path="/profile/subscription" element={<SubscriptionPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route
         path="*"

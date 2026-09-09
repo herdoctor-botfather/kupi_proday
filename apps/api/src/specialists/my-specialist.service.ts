@@ -36,6 +36,15 @@ export class MySpecialistService {
     });
     if (!row) return null;
 
+    // Действующая подписка — та, чей срок ещё не вышел. Их может быть
+    // несколько, если человек оплачивал вперёд: берём самую дальнюю,
+    // именно до неё анкета и показывается.
+    const subscription = await this.prisma.subscription.findFirst({
+      where: { specialistId: row.id, endsAt: { gt: new Date() } },
+      orderBy: { endsAt: 'desc' },
+      select: { endsAt: true },
+    });
+
     return {
       ...toDetail(row, { ratingBreakdown: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }, myReview: null }),
       status: row.status,
@@ -44,6 +53,7 @@ export class MySpecialistService {
       viewCount: row.viewCount,
       createdAt: row.createdAt.toISOString(),
       publishedAt: row.publishedAt?.toISOString() ?? null,
+      subscriptionEndsAt: subscription?.endsAt.toISOString() ?? null,
     };
   }
 

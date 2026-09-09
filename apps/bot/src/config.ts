@@ -17,6 +17,14 @@ const envSchema = z.object({
    * Не обязателен: без него сообщение просто обходится без цифр.
    */
   API_PROXY_TARGET: z.string().url().default('http://localhost:3000'),
+  /**
+   * Общий ключ для обращений к API.
+   *
+   * Об оплате Telegram сообщает боту, а выдаёт купленное сервер. Ключ
+   * должен совпадать с таким же в конфигурации API; пока он пустой,
+   * оплата не принимается — деньги лучше не взять, чем взять и не выдать.
+   */
+  INTERNAL_API_SECRET: z.string().default(''),
 });
 
 const parsed = envSchema.safeParse(process.env);

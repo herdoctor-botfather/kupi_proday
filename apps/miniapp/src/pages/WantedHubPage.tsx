@@ -36,9 +36,9 @@ export function WantedHubPage() {
           style={{ backgroundImage: 'url(/cards/wanted-new.jpg)' }}
           onClick={() => haptic.tap()}
         >
-          <span className="role-card__title">Создать запрос на покупку</span>
+          <span className="role-card__title">Создать запрос на покупку или обмен</span>
           <span className="role-card__text">
-            Опишите, что ищете и сколько готовы заплатить, — продавцы напишут сами
+            Опишите, что ищете и что готовы предложить — деньги или вещь на обмен
           </span>
           <span className="role-card__action">Заполнить форму →</span>
         </Link>

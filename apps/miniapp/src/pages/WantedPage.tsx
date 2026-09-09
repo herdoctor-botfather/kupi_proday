@@ -100,7 +100,7 @@ export function WantedPage() {
             📝
           </span>
           <span className="profile-cta__body">
-            <span className="profile-cta__title">Создать запрос на покупку</span>
+            <span className="profile-cta__title">Создать запрос на покупку или обмен</span>
             <span className="profile-cta__text">
               Ищете что-то сами? Опишите — продавцы предложат
             </span>

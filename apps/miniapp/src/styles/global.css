@@ -3509,7 +3509,7 @@ body {
   /* Снимок тянется за высотой окна, но не мельче 72 пикселей: ниже
      этого он перестаёт читаться как фотография и выглядит полоской. */
   .role-card__photo {
-    height: clamp(72px, 12vh, 120px);
+    height: clamp(56px, 10vh, 108px);
   }
 
   /* Пояснение про регистрацию — справка, а не часть выбора.
@@ -3577,5 +3577,72 @@ body {
 
 /* Лицо и телефон — обе главные детали лежат чуть выше середины. */
 .role-card__photo img[src$='wanted.jpg'] {
-  object-position: center 46%;
+  object-position: center 40%;
+}
+
+/* ─── Двери: снимок в поле карточки ─── */
+
+/*
+ * Снимок не прилегает к краям кнопки, а лежит внутри неё с отступом:
+ * так видно, что это картинка внутри кнопки, а не кнопка-картинка.
+ * Поле вокруг светлее самой карточки — иначе отступ читается не как
+ * рамка, а как пустота между карточками.
+ */
+.onboarding .role-card--banner {
+  padding-top: 10px;
+  background: color-mix(in srgb, #fff 7%, var(--surface-raised));
+}
+
+.onboarding .role-card--banner .role-card__photo {
+  /* width: auto обязателен: при width 100% поля по бокам вытолкнули бы
+     снимок за пределы карточки. */
+  width: auto;
+  margin: 0 10px;
+  border-radius: 14px;
+}
+
+/*
+ * Затемнение к низу снимка было нужно, пока заголовок начинался прямо
+ * от края фотографии. Теперь между ними есть поле, и градиент только
+ * пачкал бы нижнюю треть кадра.
+ */
+.onboarding .role-card--banner .role-card__photo::after {
+  display: none;
+}
+
+.onboarding .role-card--banner .role-card__title {
+  margin-top: 8px;
+}
+
+/* Пометка о прошлом выборе отходит вместе со снимком, иначе она
+   села бы ровно на его скруглённый угол. */
+.onboarding .role-card--banner .role-card__mark {
+  top: 20px;
+  right: 20px;
+}
+
+/* Поля внутри двери в тесном окне: каждый лишний пиксель здесь
+   умножается на четыре и решает, поместится ли четвёртая карточка. */
+@media (max-height: 900px) {
+  .onboarding .role-card--banner .role-card__title {
+    margin-top: 6px;
+  }
+
+  .onboarding .role-card--banner .role-card__action {
+    padding-bottom: 12px;
+  }
+}
+
+/*
+ * Совсем низкое окно. Снимку остаётся полоска, но четыре двери видны
+ * целиком — а видеть все четыре важнее, чем разглядывать каждую.
+ */
+@media (max-height: 660px) {
+  .role-card__photo {
+    height: clamp(48px, 8.5vh, 80px);
+  }
+
+  .role-cards {
+    gap: 6px;
+  }
 }

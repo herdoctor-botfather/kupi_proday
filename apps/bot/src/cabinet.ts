@@ -1,6 +1,17 @@
-import { Bot, InlineKeyboard } from 'grammy';
+import { Bot, InlineKeyboard, Keyboard } from 'grammy';
 import type { CallbackQueryContext, Context } from 'grammy';
 import { config } from './config';
+
+/**
+ * Постоянная кнопка над полем ввода.
+ *
+ * Команду /cabinet надо помнить и набирать, а кнопка просто есть.
+ * Одна, а не набор: всё остальное живёт в приложении, и дублировать
+ * его здесь значило бы строить второй интерфейс поверх первого.
+ */
+export const CABINET_BUTTON = '👤 Личный кабинет';
+
+export const cabinetKeyboard = () => new Keyboard().text(CABINET_BUTTON).resized().persistent();
 
 /**
  * Личный кабинет прямо в переписке с ботом.
@@ -149,6 +160,14 @@ export function registerCabinet(bot: Bot): void {
     await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
   });
 
+  // Нажатие постоянной кнопки приходит обычным сообщением с её текстом.
+  // Обработчик стоит здесь, до общей заглушки «вернитесь к кнопкам»,
+  // иначе она перехватила бы нажатие.
+  bot.hears(CABINET_BUTTON, async (ctx) => {
+    const { text, keyboard } = await open(ctx.from!.id);
+    await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+  });
+
   /**
    * Открытие новым сообщением — для кнопок под другими сообщениями.
    * Отдельно от «Обновить» потому, что сообщение с картинкой в текст
@@ -228,8 +247,10 @@ export function registerCabinet(bot: Bot): void {
     }
 
     await ctx.answerCallbackQuery();
+    // «В кабинет» рядом с «Оплатить»: передумать — обычное дело, и выход
+    // из счёта не должен требовать набирать команду заново.
     await ctx.reply(`Счёт на ${stars} ★`, {
-      reply_markup: new InlineKeyboard().url('Оплатить', link.url),
+      reply_markup: new InlineKeyboard().url('Оплатить', link.url).row().text('В кабинет', 'cab:open'),
     });
   });
 
@@ -255,6 +276,8 @@ export function registerCabinet(bot: Bot): void {
     }
 
     await ctx.answerCallbackQuery();
-    await ctx.reply('Счёт на оплату', { reply_markup: new InlineKeyboard().url('Оплатить', link.url) });
+    await ctx.reply('Счёт на оплату', {
+      reply_markup: new InlineKeyboard().url('Оплатить', link.url).row().text('В кабинет', 'cab:open'),
+    });
   }
 }

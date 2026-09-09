@@ -5,7 +5,7 @@ import { fetchCounts } from './stats';
 import * as messages from './messages';
 import { replyWithBanner } from './banner';
 import { registerPayments } from './payments';
-import { registerCabinet } from './cabinet';
+import { cabinetKeyboard, registerCabinet } from './cabinet';
 
 /**
  * Бот-обёртка вокруг Mini App.
@@ -94,7 +94,13 @@ bot.command('start', async (ctx) => {
   const counts = await fetchCounts();
 
   const name = ctx.from?.first_name?.trim();
-  await ctx.reply(messages.greeting(name, counts), { parse_mode: 'HTML' });
+  // Вместе с приветствием ставим постоянную кнопку над полем ввода.
+  // Достаточно один раз: Telegram держит её до явной замены, и на
+  // каждое следующее сообщение её слать не нужно.
+  await ctx.reply(messages.greeting(name, counts), {
+    parse_mode: 'HTML',
+    reply_markup: cabinetKeyboard(),
+  });
 
   // Каждая дверь — отдельное сообщение: у кнопок Telegram картинок нет,
   // и связать снимок с конкретным разделом иначе нечем. Отправляем

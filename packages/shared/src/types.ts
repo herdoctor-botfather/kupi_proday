@@ -203,7 +203,15 @@ export interface ConversationSummary {
    * Ровно одно из полей заполнено.
    */
   specialist: { id: string; slug: string; displayName: string } | null;
-  listing: { id: string; slug: string; title: string; priceAmount: number; currency: string } | null;
+  listing: {
+    id: string;
+    slug: string;
+    title: string;
+    /** Продажа или запрос: разговоры о них ведут по-разному. */
+    kind: ListingKind;
+    priceAmount: number;
+    currency: string;
+  } | null;
   lastMessageText: string | null;
   lastMessageAt: string | null;
   unread: number;

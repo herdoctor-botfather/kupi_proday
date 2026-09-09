@@ -1743,6 +1743,11 @@ body::before {
   font-size: 11.5px;
   color: var(--text-hint);
   opacity: 0.75;
+  /* Названия объявлений длинные, а строка одна: без обрезки она
+     растягивает карточку и ломает ряд. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chat-row__badge {

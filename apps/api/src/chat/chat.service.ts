@@ -16,6 +16,9 @@ const conversationInclude = {
       id: true,
       slug: true,
       title: true,
+      // Продажа или запрос: в списке переписок это разные разделы,
+      // и без признака их не отличить.
+      kind: true,
       priceAmount: true,
       currency: true,
       userId: true,
@@ -325,6 +328,7 @@ export class ChatService {
             id: row.listing.id,
             slug: row.listing.slug,
             title: row.listing.title,
+            kind: row.listing.kind,
             priceAmount: row.listing.priceAmount,
             currency: row.listing.currency,
           }

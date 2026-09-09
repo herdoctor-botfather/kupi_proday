@@ -97,21 +97,40 @@ export class ServiceRequestsService {
    * Нужно карточке анкеты: она рисует либо кнопку, либо ожидание, либо отказ.
    */
   async current(clientId: string, specialistId: string): Promise<ServiceRequestState | null> {
-    const request = await this.prisma.serviceRequest.findFirst({
-      where: { clientId, specialistId },
-      orderBy: { createdAt: 'desc' },
-    });
+    const [request, conversation] = await Promise.all([
+      this.prisma.serviceRequest.findFirst({
+        where: { clientId, specialistId },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.conversation.findUnique({
+        where: { specialistId_clientId: { specialistId, clientId } },
+        select: { id: true, createdAt: true },
+      }),
+    ]);
+
+    /*
+     * Открытая переписка — сама по себе согласие, и заявка поверх неё
+     * не нужна.
+     *
+     * Так выглядят разговоры, начатые до появления заявок: строки в базе
+     * у них нет, и без этой проверки анкета предлагала бы «воспользоваться
+     * услугой» человеку, который переписывается с мастером уже неделю.
+     * Заявка ничего бы не добавила: право писать у него и так есть.
+     */
+    if (conversation) {
+      return {
+        id: request?.id ?? conversation.id,
+        status: 'ACCEPTED',
+        note: request?.note ?? null,
+        createdAt: (request?.createdAt ?? conversation.createdAt).toISOString(),
+        expiresAt: (request?.expiresAt ?? conversation.createdAt).toISOString(),
+        conversationId: conversation.id,
+      };
+    }
+
     if (!request) return null;
 
-    const conversation =
-      this.effectiveStatus(request) === 'ACCEPTED'
-        ? await this.prisma.conversation.findUnique({
-            where: { specialistId_clientId: { specialistId, clientId } },
-            select: { id: true },
-          })
-        : null;
-
-    return this.toState(request, conversation?.id ?? null);
+    return this.toState(request, null);
   }
 
   /** Заявки, которые ждут ответа мастера. */
@@ -227,18 +246,6 @@ export class ServiceRequestsService {
     );
 
     return { status: 'ACCEPTED', conversationId: conversation.id };
-  }
-
-  /**
-   * Есть ли у заказчика право переписываться с мастером.
-   * Спрашивает чат, когда решает, открывать ли диалог.
-   */
-  async isAccepted(clientId: string, specialistId: string): Promise<boolean> {
-    const accepted = await this.prisma.serviceRequest.findFirst({
-      where: { clientId, specialistId, status: 'ACCEPTED' },
-      select: { id: true },
-    });
-    return Boolean(accepted);
   }
 
   /**

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { ListingStatus, MyListing } from '@app/shared';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
@@ -61,14 +61,12 @@ export function MyListingsPage() {
 
   return (
     <div className="page">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-        <h1 className="page__title" style={{ margin: 0, flex: 1 }}>
-          Мои объявления
-        </h1>
-        <Link to="/market/sell" className="button" style={{ width: 'auto', padding: '10px 16px' }}>
-          + Разместить
-        </Link>
-      </div>
+      {/*
+        Одна кнопка размещения на экран. Их было три — в шапке, посередине
+        и круглая поверх навигации, — и все вели в одно и то же место:
+        выбор без выбора, который только загромождает экран.
+      */}
+      <h1 className="page__title">Мои объявления</h1>
 
       {error && <div className="alert alert--error">{error}</div>}
 

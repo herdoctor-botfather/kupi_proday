@@ -2356,7 +2356,6 @@ body::before {
   .reply-box,
   .report-form,
   .alert,
-  .state,
   .city-input__list,
   .my-listing {
     background: var(--glass-bg);
@@ -2542,7 +2541,6 @@ body::before {
     .reply-box,
     .report-form,
     .alert,
-    .state,
     .city-input__list,
     .my-listing,
     .tabbar,

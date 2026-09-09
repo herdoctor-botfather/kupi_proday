@@ -16,10 +16,26 @@ import { replyWithBanner } from './banner';
 
 const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 
+/**
+ * Отпечаток запуска бота.
+ *
+ * Встроенный браузер Telegram держит открытую однажды страницу у себя
+ * и при следующем открытии показывает её же — заголовки кэширования он
+ * при этом уважает не всегда, и после выкладки человек видит прошлую
+ * версию приложения. Уговорить его нельзя, зато можно менять адрес:
+ * для другого адреса подставить нечего.
+ *
+ * Бот перезапускается при каждой выкладке, поэтому отметка времени
+ * старта меняется ровно тогда, когда меняется и само приложение.
+ */
+const BUILD_STAMP = Math.floor(Date.now() / 1000).toString(36);
+
 /** Адрес Mini App с параметром запуска: по нему приложение откроет нужный экран. */
 const appUrl = (startParam?: string): string => {
   const base = currentMiniAppUrl();
-  return startParam ? `${base}?tgWebAppStartParam=${encodeURIComponent(startParam)}` : base;
+  const params = new URLSearchParams({ v: BUILD_STAMP });
+  if (startParam) params.set('tgWebAppStartParam', startParam);
+  return `${base}${base.includes('?') ? '&' : '?'}${params.toString()}`;
 };
 
 /**
@@ -116,7 +132,19 @@ bot.catch((error) => {
 
 async function main() {
   const me = await bot.api.getMe();
-  console.log(`Бот @${me.username} запущен. Mini App: ${currentMiniAppUrl()}`);
+  console.log(`Бот @${me.username} запущен. Mini App: ${appUrl()}`);
+
+  // Кнопка меню рядом с полем ввода ведёт на тот же адрес, что и кнопки
+  // в сообщениях, — иначе через неё открывалась бы прошлая версия из кэша.
+  // Не критично для работы бота, поэтому ошибка сюда его не роняет.
+  try {
+    await bot.api.setChatMenuButton({
+      menu_button: { type: 'web_app', text: 'Открыть', web_app: { url: appUrl() } },
+    });
+  } catch (error) {
+    console.error('Не удалось обновить кнопку меню:', error);
+  }
+
   await bot.start();
 }
 

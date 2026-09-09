@@ -4,6 +4,7 @@ import { useAsync } from '../lib/useAsync';
 import { useAuth } from '../lib/auth';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SpecialistCard } from '../components/SpecialistCard';
+import { AvatarUpload } from '../components/PhotoUpload';
 import { ReviewCard } from '../components/Reviews';
 import { formatDate } from '../lib/format';
 import { Link, useNavigate } from 'react-router-dom';
@@ -52,11 +53,7 @@ export function ProfilePage() {
   return (
     <div className="page">
       <div className="profile__header">
-        {user.photoUrl ? (
-          <img className="profile__avatar" src={user.photoUrl} alt="" />
-        ) : (
-          <div className="profile__avatar" />
-        )}
+        <ProfileAvatar telegramPhotoUrl={user.photoUrl} hasCard={user.hasSpecialistProfile} />
         <h1 className="profile__name">{fullName}</h1>
         {user.username && <div className="profile__headline">@{user.username}</div>}
         {user.role !== 'USER' && <span className="badge-promoted">{user.role}</span>}
@@ -199,5 +196,42 @@ function FavoritesTab() {
         )
       }
     </AsyncContent>
+  );
+}
+
+/**
+ * Фотография в шапке профиля.
+ *
+ * У кого есть анкета — правит фотографию анкеты: именно её видят
+ * в каталоге, на карте и в переписке, и именно она обычно оказывается
+ * не той. Своё фото из Telegram здесь только показывается: приложение
+ * перечитывает его при каждом входе, и любая наша замена не пережила бы
+ * следующий запуск. Менять его нужно в самом Telegram.
+ */
+function ProfileAvatar({
+  telegramPhotoUrl,
+  hasCard,
+}: {
+  telegramPhotoUrl: string | null;
+  hasCard: boolean;
+}) {
+  const card = useAsync(() => (hasCard ? api.myProfile() : Promise.resolve(null)), [hasCard]);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  const shown = photoUrl ?? card.data?.photoUrl ?? telegramPhotoUrl;
+
+  if (!hasCard) {
+    return shown ? (
+      <img className="profile__avatar" src={shown} alt="" />
+    ) : (
+      <div className="profile__avatar" />
+    );
+  }
+
+  return (
+    <div className="profile__avatar-edit">
+      <AvatarUpload photoUrl={shown} onUploaded={(profile) => setPhotoUrl(profile.photoUrl)} />
+      <span className="profile__avatar-hint">Фотография анкеты — её видят клиенты</span>
+    </div>
   );
 }

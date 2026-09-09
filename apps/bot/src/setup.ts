@@ -16,6 +16,7 @@ async function main() {
   await bot.api.setMyCommands([
     { command: 'start', description: '🚀 Начать' },
     { command: 'market', description: '🛍 Надо купить или продать' },
+    { command: 'cabinet', description: '👤 Личный кабинет' },
     { command: 'help', description: '❓ Как здесь всё устроено' },
   ]);
 

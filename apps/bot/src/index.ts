@@ -5,6 +5,7 @@ import { fetchCounts } from './stats';
 import * as messages from './messages';
 import { replyWithBanner } from './banner';
 import { registerPayments } from './payments';
+import { registerCabinet } from './cabinet';
 
 /**
  * Бот-обёртка вокруг Mini App.
@@ -53,7 +54,12 @@ const mainKeyboard = () =>
     .webApp('🔎 Найти исполнителя', appUrl('catalog'))
     .webApp('🛍 Купи-продай', appUrl('market'))
     .row()
-    .webApp('💼 Стать исполнителем', appUrl('apply'));
+    .webApp('💼 Стать исполнителем', appUrl('apply'))
+    .row()
+    // Кабинет открывается прямо здесь, без приложения: посмотреть срок
+    // подписки или снять анкету на время отпуска через мини-апп — слишком
+    // долгий путь для такой мелочи.
+    .text('👤 Личный кабинет', 'cab:open');
 
 const marketKeyboard = () =>
   new InlineKeyboard()
@@ -125,6 +131,7 @@ bot.command('help', async (ctx) => {
 // платеже приходит обычным сообщением, и иначе его перехватила бы
 // заглушка «вернитесь к кнопкам».
 registerPayments(bot);
+registerCabinet(bot);
 
 // Любое сообщение вне команд возвращает пользователя к кнопкам запуска,
 // иначе диалог с ботом выглядит как тупик.

@@ -13,6 +13,7 @@ import { ReportsModule } from './reports/reports.module';
 import { ChatModule } from './chat/chat.module';
 import { ListingsModule } from './listings/listings.module';
 import { PaymentsModule } from './payments/payments.module';
+import { InternalModule } from './internal/internal.module';
 import { HealthController } from './common/health.controller';
 
 @Module({
@@ -31,6 +32,7 @@ import { HealthController } from './common/health.controller';
     ChatModule,
     ListingsModule,
     PaymentsModule,
+    InternalModule,
   ],
   controllers: [HealthController],
 })

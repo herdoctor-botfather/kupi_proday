@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import type {
+  AdminEditListingDto,
   ModerateReviewDto,
   ModerateListingDto,
   ModerateSpecialistDto,
@@ -243,6 +244,62 @@ export class AdminService {
     ]);
 
     return { pending, changed, total: pending.length + changed.length };
+  }
+
+  /**
+   * Правка объявления модератором.
+   *
+   * Только текстовые поля и цена — то, что можно поправить, не меняя
+   * сути. Действие записывается в журнал: у продавца объявление меняется
+   * без его участия, и он вправе узнать, кто и что исправил.
+   */
+  async editListing(id: string, dto: AdminEditListingDto, actorId: string) {
+    const before = await this.prisma.listing.findUnique({
+      where: { id },
+      select: { id: true, title: true, priceAmount: true, description: true },
+    });
+    if (!before) throw new NotFoundException({ code: 'LISTING_NOT_FOUND', message: 'Объявление не найдено' });
+
+    const listing = await this.prisma.listing.update({
+      where: { id },
+      data: {
+        title: dto.title,
+        description: dto.description?.trim() || null,
+        // В форме рубли, в базе копейки — как и в остальном приложении.
+        priceAmount: dto.price * 100,
+        isNegotiable: dto.isNegotiable,
+        condition: dto.condition,
+        city: dto.city.trim(),
+      },
+      include: {
+        categories: { include: { category: true } },
+        photos: { orderBy: { sortOrder: 'asc' } },
+        user: { select: { firstName: true, lastName: true, username: true } },
+      },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        actorId,
+        action: 'listing.edit',
+        entityType: 'Listing',
+        entityId: id,
+        // Записываем только то, что действительно поменялось: журнал,
+        // где каждая запись повторяет всё объявление целиком, читать
+        // невозможно, а именно ради чтения он и ведётся.
+        payload: {
+          ...(before.title === dto.title ? {} : { title: { from: before.title, to: dto.title } }),
+          ...(before.priceAmount === dto.price * 100
+            ? {}
+            : { price: { from: before.priceAmount, to: dto.price * 100 } }),
+          ...((before.description ?? '') === (dto.description?.trim() ?? '')
+            ? {}
+            : { descriptionChanged: true }),
+        },
+      },
+    });
+
+    return listing;
   }
 
   async moderateListing(id: string, dto: ModerateListingDto, actorId: string) {

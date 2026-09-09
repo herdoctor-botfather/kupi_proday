@@ -5,6 +5,7 @@ import { api, type SpecialistFilters } from '../lib/api';
 import { useAsync, useDebounced } from '../lib/useAsync';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SearchInput } from '../components/SearchInput';
+import { ChipsRow } from '../components/ChipsRow';
 import { SpecialistCard } from '../components/SpecialistCard';
 
 type Sort = NonNullable<SpecialistFilters['sort']>;
@@ -85,7 +86,7 @@ export function SpecialistsPage() {
     <div className="page">
       <SearchInput value={query} onChange={setQuery} />
 
-      <div className="chips">
+      <ChipsRow>
         {availableSorts.map((option) => (
           <button
             key={option}
@@ -96,11 +97,11 @@ export function SpecialistsPage() {
             {SORT_LABELS[option]}
           </button>
         ))}
-      </div>
+      </ChipsRow>
 
       <CityFilter current={city} onChange={(value) => setParam('city', value)} />
 
-      <div className="chips">
+      <ChipsRow>
         <button
           type="button"
           className={`chip${!minRating ? ' chip--active' : ''}`}
@@ -123,10 +124,10 @@ export function SpecialistsPage() {
             Категория ✕
           </button>
         )}
-      </div>
+      </ChipsRow>
 
       {hasCoords && (
-        <div className="chips">
+        <ChipsRow>
           {NEARBY_RADII_KM.map((value) => (
             <button
               key={value}
@@ -137,7 +138,7 @@ export function SpecialistsPage() {
               до {value} км
             </button>
           ))}
-        </div>
+        </ChipsRow>
       )}
 
       <AsyncContent state={result}>
@@ -191,7 +192,7 @@ function CityFilter({ current, onChange }: { current?: string; onChange: (city: 
   if (list.length <= 1) return null;
 
   return (
-    <div className="chips">
+    <ChipsRow>
       <button
         type="button"
         className={`chip${!current ? ' chip--active' : ''}`}
@@ -209,6 +210,6 @@ function CityFilter({ current, onChange }: { current?: string; onChange: (city: 
           {city.name} <span style={{ opacity: 0.6 }}>{city.count}</span>
         </button>
       ))}
-    </div>
+    </ChipsRow>
   );
 }

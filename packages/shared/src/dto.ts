@@ -210,6 +210,27 @@ export const listingQuerySchema = paginationSchema.extend({
 });
 export type ListingQuery = z.infer<typeof listingQuerySchema>;
 
+/**
+ * Правка объявления модератором.
+ *
+ * Нужна для мелочей: опечатка в названии, цена в неверном разряде,
+ * описание с телефоном продавца. Отклонить и ждать исправления ради
+ * запятой — потерять и время модератора, и терпение продавца.
+ *
+ * Фотографии и категории сюда не входят намеренно: их правка меняет
+ * смысл объявления, и это уже не редактура, а подмена. Такое отклоняют
+ * с объяснением.
+ */
+export const adminEditListingSchema = z.object({
+  title: z.string().trim().min(3, 'Слишком короткое название').max(120),
+  description: z.string().trim().max(4000).nullable().optional(),
+  price: z.coerce.number().int().min(0).max(MAX_PRICE_RUB, 'Проверьте цену'),
+  isNegotiable: z.boolean().default(false),
+  condition: z.enum(['NEW', 'USED_PERFECT', 'USED']),
+  city: z.string().trim().min(2, 'Укажите город').max(100),
+});
+export type AdminEditListingDto = z.infer<typeof adminEditListingSchema>;
+
 export const moderateListingSchema = z.object({
   action: z.enum(['approve', 'reject']),
   reason: z.string().trim().max(500).optional(),

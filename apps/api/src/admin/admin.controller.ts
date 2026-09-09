@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import {
   moderateReviewSchema,
+  adminEditListingSchema,
   moderateListingSchema,
   moderateSpecialistSchema,
   paginationSchema,
@@ -20,6 +21,7 @@ import {
   upsertSpecialistSchema,
   upsertSubscriptionSchema,
   type ModerateReviewDto,
+  type AdminEditListingDto,
   type ModerateListingDto,
   type ModerateSpecialistDto,
   type UpsertCategoryDto,
@@ -91,6 +93,16 @@ export class AdminController {
   @Get('listings/pending')
   pendingListings() {
     return this.admin.pendingListings();
+  }
+
+  /** Правка мелочей в объявлении: опечатка, цена, лишний телефон в тексте. */
+  @Patch('listings/:id')
+  editListing(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(adminEditListingSchema)) dto: AdminEditListingDto,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.admin.editListing(id, dto, user.id);
   }
 
   @Patch('listings/:id/moderate')

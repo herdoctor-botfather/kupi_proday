@@ -29,7 +29,7 @@ import { clearStartRoute, startRoute } from './lib/start-param';
 import { useGoBack } from './lib/navigation';
 
 /** Вкладки нижней навигации: с них не «возвращаются», на них переключаются. */
-const ROOT_ROUTES = new Set(['/', '/map', '/chats', '/profile', '/market', '/wallet']);
+const ROOT_ROUTES = new Set(['/', '/onboarding', '/map', '/chats', '/profile', '/market', '/wallet']);
 
 /**
  * Есть ли куда возвращаться.

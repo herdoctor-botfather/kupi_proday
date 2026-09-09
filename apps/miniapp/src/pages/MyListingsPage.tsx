@@ -92,7 +92,7 @@ export function MyListingsPage() {
         и круглая поверх навигации, — и все вели в одно и то же место:
         выбор без выбора, который только загромождает экран.
       */}
-      <h1 className="page__title">Мои объявления</h1>
+      <h1 className="page__title">Мои объявления и запросы</h1>
 
       {error && <div className="alert alert--error">{error}</div>}
 
@@ -110,104 +110,114 @@ export function MyListingsPage() {
               </button>
             </>
           ) : (
+            /*
+              Продажа и запрос лежали вперемешку, а это разные дела:
+              у одного цена — ценник, у другого потолок, который человек
+              назвал сам. Разделяем заголовками, порядок внутри прежний.
+            */
             <div className="card-list">
-              {listings.map((listing) => {
-                const view = STATUS_VIEW[listing.status];
-                return (
-                  <div key={listing.id} className="my-listing">
-                    <div className="my-listing__head">
-                      <div className="my-listing__photo">
-                        {listing.coverUrl ? (
-                          <img src={listing.coverUrl} alt="" loading="lazy" />
-                        ) : (
-                          <span aria-hidden>{listing.kind === 'BUY' ? '🔎' : '📦'}</span>
+              {(['SELL', 'BUY'] as const).flatMap((kind) => {
+                const group = listings.filter((listing) => listing.kind === kind);
+                if (group.length === 0) return [];
+                return [
+                  <div key={kind} className="section-title">
+                    {kind === 'SELL' ? 'Объявления' : 'Запросы на покупку'}
+                  </div>,
+                  ...group.map((listing) => {
+                    const view = STATUS_VIEW[listing.status];
+                    return (
+                      <div key={listing.id} className="my-listing">
+                        <div className="my-listing__head">
+                          <div className="my-listing__photo">
+                            {listing.coverUrl ? (
+                              <img src={listing.coverUrl} alt="" loading="lazy" />
+                            ) : (
+                              <span aria-hidden>{listing.kind === 'BUY' ? '🔎' : '📦'}</span>
+                            )}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="my-listing__title">{listing.title}</div>
+                            <div className="my-listing__price">
+                              {/* У запроса цена — не ценник, а потолок,
+                                  который человек назвал сам. */}
+                              {listing.kind === 'BUY' && <span className="card__headline">до </span>}
+                              {formatPrice(listing.priceAmount, listing.currency)}
+                            </div>
+                            <div className="card__headline">
+                              {listing.viewCount}{' '}
+                              {pluralize(listing.viewCount, ['просмотр', 'просмотра', 'просмотров'])}
+                            </div>
+                          </div>
+                          <span className={`listing-status ${view.tone}`}>
+                            {view.icon} {view.label}
+                          </span>
+                        </div>
+
+                        {listing.rejectionReason && (
+                          <div className="alert alert--warning" style={{ margin: '10px 0 0' }}>
+                            <strong>Что поправить:</strong> {listing.rejectionReason}
+                          </div>
                         )}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        {/* Продажа и запрос лежат в одном списке, и без пометки
-                            владелец не поймёт, почему у одной записи цена — это
-                            ценник, а у другой потолок, который он сам назвал. */}
-                        {listing.kind === 'BUY' && <span className="badge-promoted">Ищу</span>}
-                        <div className="my-listing__title">{listing.title}</div>
-                        <div className="my-listing__price">
-                          {listing.kind === 'BUY' && (
-                            <span className="card__headline">до </span>
+
+                        {listing.needsReview && listing.status === 'ACTIVE' && (
+                          <div className="alert alert--info" style={{ margin: '10px 0 0' }}>
+                            Изменения на проверке. Объявление остаётся на витрине.
+                          </div>
+                        )}
+
+                        <div className="my-listing__actions">
+                          {listing.status !== 'SOLD' && (
+                            <button
+                              type="button"
+                              className="button button--secondary button--sm"
+                              onClick={() => navigate(`/market/sell?id=${listing.id}`)}
+                              disabled={busyId === listing.id}
+                            >
+                              Изменить
+                            </button>
                           )}
-                          {formatPrice(listing.priceAmount, listing.currency)}
+                          {/*
+                            Одна кнопка вместо двух. «Продано» и «Снять» —
+                            не два разных действия, а одно с разной причиной:
+                            объявление в обоих случаях уходит с витрины.
+                            Причину спрашиваем после нажатия — она уточняет
+                            уже принятое решение, а не предлагает выбрать одно
+                            из двух похожих.
+                          */}
+                          {listing.status === 'ACTIVE' && (
+                            <button
+                              type="button"
+                              className="button button--secondary button--sm"
+                              onClick={() => setRemoving(listing)}
+                              disabled={busyId === listing.id}
+                            >
+                              Снять с витрины
+                            </button>
+                          )}
+                          {(listing.status === 'HIDDEN' || listing.status === 'SOLD') && (
+                            <button
+                              type="button"
+                              className="button button--secondary button--sm"
+                              onClick={() => act(listing, 'publish')}
+                              disabled={busyId === listing.id}
+                            >
+                              Вернуть на витрину
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="button button--secondary button--sm"
+                            style={{ color: 'var(--destructive)', marginLeft: 'auto' }}
+                            onClick={() => act(listing, 'delete')}
+                            disabled={busyId === listing.id}
+                          >
+                            Удалить
+                          </button>
                         </div>
-                        <div className="card__headline">
-                          {listing.viewCount}{' '}
-                          {pluralize(listing.viewCount, ['просмотр', 'просмотра', 'просмотров'])}
-                        </div>
                       </div>
-                      <span className={`listing-status ${view.tone}`}>
-                        {view.icon} {view.label}
-                      </span>
-                    </div>
-
-                    {listing.rejectionReason && (
-                      <div className="alert alert--warning" style={{ margin: '10px 0 0' }}>
-                        <strong>Что поправить:</strong> {listing.rejectionReason}
-                      </div>
-                    )}
-
-                    {listing.needsReview && listing.status === 'ACTIVE' && (
-                      <div className="alert alert--info" style={{ margin: '10px 0 0' }}>
-                        Изменения на проверке. Объявление остаётся на витрине.
-                      </div>
-                    )}
-
-                    <div className="my-listing__actions">
-                      {listing.status !== 'SOLD' && (
-                        <button
-                          type="button"
-                          className="button button--secondary button--sm"
-                          onClick={() => navigate(`/market/sell?id=${listing.id}`)}
-                          disabled={busyId === listing.id}
-                        >
-                          Изменить
-                        </button>
-                      )}
-                      {/*
-                        Одна кнопка вместо двух. «Продано» и «Снять» —
-                        не два разных действия, а одно с разной причиной:
-                        объявление в обоих случаях уходит с витрины.
-                        Причину спрашиваем после нажатия — она уточняет
-                        уже принятое решение, а не предлагает выбрать одно
-                        из двух похожих.
-                      */}
-                      {listing.status === 'ACTIVE' && (
-                        <button
-                          type="button"
-                          className="button button--secondary button--sm"
-                          onClick={() => setRemoving(listing)}
-                          disabled={busyId === listing.id}
-                        >
-                          Снять с витрины
-                        </button>
-                      )}
-                      {(listing.status === 'HIDDEN' || listing.status === 'SOLD') && (
-                        <button
-                          type="button"
-                          className="button button--secondary button--sm"
-                          onClick={() => act(listing, 'publish')}
-                          disabled={busyId === listing.id}
-                        >
-                          Вернуть на витрину
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        className="button button--secondary button--sm"
-                        style={{ color: 'var(--destructive)', marginLeft: 'auto' }}
-                        onClick={() => act(listing, 'delete')}
-                        disabled={busyId === listing.id}
-                      >
-                        Удалить
-                      </button>
-                    </div>
-                  </div>
-                );
+                    );
+                  }),
+                ];
               })}
             </div>
           )

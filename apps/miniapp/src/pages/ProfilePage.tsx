@@ -67,6 +67,27 @@ export function ProfilePage() {
       {/* Заявки — первым делом: у них срок, и всё остальное в кабинете подождёт. */}
       {user.hasSpecialistProfile && <IncomingRequests />}
 
+      {/*
+        Первым — то, что человек проверяет чаще всего: как дела у его
+        объявлений. Анкету заводят однажды, а размещённое перечитывают,
+        правят и снимают, и путь к нему через раздел товаров человек
+        помнить не обязан.
+      */}
+      <Link to="/market/my" className="profile-cta" onClick={() => haptic.tap()}>
+        <span className="profile-cta__icon" aria-hidden>
+          📋
+        </span>
+        <span className="profile-cta__body">
+          <span className="profile-cta__title">Мои объявления и запросы</span>
+          <span className="profile-cta__text">
+            Что на витрине, что на проверке и что вы ищете сами
+          </span>
+        </span>
+        <span className="profile-cta__chevron" aria-hidden>
+          ›
+        </span>
+      </Link>
+
       <Link
         to={user.hasSpecialistProfile ? '/profile/my-card' : '/profile/application'}
         className="profile-cta"

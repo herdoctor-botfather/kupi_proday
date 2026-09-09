@@ -38,6 +38,19 @@ export class InternalController {
     );
   }
 
+  /** Мастер принял или отклонил заявку кнопкой под уведомлением. */
+  @Post('service-request/respond')
+  @HttpCode(200)
+  respondToRequest(
+    @Body() body: { telegramId?: string; requestId?: string; action?: 'accept' | 'decline' },
+  ): Promise<{ status: string; conversationId: string | null }> {
+    return this.internal.respondToRequest(
+      String(body?.telegramId ?? ''),
+      String(body?.requestId ?? ''),
+      body?.action === 'decline' ? 'decline' : 'accept',
+    );
+  }
+
   @Post('invoice')
   @HttpCode(200)
   invoice(

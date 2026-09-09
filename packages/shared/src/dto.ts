@@ -6,6 +6,7 @@ import {
   RATING_MAX,
   RATING_MIN,
   REVIEW_TEXT_MAX,
+  SERVICE_REQUEST_NOTE_MAX,
 } from './constants.js';
 
 /**
@@ -402,3 +403,10 @@ export const dealReviewSchema = z.object({
   text: z.string().trim().max(REVIEW_TEXT_MAX).nullable().optional(),
 });
 export type DealReviewDto = z.infer<typeof dealReviewSchema>;
+
+/** Заявка на услугу: кому и, необязательно, что именно нужно. */
+export const serviceRequestSchema = z.object({
+  specialistId: z.string().trim().min(1).max(40),
+  note: z.string().trim().max(SERVICE_REQUEST_NOTE_MAX).nullable().optional(),
+});
+export type ServiceRequestDto = z.infer<typeof serviceRequestSchema>;

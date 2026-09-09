@@ -15,6 +15,7 @@ import { ListingsModule } from './listings/listings.module';
 import { PaymentsModule } from './payments/payments.module';
 import { InternalModule } from './internal/internal.module';
 import { DealsModule } from './deals/deals.module';
+import { ServiceRequestsModule } from './service-requests/service-requests.module';
 import { HealthController } from './common/health.controller';
 
 @Module({
@@ -35,6 +36,7 @@ import { HealthController } from './common/health.controller';
     PaymentsModule,
     InternalModule,
     DealsModule,
+    ServiceRequestsModule,
   ],
   controllers: [HealthController],
 })

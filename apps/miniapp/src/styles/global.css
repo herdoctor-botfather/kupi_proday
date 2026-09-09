@@ -2225,6 +2225,26 @@ body::before {
   margin-top: 12px;
 }
 
+/* Ожидание ответа мастера. Не тревога и не ошибка — просто состояние,
+   поэтому спокойный блок, а не красная плашка. */
+.request-wait {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+}
+
+.request-wait__title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.request-wait__text {
+  font-size: 13.5px;
+  color: var(--text-hint);
+}
+
 /* Строка участия целиком нажимается: кнопка, а не ссылка, потому что
    внутри уже есть свои кнопки, а вложенные ссылки браузер не разрешает. */
 .involvement__open {

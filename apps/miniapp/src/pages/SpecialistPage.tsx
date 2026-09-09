@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { SERVICE_REQUEST_MINUTES, SERVICE_REQUEST_NOTE_MAX } from '@app/shared';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { AsyncContent } from '../components/states';
 import { Rating, RatingBreakdown } from '../components/Rating';
 import { ReviewForm, ReviewList } from '../components/Reviews';
-import { formatDistance, formatPrice } from '../lib/format';
+import { formatDistance, formatPrice, pluralize } from '../lib/format';
 import { haptic } from '../lib/telegram';
 import { useIsAuthenticated } from '../lib/auth';
 import { FavoriteButton } from '../components/FavoriteButton';
@@ -154,10 +155,15 @@ export function SpecialistPage() {
 }
 
 /**
- * Единственный способ связаться — чат внутри приложения.
+ * Обращение к мастеру — через заявку, а не сразу перепиской.
  *
- * Контакты в карточке больше не показываются: общение остаётся на площадке,
- * поэтому видно, о чём договорились, и спорную ситуацию можно разобрать.
+ * Открытый чат обещает ответ, а обещать за мастера нельзя: обращения
+ * оставались без ответа, и виноватой выглядела площадка. Теперь заказчик
+ * просит, мастер соглашается, и только тогда появляется переписка —
+ * согласие становится видимым событием, а не догадкой.
+ *
+ * У мастера на ответ полчаса. Заказчику видно, сколько осталось: ждать
+ * непонятно чего хуже, чем получить отказ.
  */
 function ContactAction({
   specialistId,
@@ -169,13 +175,21 @@ function ContactAction({
   canChat: boolean;
 }) {
   const navigate = useNavigate();
+  const state = useAsync(
+    () => (isAuthenticated && canChat ? api.serviceRequestFor(specialistId) : Promise.resolve(null)),
+    [specialistId, isAuthenticated, canChat],
+  );
+
+  const [composing, setComposing] = useState(false);
+  const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const left = useMinutesLeft(state.data?.status === 'PENDING' ? state.data.expiresAt : null);
 
   if (!isAuthenticated) {
     return (
       <div className="contact-note">
-        Откройте приложение в Telegram, чтобы написать специалисту.
+        Откройте приложение в Telegram, чтобы обратиться к специалисту.
       </div>
     );
   }
@@ -191,29 +205,139 @@ function ContactAction({
     );
   }
 
-  const write = async () => {
+  const send = async () => {
     setBusy(true);
     setError(null);
     try {
       haptic.tap();
-      const conversation = await api.startConversation(specialistId);
-      navigate(`/chat/${conversation.id}`);
+      const created = await api.requestService(specialistId, note.trim() || null);
+      haptic.success();
+      setComposing(false);
+      setNote('');
+      // Мастер мог согласиться раньше — тогда заявка не нужна и заказчик
+      // сразу попадает в переписку.
+      if (created.status === 'ACCEPTED' && created.conversationId) {
+        navigate(`/chat/${created.conversationId}`);
+        return;
+      }
+      state.reload();
     } catch (err) {
       haptic.error();
-      setError(err instanceof Error ? err.message : 'Не удалось открыть переписку');
+      setError(err instanceof Error ? err.message : 'Не удалось отправить заявку');
+    } finally {
       setBusy(false);
     }
   };
 
+  const request = state.data;
+
+  if (request?.status === 'ACCEPTED' && request.conversationId) {
+    return (
+      <div style={{ marginBottom: 18 }}>
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            haptic.tap();
+            navigate(`/chat/${request.conversationId}`);
+          }}
+        >
+          💬 Открыть переписку
+        </button>
+        <div className="contact-note">Мастер принял заявку — договаривайтесь о деталях в чате</div>
+      </div>
+    );
+  }
+
+  if (request?.status === 'PENDING') {
+    return (
+      <div className="request-wait">
+        <div className="request-wait__title">⏳ Заявка отправлена</div>
+        <div className="request-wait__text">
+          {left > 0
+            ? `Мастер отвечает. Осталось ${left} ${pluralize(left, ['минута', 'минуты', 'минут'])} — как ответит, придёт уведомление.`
+            : 'Время на ответ истекло. Обновите страницу или напишите другому мастеру.'}
+        </div>
+      </div>
+    );
+  }
+
+  const wasRefused = request?.status === 'DECLINED';
+  const wasIgnored = request?.status === 'EXPIRED';
+
   return (
     <div style={{ marginBottom: 18 }}>
-      <button type="button" className="button" onClick={write} disabled={busy}>
-        {busy ? 'Открываем...' : '💬 Написать специалисту'}
-      </button>
+      {/*
+        Отказ и молчание называем прямо. Скрыть их — значит оставить
+        человека гадать, почему кнопка снова предлагает то же самое.
+      */}
+      {wasRefused && (
+        <div className="alert alert--warning" style={{ marginBottom: 10 }}>
+          Мастер отказался от прошлой заявки. Можно попробовать ещё раз или поискать другого.
+        </div>
+      )}
+      {wasIgnored && (
+        <div className="alert alert--warning" style={{ marginBottom: 10 }}>
+          На прошлую заявку мастер не ответил вовремя. Попробуйте снова или выберите другого.
+        </div>
+      )}
+
+      {composing ? (
+        <>
+          <textarea
+            className="textarea"
+            value={note}
+            maxLength={SERVICE_REQUEST_NOTE_MAX}
+            placeholder="Что нужно сделать? Необязательно, но так мастер быстрее решит"
+            onChange={(event) => setNote(event.target.value)}
+          />
+          <div className="my-listing__actions">
+            <button type="button" className="button" disabled={busy} onClick={() => void send()}>
+              {busy ? 'Отправляем...' : 'Отправить заявку'}
+            </button>
+            <button
+              type="button"
+              className="button button--secondary"
+              disabled={busy}
+              onClick={() => setComposing(false)}
+            >
+              Отмена
+            </button>
+          </div>
+        </>
+      ) : (
+        <button
+          type="button"
+          className="button"
+          disabled={state.loading}
+          onClick={() => {
+            haptic.tap();
+            setComposing(true);
+          }}
+        >
+          🤝 Воспользоваться услугой
+        </button>
+      )}
+
       {error && <div className="field__error" style={{ marginTop: 6 }}>{error}</div>}
       <div className="contact-note">
-        Общение внутри приложения: переписка сохраняется, и в спорной ситуации есть на что сослаться
+        Мастер ответит в течение {SERVICE_REQUEST_MINUTES} минут. Переписка откроется, когда он примет заявку
       </div>
     </div>
   );
+}
+
+/** Сколько минут осталось у мастера. Пересчитывается на месте, без перезагрузки. */
+function useMinutesLeft(expiresAt: string | null): number {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    // Раз в полминуты: чаще незачем — показываем минуты, а не секунды.
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, [expiresAt]);
+
+  if (!expiresAt) return 0;
+  return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - now) / 60_000));
 }

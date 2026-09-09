@@ -34,6 +34,21 @@ export class NotificationsService {
     });
   }
 
+  /**
+   * Уведомление, на которое можно ответить, не открывая приложение.
+   *
+   * Нужно там, где счёт идёт на минуты: заявка на услугу живёт полчаса,
+   * и путь «открыть приложение — найти экран — нажать» съедает их прежде,
+   * чем мастер успеет согласиться. Нажатие обрабатывает бот и возвращает
+   * решение сюда же, на сервер: правила остаются в одном месте.
+   */
+  notifyWithActions(userId: string, text: string, actions: { text: string; data: string }[]): void {
+    if (!config.notificationsEnabled) return;
+    void this.send(userId, text, undefined, actions).catch((error: unknown) => {
+      this.logger.warn(`Не удалось уведомить ${userId}: ${String(error)}`);
+    });
+  }
+
   /** Уведомляет всех администраторов и модераторов. */
   async notifyStaff(text: string, buttonUrl?: string): Promise<void> {
     if (!config.notificationsEnabled) return;
@@ -44,7 +59,12 @@ export class NotificationsService {
     for (const member of staff) this.notify(member.id, text, buttonUrl);
   }
 
-  private async send(userId: string, text: string, buttonUrl?: string): Promise<void> {
+  private async send(
+    userId: string,
+    text: string,
+    buttonUrl?: string,
+    actions?: { text: string; data: string }[],
+  ): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { telegramId: true, botBlocked: true },
@@ -63,9 +83,17 @@ export class NotificationsService {
         text,
         parse_mode: 'HTML',
         link_preview_options: { is_disabled: true },
-        ...(buttonUrl
-          ? { reply_markup: { inline_keyboard: [[{ text: 'Открыть приложение', web_app: { url: buttonUrl } }]] } }
-          : {}),
+        ...(actions?.length
+          ? {
+              // Кнопки действия в один ряд: их две, и выбор между ними
+              // должен читаться как выбор, а не как список.
+              reply_markup: {
+                inline_keyboard: [actions.map((action) => ({ text: action.text, callback_data: action.data }))],
+              },
+            }
+          : buttonUrl
+            ? { reply_markup: { inline_keyboard: [[{ text: 'Открыть приложение', web_app: { url: buttonUrl } }]] } }
+            : {}),
       }),
     });
 

@@ -82,11 +82,22 @@ export class ChatService {
       });
     }
 
-    return this.prisma.conversation.upsert({
+    /*
+     * Переписку с мастером открывает не заказчик, а согласие мастера.
+     *
+     * Уже существующий диалог продолжаем без вопросов: люди общаются,
+     * и требовать заявку у тех, кто договорился ещё вчера, — значит
+     * ломать разговор ради правила.
+     */
+    const existing = await this.prisma.conversation.findUnique({
       where: { specialistId_clientId: { specialistId, clientId } },
-      create: { specialistId, clientId },
-      update: {},
       include: conversationInclude,
+    });
+    if (existing) return existing;
+
+    throw new ForbiddenException({
+      code: 'SERVICE_REQUEST_REQUIRED',
+      message: 'Сначала отправьте заявку — переписка откроется, когда мастер её примет',
     });
   }
 

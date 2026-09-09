@@ -9,8 +9,11 @@ import type {
   CreateInvoiceDto,
   CreateReportDto,
   CreateReviewDto,
+  IncomingServiceRequest,
   Involvement,
   ListingDetail,
+  ServiceRequestState,
+  ServiceRequestStatus,
   ListingDto,
   ListingListItem,
   MyListing,
@@ -216,6 +219,28 @@ export const api = {
 
   /** Чужие анкеты, товары и запросы, в которых пользователь участвует. */
   involvements: () => request<Involvement[]>('/deals/involved'),
+
+  // ─── Заявки на услугу ───
+
+  /** Попросить мастера взяться за работу. Переписки до его согласия нет. */
+  requestService: (specialistId: string, note?: string | null) =>
+    request<ServiceRequestState>('/service-requests', {
+      method: 'POST',
+      body: JSON.stringify({ specialistId, note: note ?? null }),
+    }),
+
+  /** Что сейчас с моей заявкой к этому мастеру. */
+  serviceRequestFor: (specialistId: string) =>
+    request<ServiceRequestState | null>(`/service-requests/for/${specialistId}`),
+
+  /** Заявки, ждущие моего ответа как мастера. */
+  incomingRequests: () => request<IncomingServiceRequest[]>('/service-requests/incoming'),
+
+  answerRequest: (id: string, action: 'accept' | 'decline') =>
+    request<{ status: ServiceRequestStatus; conversationId: string | null }>(
+      `/service-requests/${id}/${action}`,
+      { method: 'POST' },
+    ),
 
   reviewDeal: (dealId: string, rating: number, text: string | null) =>
     request<{ revealed: boolean }>(`/deals/${dealId}/review`, {

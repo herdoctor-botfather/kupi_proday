@@ -220,6 +220,32 @@ export interface ConversationSummary {
   role: 'CLIENT' | 'SPECIALIST';
 }
 
+export type ServiceRequestStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED';
+
+/**
+ * Заявка на услугу глазами заказчика.
+ *
+ * Переписка появляется только после согласия мастера, поэтому до тех пор
+ * заказчику нужно видеть, что происходит: заявка ушла, срок идёт, ответ
+ * такой-то. Молчащий экран здесь хуже отказа.
+ */
+export interface ServiceRequestState {
+  id: string;
+  status: ServiceRequestStatus;
+  note: string | null;
+  createdAt: string;
+  /** До какого момента мастер может согласиться. */
+  expiresAt: string;
+  /** Переписка, открытая согласием мастера. */
+  conversationId: string | null;
+}
+
+/** Та же заявка глазами мастера — с тем, кто её прислал. */
+export interface IncomingServiceRequest extends ServiceRequestState {
+  client: ConversationParty;
+  specialist: { id: string; displayName: string };
+}
+
 /**
  * Чужое дело, в котором пользователь участвует: анкета мастера, товар
  * или запрос на покупку, куда он написал.

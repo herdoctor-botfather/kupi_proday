@@ -78,6 +78,7 @@ model User {
   dealsAsBuyer  Deal[]       @relation("DealsAsBuyer")
   writtenUserReviews  UserReview[] @relation("WrittenUserReviews")
   receivedUserReviews UserReview[] @relation("ReceivedUserReviews")
+  serviceRequests     ServiceRequest[] @relation("ServiceRequests")
 
   /// Остаток звёзд на балансе. Хранится числом ради скорости: считать
   /// его по всем движениям на каждый показ экрана слишком дорого.
@@ -205,6 +206,7 @@ model Specialist {
   favorites     Favorite[]
   subscriptions Subscription[]
   conversations Conversation[]
+  requests      ServiceRequest[]
 
   @@index([status, ratingAvg])
   @@index([status, needsReview])
@@ -542,6 +544,57 @@ model UserReview {
   @@unique([dealId, authorId])
   @@index([targetId, revealedAt])
   @@map("user_reviews")
+}
+
+// ─────────────────── Заявки на услугу ───────────────────
+
+/// Чем кончилась заявка.
+enum ServiceRequestStatus {
+  /// Отправлена, мастер ещё не ответил.
+  PENDING
+  /// Мастер взялся — открылась переписка.
+  ACCEPTED
+  /// Мастер отказался.
+  DECLINED
+  /// Мастер промолчал дольше отведённого срока.
+  EXPIRED
+}
+
+/// Заявка на услугу: заказчик просит, мастер соглашается.
+///
+/// Раньше переписку с мастером открывал сам заказчик, и мастер узнавал
+/// об обращении только по сообщению — а мог не ответить вовсе. Заявка
+/// делает согласие явным: пока мастер не сказал «беру», чата нет, и
+/// заказчик не ждёт ответа в пустоту.
+///
+/// Срок ответа короткий намеренно. Услуга нужна сейчас, и заказчик,
+/// не получив ответа за полчаса, пойдёт к следующему — так и должно
+/// быть. Просроченная заявка не мешает отправить новую.
+model ServiceRequest {
+  id String @id @default(cuid())
+
+  specialistId String
+  specialist   Specialist @relation(fields: [specialistId], references: [id], onDelete: Cascade)
+
+  clientId String
+  client   User   @relation("ServiceRequests", fields: [clientId], references: [id], onDelete: Cascade)
+
+  /// Что именно нужно — необязательно: часто всё ясно из самой анкеты.
+  note String? @db.Text
+
+  status ServiceRequestStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+
+  /// До какого момента мастер может согласиться. Проверяется при чтении
+  /// и при ответе: отдельная задача, которая ходила бы по базе и гасила
+  /// просроченные, была бы лишним местом для поломки.
+  expiresAt   DateTime
+  respondedAt DateTime?
+
+  @@index([specialistId, status, createdAt])
+  @@index([clientId, createdAt])
+  @@map("service_requests")
 }
 
 // ─────────────────────────── Оплата ───────────────────────────

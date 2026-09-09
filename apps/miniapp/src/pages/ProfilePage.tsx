@@ -64,6 +64,9 @@ export function ProfilePage() {
         {user.role !== 'USER' && <span className="badge-promoted">{user.role}</span>}
       </div>
 
+      {/* Заявки — первым делом: у них срок, и всё остальное в кабинете подождёт. */}
+      {user.hasSpecialistProfile && <IncomingRequests />}
+
       <Link
         to={user.hasSpecialistProfile ? '/profile/my-card' : '/profile/application'}
         className="profile-cta"
@@ -296,6 +299,94 @@ function ProfileAvatar({ photoUrl }: { photoUrl: string | null }) {
 
       {error && <span className="profile__avatar-error">{error}</span>}
     </div>
+  );
+}
+
+/**
+ * Заявки, ждущие ответа мастера.
+ *
+ * Заявка живёт полчаса, поэтому она стоит выше всего остального в кабинете
+ * и показывает, сколько осталось. Отказ здесь — такое же законное действие,
+ * как согласие: занятому мастеру важно уметь освободить человека, а не
+ * молчать до истечения срока.
+ */
+function IncomingRequests() {
+  const navigate = useNavigate();
+  const state = useAsync(() => api.incomingRequests(), []);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const items = state.data ?? [];
+  if (items.length === 0) return null;
+
+  const answer = async (id: string, action: 'accept' | 'decline') => {
+    setBusyId(id);
+    setError(null);
+    try {
+      const result = await api.answerRequest(id, action);
+      haptic.success();
+      if (action === 'accept' && result.conversationId) {
+        navigate(`/chat/${result.conversationId}`);
+        return;
+      }
+      state.reload();
+    } catch (err) {
+      haptic.error();
+      setError(err instanceof Error ? err.message : 'Не удалось ответить');
+      state.reload();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <>
+      <div className="section-title">Заявки на услугу</div>
+      {error && <div className="alert alert--error">{error}</div>}
+
+      {items.map((item) => (
+        <div key={item.id} className="deal-card">
+          <div className="deal-card__head">
+            {item.client.photoUrl ? (
+              <img className="seller__avatar" src={item.client.photoUrl} alt="" />
+            ) : (
+              <div className="seller__avatar" aria-hidden>
+                {item.client.name.charAt(0)}
+              </div>
+            )}
+            <div>
+              <div className="seller__name">{item.client.name}</div>
+              <div className="card__headline">Хочет воспользоваться услугой</div>
+            </div>
+          </div>
+
+          {item.note && <div style={{ whiteSpace: 'pre-line', marginTop: 8 }}>{item.note}</div>}
+
+          <div className="my-listing__actions">
+            <button
+              type="button"
+              className="button button--sm"
+              disabled={busyId === item.id}
+              onClick={() => void answer(item.id, 'accept')}
+            >
+              Принять запрос
+            </button>
+            <button
+              type="button"
+              className="button button--secondary button--sm"
+              disabled={busyId === item.id}
+              onClick={() => void answer(item.id, 'decline')}
+            >
+              Отказать
+            </button>
+          </div>
+
+          <p className="form-hint">
+            Переписка откроется сразу после согласия. Если промолчать, заявка сгорит.
+          </p>
+        </div>
+      ))}
+    </>
   );
 }
 

@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
 import { MySpecialistService } from '../specialists/my-specialist.service';
 import { ListingsService } from '../listings/listings.service';
+import { ServiceRequestsService } from '../service-requests/service-requests.service';
 
 /** Что бот показывает в кабинете. Ровно то, что помещается в одно сообщение. */
 export interface CabinetSummary {
@@ -39,7 +40,20 @@ export class InternalService {
     private readonly payments: PaymentsService,
     private readonly specialists: MySpecialistService,
     private readonly listings: ListingsService,
+    private readonly requests: ServiceRequestsService,
   ) {}
+
+  /**
+   * Ответ мастера на заявку прямо из переписки с ботом.
+   *
+   * Заявка живёт полчаса, и путь через приложение съедает их слишком
+   * быстро. Решение всё равно принимает сервер — бот только передаёт
+   * нажатие и то, кто нажал.
+   */
+  async respondToRequest(telegramId: string, requestId: string, action: 'accept' | 'decline') {
+    const user = await this.findUser(telegramId);
+    return this.requests.respond(user.id, String(requestId ?? ''), action);
+  }
 
   async summary(telegramId: string): Promise<CabinetSummary> {
     const user = await this.findUser(telegramId);

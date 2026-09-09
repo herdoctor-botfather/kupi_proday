@@ -3,12 +3,11 @@ import { NavLink } from 'react-router-dom';
 import { haptic } from '../lib/telegram';
 import { api } from '../lib/api';
 import { useIsAuthenticated } from '../lib/auth';
-import { IconCatalog, IconChats, IconMap, IconMarket, IconProfile } from './TabIcons';
+import { IconChats, IconMap, IconProfile, IconWallet } from './TabIcons';
 
 const TABS = [
-  { to: '/', icon: IconCatalog, label: 'Каталог', end: true },
   { to: '/map', icon: IconMap, label: 'Карта', end: false },
-  { to: '/market', icon: IconMarket, label: 'Товары', end: false },
+  { to: '/wallet', icon: IconWallet, label: 'Кошелёк', end: false },
   { to: '/chats', icon: IconChats, label: 'Чаты', end: false },
   { to: '/profile', icon: IconProfile, label: 'Профиль', end: false },
 ];

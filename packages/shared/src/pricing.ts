@@ -62,7 +62,31 @@ export const LISTING_PROMOTION_IDS = Object.keys(LISTING_PROMOTIONS) as ListingP
 export const isListingPromotion = (value: string): value is ListingPromotion =>
   Object.prototype.hasOwnProperty.call(LISTING_PROMOTIONS, value);
 
+/**
+ * Наборы для пополнения кошелька.
+ *
+ * Суммы фиксированные, а не произвольные: произвольная сумма заставляет
+ * человека решать лишнюю задачу — «сколько мне надо?» — на которую он
+ * не знает ответа, пока не изучил цены. Готовые наборы отвечают на неё
+ * за него, и каждый привязан к тому, что на него можно купить.
+ */
+export const TOPUP_PACKS = [
+  { stars: 199, hint: 'Месяц показа анкеты' },
+  { stars: 499, hint: 'Три месяца показа' },
+  { stars: 1000, hint: 'С запасом на продвижение' },
+  { stars: 2500, hint: 'Год показа и объявления' },
+] as const;
+
+export const TOPUP_STARS = TOPUP_PACKS.map((pack) => pack.stars);
+
+export const isTopupAmount = (value: number): boolean => TOPUP_STARS.includes(value as never);
+
 /** За что именно платят. Хранится в базе и разбирается при подтверждении оплаты. */
-export const PAYMENT_PURPOSES = ['SPECIALIST_SUBSCRIPTION', 'LISTING_SLOT', 'LISTING_PROMOTION'] as const;
+export const PAYMENT_PURPOSES = [
+  'SPECIALIST_SUBSCRIPTION',
+  'LISTING_SLOT',
+  'LISTING_PROMOTION',
+  'WALLET_TOPUP',
+] as const;
 
 export type PaymentPurpose = (typeof PAYMENT_PURPOSES)[number];

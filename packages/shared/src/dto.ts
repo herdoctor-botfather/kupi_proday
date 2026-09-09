@@ -308,14 +308,20 @@ export type UpsertSubscriptionDto = z.infer<typeof upsertSubscriptionSchema>;
  */
 export const createInvoiceSchema = z
   .object({
-    purpose: z.enum(['SPECIALIST_SUBSCRIPTION', 'LISTING_SLOT', 'LISTING_PROMOTION']),
+    purpose: z.enum(['SPECIALIST_SUBSCRIPTION', 'LISTING_SLOT', 'LISTING_PROMOTION', 'WALLET_TOPUP']),
     /** 'month' | 'quarter' | 'year' для подписки, 'week' | 'month' для продвижения. */
     plan: z.string().trim().min(1).max(32).optional(),
     listingId: z.string().trim().min(1).max(40).optional(),
+    /** Сумма пополнения в звёздах. Сервер принимает только из готовых наборов. */
+    stars: z.coerce.number().int().min(1).max(100_000).optional(),
   })
-  .refine((v) => v.purpose === 'LISTING_SLOT' || Boolean(v.plan), {
-    message: 'Не выбран тариф',
-    path: ['plan'],
+  .refine(
+    (v) => v.purpose === 'LISTING_SLOT' || v.purpose === 'WALLET_TOPUP' || Boolean(v.plan),
+    { message: 'Не выбран тариф', path: ['plan'] },
+  )
+  .refine((v) => v.purpose !== 'WALLET_TOPUP' || Boolean(v.stars), {
+    message: 'Не выбрана сумма пополнения',
+    path: ['stars'],
   })
   // Объявление нужно знать только для продвижения: место покупается
   // заранее и ни к какому объявлению не привязано — человек платит за

@@ -13,6 +13,7 @@ import {
   SPECIALIST_PLANS,
   isListingPromotion,
   isSpecialistPlan,
+  isTopupAmount,
   type CreateInvoiceDto,
   type ConfirmPaymentDto,
 } from '@app/shared';
@@ -132,6 +133,22 @@ export class PaymentsService {
         await this.applySubscription(tx, payment.id, payment.specialistId, payment.plan, payment.stars);
       } else if (payment.purpose === 'LISTING_PROMOTION') {
         await this.applyPromotion(tx, payment.listingId, payment.plan);
+      } else if (payment.purpose === 'WALLET_TOPUP') {
+        const user = await tx.user.update({
+          where: { id: payment.userId },
+          data: { starsBalance: { increment: payment.stars } },
+          select: { starsBalance: true },
+        });
+        await tx.walletEntry.create({
+          data: {
+            userId: payment.userId,
+            kind: 'TOPUP',
+            stars: payment.stars,
+            balanceAfter: user.starsBalance,
+            title: `Пополнение на ${payment.stars} ★`,
+            paymentId: payment.id,
+          },
+        });
       }
       // LISTING_SLOT выдавать нечего: оплаченное место — это сама запись,
       // и лимит считает её при следующей попытке разместить объявление.
@@ -186,8 +203,111 @@ export class PaymentsService {
     });
   }
 
+  /** Кошелёк: остаток и история движений. */
+  async wallet(userId: string): Promise<{
+    balance: number;
+    entries: {
+      id: string;
+      kind: string;
+      stars: number;
+      balanceAfter: number;
+      title: string;
+      createdAt: string;
+    }[];
+  }> {
+    const [user, entries] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: userId }, select: { starsBalance: true } }),
+      this.prisma.walletEntry.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        select: { id: true, kind: true, stars: true, balanceAfter: true, title: true, createdAt: true },
+      }),
+    ]);
+
+    return {
+      balance: user?.starsBalance ?? 0,
+      entries: entries.map((entry) => ({ ...entry, createdAt: entry.createdAt.toISOString() })),
+    };
+  }
+
+  /**
+   * Списывает с баланса и выдаёт купленное.
+   *
+   * Проверка остатка и списание идут одной операцией с условием на сумму:
+   * два одновременных запроса иначе оба увидели бы достаточный остаток
+   * и оба прошли бы, уведя баланс в минус.
+   */
+  async payFromBalance(userId: string, dto: CreateInvoiceDto): Promise<{ balance: number }> {
+    const order = await this.describeOrder(userId, dto);
+    if (dto.purpose === 'WALLET_TOPUP') {
+      throw new BadRequestException('Пополнить кошелёк с его же баланса нельзя');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const debited = await tx.user.updateMany({
+        where: { id: userId, starsBalance: { gte: order.stars } },
+        data: { starsBalance: { decrement: order.stars } },
+      });
+      if (debited.count === 0) throw new BadRequestException('На балансе недостаточно звёзд');
+
+      const user = await tx.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { starsBalance: true },
+      });
+
+      const payment = await tx.payment.create({
+        data: {
+          userId,
+          purpose: dto.purpose,
+          status: 'PAID',
+          paidAt: new Date(),
+          stars: order.stars,
+          plan: dto.plan ?? null,
+          listingId: order.listingId ?? null,
+          specialistId: order.specialistId ?? null,
+          invoicePayload: `b_${randomUUID().replace(/-/g, '')}`,
+        },
+        select: { id: true },
+      });
+
+      await tx.walletEntry.create({
+        data: {
+          userId,
+          kind: 'SPEND',
+          stars: -order.stars,
+          balanceAfter: user.starsBalance,
+          title: order.title,
+          paymentId: payment.id,
+        },
+      });
+
+      if (dto.purpose === 'SPECIALIST_SUBSCRIPTION') {
+        await this.applySubscription(tx, payment.id, order.specialistId ?? null, dto.plan ?? null, order.stars);
+      } else if (dto.purpose === 'LISTING_PROMOTION') {
+        await this.applyPromotion(tx, order.listingId ?? null, dto.plan ?? null);
+      }
+
+      return { balance: user.starsBalance };
+    });
+  }
+
   /** Что именно покупают, почём и можно ли это купить. */
   private async describeOrder(userId: string, dto: CreateInvoiceDto) {
+    if (dto.purpose === 'WALLET_TOPUP') {
+      const stars = dto.stars ?? 0;
+      // Сумму берём не на веру: иначе счёт на одну звезду пополнил бы
+      // баланс на любое число, которое пришлёт клиент.
+      if (!isTopupAmount(stars)) throw new BadRequestException('Такой суммы пополнения нет');
+      return {
+        stars,
+        title: `Пополнение на ${stars} ★`,
+        description: 'Звёзды зачисляются на баланс и тратятся внутри приложения',
+        specialistId: undefined as string | undefined,
+        listingId: undefined as string | undefined,
+      };
+    }
+
     if (dto.purpose === 'SPECIALIST_SUBSCRIPTION') {
       const plan = dto.plan ?? '';
       if (!isSpecialistPlan(plan)) throw new BadRequestException('Неизвестный тариф подписки');

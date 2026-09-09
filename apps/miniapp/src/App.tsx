@@ -7,6 +7,7 @@ import { OnboardingPage } from './pages/OnboardingPage';
 import { ApplicationPage } from './pages/ApplicationPage';
 import { MyCardPage } from './pages/MyCardPage';
 import { SubscriptionPage } from './pages/SubscriptionPage';
+import { WalletPage } from './pages/WalletPage';
 import { ChatsPage } from './pages/ChatsPage';
 import { ChatPage } from './pages/ChatPage';
 import { MarketPage } from './pages/MarketPage';
@@ -28,7 +29,7 @@ import { clearStartRoute, startRoute } from './lib/start-param';
 import { useGoBack } from './lib/navigation';
 
 /** Вкладки нижней навигации: с них не «возвращаются», на них переключаются. */
-const ROOT_ROUTES = new Set(['/', '/map', '/chats', '/profile', '/market']);
+const ROOT_ROUTES = new Set(['/', '/map', '/chats', '/profile', '/market', '/wallet']);
 
 /**
  * Есть ли куда возвращаться.
@@ -148,6 +149,7 @@ function Shell() {
       <Route path="/profile/application" element={<ApplicationPage />} />
       <Route path="/profile/my-card" element={<MyCardPage />} />
       <Route path="/profile/subscription" element={<SubscriptionPage />} />
+      <Route path="/wallet" element={<WalletPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route
         path="*"

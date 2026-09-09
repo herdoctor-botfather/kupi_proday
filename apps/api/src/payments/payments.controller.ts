@@ -39,6 +39,24 @@ export class PaymentsController {
     return this.payments.history(user.id);
   }
 
+  /** Кошелёк: остаток и движения. */
+  @Get('wallet')
+  @UseGuards(JwtAuthGuard)
+  wallet(@CurrentUser() user: RequestUser) {
+    return this.payments.wallet(user.id);
+  }
+
+  /** Покупка за звёзды, уже лежащие на балансе. */
+  @Post('pay-from-balance')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  payFromBalance(
+    @CurrentUser() user: RequestUser,
+    @Body(new ZodValidationPipe(createInvoiceSchema)) dto: CreateInvoiceDto,
+  ): Promise<{ balance: number }> {
+    return this.payments.payFromBalance(user.id, dto);
+  }
+
   /**
    * Проверка счёта перед списанием. Бот спрашивает это на pre_checkout_query,
    * и ответить нужно за десять секунд — молчание Telegram считает отказом.

@@ -66,6 +66,13 @@ model User {
   messages      Message[]      @relation("SentMessages")
   listings      Listing[]
   payments      Payment[]
+  walletEntries WalletEntry[]
+
+  /// Остаток звёзд на балансе. Хранится числом ради скорости: считать
+  /// его по всем движениям на каждый показ экрана слишком дорого.
+  /// Достоверность обеспечивает то, что число и движение всегда
+  /// меняются в одной транзакции.
+  starsBalance Int @default(0)
 
   @@index([role])
   @@map("users")
@@ -468,6 +475,51 @@ enum PaymentPurpose {
   LISTING_SLOT
   /// Продвижение объявления: подъём в начало списка на срок.
   LISTING_PROMOTION
+  /// Пополнение кошелька: звёзды переходят на баланс и тратятся потом.
+  WALLET_TOPUP
+}
+
+/// Куда движутся звёзды на балансе.
+enum WalletEntryKind {
+  /// Пополнение звёздами Telegram.
+  TOPUP
+  /// Списание за покупку.
+  SPEND
+  /// Возврат — при отмене покупки или по решению администратора.
+  REFUND
+  /// Начисление администратором: компенсация, бонус, исправление ошибки.
+  ADJUSTMENT
+}
+
+/// Движение по кошельку.
+///
+/// Баланс хранится у пользователя числом, но каждое его изменение обязано
+/// иметь здесь строку. Само по себе число ничего не объясняет: при споре
+/// «я пополнял на триста» ответить нечем, если движения не записаны.
+/// Остаток после операции хранится вместе с ней — так видно не только
+/// что произошло, но и к чему это привело.
+model WalletEntry {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  kind  WalletEntryKind
+  /// Со знаком: пополнение положительное, списание отрицательное.
+  stars Int
+  /// Остаток после операции — для сверки и для истории в приложении.
+  balanceAfter Int
+
+  /// Человеческое описание: «Подписка на месяц», «Пополнение».
+  title String
+
+  /// Оплата, которой сделано пополнение. У списаний пусто.
+  paymentId String?  @unique
+  payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("wallet_entries")
 }
 
 enum PaymentStatus {
@@ -523,6 +575,7 @@ model Payment {
   refundedAt DateTime?
 
   subscription Subscription?
+  walletEntry  WalletEntry?
 
   @@index([userId, createdAt])
   @@index([status, createdAt])

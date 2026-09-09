@@ -13,12 +13,17 @@ import { usePurchase } from '../lib/usePurchase';
  */
 export function SubscriptionPage() {
   const [profile, setProfile] = useState<MySpecialistProfile | null>(null);
+  const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [paying, setPaying] = useState(false);
 
   const load = useCallback(async () => {
-    const fresh = await api.myProfile();
+    // Кошелёк тянем вместе с анкетой: от остатка зависит сам способ
+    // оплаты, и узнавать его после нажатия было бы поздно.
+    const [fresh, wallet] = await Promise.all([api.myProfile(), api.wallet().catch(() => null)]);
     setProfile(fresh);
+    if (wallet) setBalance(wallet.balance);
     return fresh;
   }, []);
 
@@ -35,6 +40,33 @@ export function SubscriptionPage() {
     const fresh = await load();
     return Boolean(fresh?.subscriptionEndsAt) && fresh?.subscriptionEndsAt !== previousEnd;
   });
+
+  const [balanceError, setBalanceError] = useState<string | null>(null);
+
+  /**
+   * Хватает на балансе — списываем оттуда, не хватает — платим звёздами
+   * напрямую. Спрашивать человека, каким из двух способов он хочет
+   * заплатить одну и ту же сумму, значит перекладывать на него выбор,
+   * у которого нет последствий.
+   */
+  const pay = async (plan: string, price: number) => {
+    setBalanceError(null);
+    if (balance < price) {
+      void buy({ purpose: 'SPECIALIST_SUBSCRIPTION', plan });
+      return;
+    }
+
+    setPaying(true);
+    try {
+      const { balance: left } = await api.payFromBalance({ purpose: 'SPECIALIST_SUBSCRIPTION', plan });
+      setBalance(left);
+      await load();
+    } catch (err) {
+      setBalanceError(err instanceof Error ? err.message : 'Не удалось списать с баланса');
+    } finally {
+      setPaying(false);
+    }
+  };
 
   if (loading) return <div className="page" />;
 
@@ -90,17 +122,24 @@ export function SubscriptionPage() {
               key={id}
               type="button"
               className="plan"
-              disabled={busy}
-              onClick={() => void buy({ purpose: 'SPECIALIST_SUBSCRIPTION', plan: id })}
+              disabled={busy || paying}
+              onClick={() => void pay(id, plan.stars)}
             >
               <span className="plan__title">{plan.title}</span>
               <span className="plan__price">{plan.stars} ★</span>
-              <span className="plan__note">примерно {perDay} ★ в день</span>
+              <span className="plan__note">
+                примерно {perDay} ★ в день
+                {balance >= plan.stars ? ' · спишется с баланса' : ''}
+              </span>
             </button>
           );
         })}
       </div>
 
+      <p className="form-hint">На балансе: {balance} ★</p>
+
+      {paying && <p className="form-hint">Списываем с баланса…</p>}
+      {balanceError && <p className="form-error">{balanceError}</p>}
       {state === 'waiting' && <p className="form-hint">Оплата прошла, применяем…</p>}
       {state === 'done' && <p className="form-hint">Готово. Анкета снова в каталоге.</p>}
       {state === 'cancelled' && <p className="form-hint">Оплата отменена.</p>}

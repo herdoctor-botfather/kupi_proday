@@ -241,7 +241,29 @@ export const api = {
   listingQuota: () => request<ListingQuota>('/payments/listing-quota'),
 
   paymentHistory: () => request<PaymentHistoryItem[]>('/payments/my'),
+
+  wallet: () => request<Wallet>('/payments/wallet'),
+
+  payFromBalance: (dto: CreateInvoiceDto) =>
+    request<{ balance: number }>('/payments/pay-from-balance', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    }),
 };
+
+/** Кошелёк: остаток и последние движения. */
+export interface Wallet {
+  balance: number;
+  entries: {
+    id: string;
+    kind: 'TOPUP' | 'SPEND' | 'REFUND' | 'ADJUSTMENT';
+    /** Со знаком: пополнение положительное, списание отрицательное. */
+    stars: number;
+    balanceAfter: number;
+    title: string;
+    createdAt: string;
+  }[];
+}
 
 /** Сколько объявлений человек может разместить прямо сейчас. */
 export interface ListingQuota {

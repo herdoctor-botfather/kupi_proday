@@ -3590,7 +3590,7 @@ body {
  */
 .onboarding .role-card--banner {
   padding-top: 10px;
-  background: color-mix(in srgb, #fff 7%, var(--surface-raised));
+  background: color-mix(in srgb, #000 14%, var(--surface-raised));
 }
 
 .onboarding .role-card--banner .role-card__photo {
@@ -3644,5 +3644,63 @@ body {
 
   .role-cards {
     gap: 6px;
+  }
+}
+
+/* ─── Двери: перелив по полю карточки ─── */
+
+/*
+ * Медленный блик, проходящий по карточке слева направо. Он не сообщает
+ * ничего и не зовёт нажать — он только не даёт четырём одинаковым
+ * прямоугольникам выглядеть мёртвыми. Поэтому и держится на грани
+ * различимости: заметить его можно, обратить на него внимание — нет.
+ */
+.onboarding .role-card--banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.055) 50%,
+    transparent 62%
+  );
+  /* Полоса шире карточки: иначе на входе и выходе был бы виден её край. */
+  background-size: 260% 100%;
+  background-repeat: no-repeat;
+  animation: door-sheen 7s linear infinite;
+}
+
+@keyframes door-sheen {
+  from {
+    background-position: 170% 0;
+  }
+
+  to {
+    background-position: -70% 0;
+  }
+}
+
+/* Вразнобой: одновременная вспышка по всем четырём читалась бы как
+   мигание экрана, а не как перелив. */
+.onboarding .role-cards > :nth-child(2)::before {
+  animation-delay: -1.7s;
+}
+
+.onboarding .role-cards > :nth-child(3)::before {
+  animation-delay: -3.4s;
+}
+
+.onboarding .role-cards > :nth-child(4)::before {
+  animation-delay: -5.1s;
+}
+
+/* Кому движение мешает — тому его нет: перелив декоративен целиком. */
+@media (prefers-reduced-motion: reduce) {
+  .onboarding .role-card--banner::before {
+    animation: none;
+    background: none;
   }
 }

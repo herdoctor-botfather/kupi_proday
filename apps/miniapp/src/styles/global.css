@@ -3649,3 +3649,55 @@ body {
   font-size: 12.5px;
   color: var(--text-hint);
 }
+
+/* ─── Полоса фильтров со стрелками ─── */
+
+.chips-row {
+  position: relative;
+}
+
+/* Внутри полосы отступ снизу уже есть у самой .chips — здесь он лишний,
+   иначе стрелка окажется выше середины полосы. */
+.chips-row .chips {
+  margin-bottom: 12px;
+}
+
+/*
+ * Стрелка лежит поверх крайней категории, а не рядом с полосой: место
+ * по бокам на телефоне дороже, чем возможность видеть категорию целиком,
+ * а под стрелкой всегда есть ещё одна — иначе стрелки бы не было.
+ */
+.chips-row__arrow {
+  position: absolute;
+  top: 0;
+  bottom: 16px;
+  width: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  border: none;
+  color: var(--text);
+  z-index: 2;
+}
+
+.chips-row__arrow--left {
+  left: 0;
+  justify-content: flex-start;
+  /* Заливка уходит в прозрачность к середине: под стрелкой должно быть
+     видно, что там продолжается список, а не стоит панель. */
+  background: linear-gradient(to right, var(--bg) 45%, transparent);
+}
+
+.chips-row__arrow--right {
+  right: 0;
+  justify-content: flex-end;
+  background: linear-gradient(to left, var(--bg) 45%, transparent);
+}
+
+.chips-row__arrow--left svg {
+  transform: rotate(180deg);
+}
+
+.chips-row__arrow:active {
+  color: var(--accent);
+}

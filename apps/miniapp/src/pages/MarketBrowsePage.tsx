@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import { useAsync, useDebounced } from '../lib/useAsync';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SearchInput } from '../components/SearchInput';
+import { ChipsRow } from '../components/ChipsRow';
 import { ListingCard } from '../components/ListingCard';
 import { haptic } from '../lib/telegram';
 
@@ -62,7 +63,7 @@ export function MarketBrowsePage() {
       <SearchInput value={query} onChange={setQuery} placeholder="Что ищете?" />
 
       {categories.data && categories.data.length > 0 && (
-        <div className="chips">
+        <ChipsRow>
           <button
             type="button"
             className={`chip${!categorySlug ? ' chip--active' : ''}`}
@@ -83,7 +84,7 @@ export function MarketBrowsePage() {
               {category.icon} {category.name}
             </button>
           ))}
-        </div>
+        </ChipsRow>
       )}
 
       {/* Город приходит из каталога и снимается только здесь — без этого
@@ -96,7 +97,7 @@ export function MarketBrowsePage() {
         </div>
       )}
 
-      <div className="chips">
+      <ChipsRow>
         {(Object.keys(SORT_LABELS) as Sort[]).map((option) => (
           <button
             key={option}
@@ -117,7 +118,7 @@ export function MarketBrowsePage() {
             {option.label}
           </button>
         ))}
-      </div>
+      </ChipsRow>
 
       <AsyncContent state={result}>
         {(pageData) =>

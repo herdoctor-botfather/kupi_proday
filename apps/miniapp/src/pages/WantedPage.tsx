@@ -5,6 +5,7 @@ import { useAsync, useDebounced } from '../lib/useAsync';
 import { usePagedFeed } from '../lib/usePagedFeed';
 import { EmptyState } from '../components/states';
 import { SearchInput } from '../components/SearchInput';
+import { ChipsRow } from '../components/ChipsRow';
 import { ListingCard } from '../components/ListingCard';
 import { FeedMore } from '../components/Feed';
 import { haptic } from '../lib/telegram';
@@ -69,7 +70,7 @@ export function WantedPage() {
       <SearchInput value={query} onChange={setQuery} placeholder="Что ищут" />
 
       {categories.data && categories.data.length > 0 && (
-        <div className="chips">
+        <ChipsRow>
           <button
             type="button"
             className={`chip${!categorySlug ? ' chip--active' : ''}`}
@@ -90,7 +91,7 @@ export function WantedPage() {
               {category.icon} {category.name}
             </button>
           ))}
-        </div>
+        </ChipsRow>
       )}
 
       {isAuthenticated && (

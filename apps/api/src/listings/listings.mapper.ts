@@ -47,8 +47,12 @@ export function toDetail(row: DetailRow, viewerId: string | null): ListingDetail
     photos: row.photos.map((photo) => ({ id: photo.id, url: photo.url })),
     viewCount: row.viewCount,
     seller: {
-      name: [row.user.firstName, row.user.lastName].filter(Boolean).join(' '),
-      photoUrl: row.user.photoUrl,
+      // Имя из Telegram здесь не показывается по той же причине, что
+      // и в переписке: человек не выбирал его как вывеску на площадке.
+      // Продавец объявления остаётся продавцом.
+      name: 'Продавец',
+      // Аватар из Telegram узнаваем не меньше имени — его тоже не отдаём.
+      photoUrl: null,
     },
     isMine: row.userId === viewerId,
   };

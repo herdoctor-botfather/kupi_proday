@@ -3676,7 +3676,10 @@ body {
   align-items: center;
   padding: 0;
   border: none;
-  color: var(--text);
+  /* Стрелка — подсказка, а не действие: она должна попадаться на
+     глаза, но не спорить с категориями за внимание. Отсюда и
+     полупрозрачность, и лёгкое проявление при нажатии. */
+  color: color-mix(in srgb, var(--text) 42%, transparent);
   z-index: 2;
 }
 
@@ -3685,13 +3688,13 @@ body {
   justify-content: flex-start;
   /* Заливка уходит в прозрачность к середине: под стрелкой должно быть
      видно, что там продолжается список, а не стоит панель. */
-  background: linear-gradient(to right, var(--bg) 45%, transparent);
+  background: linear-gradient(to right, var(--bg) 30%, transparent);
 }
 
 .chips-row__arrow--right {
   right: 0;
   justify-content: flex-end;
-  background: linear-gradient(to left, var(--bg) 45%, transparent);
+  background: linear-gradient(to left, var(--bg) 30%, transparent);
 }
 
 .chips-row__arrow--left svg {

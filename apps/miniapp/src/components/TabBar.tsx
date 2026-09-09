@@ -28,13 +28,26 @@ const TABS = [
  * помогает, а только закрывает собой содержимое — на формах ей
  * достаются поля и кнопки выбора.
  */
-const FAB_HIDDEN_ON = [
+const FAB_HIDDEN_PREFIX = [
   '/map',
   '/market/my',
   '/market/sell',
   '/wanted/new',
   '/profile/application',
 ];
+
+/**
+ * Развилки разделов — совпадение точное, а не по началу пути.
+ *
+ * На них человек и так выбирает из крупных карточек «я покупаю» и
+ * «я продаю», а круглая кнопка садится ровно на вторую из них. При этом
+ * во вложенных экранах — витрине и списке объявлений — она уместна:
+ * там человек смотрит чужое и может захотеть выложить своё.
+ */
+const FAB_HIDDEN_EXACT = ['/market', '/wanted'];
+
+const isFabHidden = (pathname: string): boolean =>
+  FAB_HIDDEN_EXACT.includes(pathname) || FAB_HIDDEN_PREFIX.some((path) => pathname.startsWith(path));
 
 /** Как часто обновляем счётчик непрочитанного. */
 const UNREAD_POLL_MS = 20000;
@@ -86,7 +99,7 @@ export function TabBar() {
           ширину, и две кнопки одного действия рядом только мешают
           выбрать, на какую нажать.
       */}
-      {isAuthenticated && !FAB_HIDDEN_ON.some((path) => location.pathname.startsWith(path)) && (
+      {isAuthenticated && !isFabHidden(location.pathname) && (
         <button
           type="button"
           className="fab"

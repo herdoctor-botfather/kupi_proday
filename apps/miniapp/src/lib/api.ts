@@ -185,6 +185,9 @@ export const api = {
   listings: (filters: Record<string, unknown>) =>
     request<Paginated<ListingListItem>>(`/listings${qs(filters)}`),
   listing: (idOrSlug: string) => request<ListingDetail>(`/listings/${idOrSlug}`),
+
+  /** Публичный профиль продавца: кто это и что ещё выставил. */
+  publicProfile: (id: string) => request<PublicProfile>(`/users/${id}`),
   listingCities: (kind?: string, q?: string) =>
     request<{ name: string; count: number }[]>(`/listings/cities${qs({ kind, q })}`),
 
@@ -252,6 +255,23 @@ export const api = {
       body: JSON.stringify(dto),
     }),
 };
+
+/** Публичный профиль пользователя. */
+export interface PublicProfile {
+  id: string;
+  name: string;
+  photoUrl: string | null;
+  joinedAt: string;
+  listings: number;
+  wanted: number;
+  specialist: {
+    slug: string;
+    displayName: string;
+    headline: string | null;
+    ratingAvg: number;
+    ratingCount: number;
+  } | null;
+}
 
 /** Кошелёк: остаток и последние движения. */
 export interface Wallet {

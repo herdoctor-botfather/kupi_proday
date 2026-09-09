@@ -4088,3 +4088,20 @@ body {
   font-size: 12.5px;
   color: var(--destructive);
 }
+
+/* Продавец как ссылка: та же карточка, но со стрелкой и откликом
+   на нажатие — иначе неясно, что по ней можно перейти. */
+.seller--link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+}
+
+.seller--link:active {
+  transform: scale(0.99);
+}
+
+.seller--link .profile-cta__chevron {
+  margin-left: auto;
+}

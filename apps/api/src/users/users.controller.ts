@@ -75,3 +75,18 @@ export class UsersController {
     return this.users.toggleFavorite(user.id, specialistId);
   }
 }
+
+/**
+ * Публичный профиль. Открыт всем, включая гостей: карточку продавца
+ * смотрят до того, как решают писать, и требовать вход на этом шаге
+ * значило бы отсекать половину интереса.
+ */
+@Controller('users')
+export class PublicUsersController {
+  constructor(private readonly users: UsersService) {}
+
+  @Get(':id')
+  profile(@Param('id') id: string) {
+    return this.users.publicProfile(id);
+  }
+}

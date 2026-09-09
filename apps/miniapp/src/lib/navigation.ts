@@ -20,6 +20,7 @@ const PARENT_ROUTE: Array<[RegExp, string]> = [
   [/^\/market\/my/, '/market/selling'],
   [/^\/market\/(browse|selling)/, '/market'],
   [/^\/listing\//, '/market/listings'],
+  [/^\/seller\//, '/market/listings'],
   [/^\/specialist\//, '/specialists'],
   [/^\/specialists/, '/'],
 ];

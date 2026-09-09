@@ -11,7 +11,17 @@ export const listInclude = {
 export const detailInclude = {
   categories: { include: { category: true } },
   photos: { orderBy: { sortOrder: 'asc' } },
-  user: { select: { firstName: true, lastName: true, photoUrl: true } },
+  user: {
+    select: {
+      firstName: true,
+      lastName: true,
+      photoUrl: true,
+      avatarUrl: true,
+      // Анкета нужна, чтобы из объявления вести сразу в неё: там отзывы,
+      // услуги и цены — куда больше, чем на странице с одними объявлениями.
+      specialist: { select: { slug: true, status: true } },
+    },
+  },
 } satisfies Prisma.ListingInclude;
 
 type ListRow = Prisma.ListingGetPayload<{ include: typeof listInclude }>;
@@ -47,10 +57,14 @@ export function toDetail(row: DetailRow, viewerId: string | null): ListingDetail
     photos: row.photos.map((photo) => ({ id: photo.id, url: photo.url })),
     viewCount: row.viewCount,
     seller: {
+      id: row.userId,
       // Только имя, без фамилии: покупателю важно, к кому он обращается,
       // а полное имя продавца к сделке ничего не добавляет.
       name: row.user.firstName,
-      photoUrl: row.user.photoUrl,
+      photoUrl: row.user.avatarUrl ?? row.user.photoUrl,
+      // Адрес анкеты — только у опубликованной: вести покупателя
+      // на скрытую или отклонённую карточку значит показать ему пустоту.
+      specialistSlug: row.user.specialist?.status === 'ACTIVE' ? row.user.specialist.slug : null,
     },
     isMine: row.userId === viewerId,
   };

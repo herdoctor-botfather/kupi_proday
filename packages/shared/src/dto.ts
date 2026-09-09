@@ -207,6 +207,8 @@ export const listingQuerySchema = paginationSchema.extend({
   q: z.string().trim().max(100).optional(),
   categorySlug: z.string().trim().max(64).optional(),
   city: z.string().trim().max(100).optional(),
+  /** Все объявления одного автора — для страницы продавца. */
+  sellerId: z.string().trim().max(40).optional(),
   minPrice: z.coerce.number().int().min(0).optional(),
   maxPrice: z.coerce.number().int().min(0).optional(),
   condition: z.enum(['NEW', 'USED_PERFECT', 'USED']).optional(),

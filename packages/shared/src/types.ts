@@ -163,7 +163,18 @@ export interface ListingDetail extends ListingListItem {
   photos: { id: string; url: string }[];
   viewCount: number;
   /** Автор объявления: продавец у SELL и покупатель у BUY. */
-  seller: { name: string; photoUrl: string | null };
+  seller: {
+    /** Идентификатор автора — по нему открывается страница с его объявлениями. */
+    id: string;
+    name: string;
+    photoUrl: string | null;
+    /**
+     * Адрес анкеты специалиста, если она есть и опубликована. Тогда
+     * из объявления ведём сразу в неё: там отзывы, услуги и цены,
+     * то есть куда больше, чем на странице с одними объявлениями.
+     */
+    specialistSlug: string | null;
+  };
   /** Объявление принадлежит текущему пользователю — писать себе не нужно. */
   isMine: boolean;
 }

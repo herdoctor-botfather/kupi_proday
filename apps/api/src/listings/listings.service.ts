@@ -310,6 +310,8 @@ export class ListingsService {
 
     if (query.categorySlug) where.categories = { some: { category: { slug: query.categorySlug } } };
     if (query.city) where.city = { equals: query.city, mode: 'insensitive' };
+    // Страница продавца: все его объявления одной выдачей.
+    if (query.sellerId) where.userId = query.sellerId;
     if (query.condition) where.condition = query.condition;
 
     if (query.minPrice !== undefined || query.maxPrice !== undefined) {

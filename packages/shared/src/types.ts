@@ -220,6 +220,41 @@ export interface ConversationSummary {
   role: 'CLIENT' | 'SPECIALIST';
 }
 
+/**
+ * Чужое дело, в котором пользователь участвует: анкета мастера, товар
+ * или запрос на покупку, куда он написал.
+ *
+ * Своё лежит в «Моих объявлениях», и смешивать не нужно: там человек
+ * управляет, а здесь — участвует. Вопрос, на который отвечает этот
+ * список, один: «во что я ввязался и чем оно кончилось».
+ */
+export interface Involvement {
+  /** Идентификатор переписки: по ней и открывается это участие. */
+  id: string;
+  /** Из какой двери пришло участие. */
+  kind: 'SERVICE' | 'SELL' | 'BUY';
+  title: string;
+  subtitle: string | null;
+  /** Куда ведёт карточка внутри приложения. */
+  href: string;
+  coverUrl: string | null;
+  priceAmount: number | null;
+  currency: string | null;
+  /** Предмет снят или продан: писать туда уже поздно. */
+  isClosed: boolean;
+  /** Чьё это дело. */
+  owner: ConversationParty;
+  lastMessageAt: string | null;
+  unread: number;
+  /**
+   * Сделка отмечена второй стороной. Тогда участие превращается в право
+   * оценить человека — до этого момента его нет.
+   */
+  dealId: string | null;
+  /** Отзыв по этой сделке уже оставлен. */
+  isReviewed: boolean;
+}
+
 export interface ChatMessage {
   id: string;
   text: string;

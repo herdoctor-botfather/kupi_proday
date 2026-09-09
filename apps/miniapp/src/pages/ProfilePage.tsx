@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import type { Involvement } from '@app/shared';
 import { api, type PendingDeal } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { ChipsRow } from '../components/ChipsRow';
@@ -9,7 +10,7 @@ import { ImageError, prepareImage } from '../lib/image';
 import { Stars } from '../components/Rating';
 import { REVIEW_TEXT_MAX } from '@app/shared';
 import { ReviewCard } from '../components/Reviews';
-import { formatDate } from '../lib/format';
+import { formatDate, formatPrice } from '../lib/format';
 import { Link, useNavigate } from 'react-router-dom';
 import { resetRoleChoice } from '../lib/session';
 import { haptic, tg } from '../lib/telegram';
@@ -298,38 +299,151 @@ function ProfileAvatar({ photoUrl }: { photoUrl: string | null }) {
   );
 }
 
+/** Заголовки разделов участия — по дверям, из которых человек пришёл. */
+const INVOLVEMENT_SECTIONS: { kind: Involvement['kind']; title: string; icon: string }[] = [
+  { kind: 'SERVICE', title: 'Услуги', icon: '🛠' },
+  { kind: 'SELL', title: 'Товары', icon: '📦' },
+  { kind: 'BUY', title: 'Запросы', icon: '🔎' },
+];
+
 /**
- * Сделки, которые ждут оценки.
+ * Сделки: что человек ждёт оценить и во что он ввязался.
+ *
+ * Сверху — состоявшиеся сделки, по которым он ещё не высказался: это
+ * дело со сроком, и откладывать его в конец списка нельзя. Ниже — чужие
+ * анкеты, товары и запросы, куда он написал: участие начинается с первого
+ * сообщения и заканчивается сделкой, и до сделки его больше нигде не видно.
  *
  * Оценить можно только состоявшуюся сделку — это и есть защита от мести
  * и накруток: написать «мошенник» первому встречному нельзя, потому что
  * права на отзыв без сделки не возникает.
- *
- * Отзыв не публикуется сразу: пока вторая сторона не ответила своим,
- * он виден только автору. Об этом сказано прямо — иначе человек решит,
- * что отзыв пропал.
  */
 function DealsTab() {
-  const state = useAsync(() => api.pendingDeals(), []);
+  const pending = useAsync(() => api.pendingDeals(), []);
+  const involved = useAsync(() => api.involvements(), []);
+
+  const deals = pending.data ?? [];
+  const items = involved.data ?? [];
 
   return (
-    <AsyncContent state={state}>
-      {(deals) =>
-        deals.length === 0 ? (
-          <EmptyState
-            icon="🤝"
-            title="Сделок пока нет"
-            hint="Оценить человека можно только после покупки или продажи через площадку"
-          />
-        ) : (
-          <div>
-            {deals.map((deal) => (
-              <DealReviewForm key={deal.id} deal={deal} onDone={() => state.reload()} />
-            ))}
-          </div>
-        )
-      }
-    </AsyncContent>
+    <>
+      {deals.length > 0 && (
+        <>
+          <div className="section-title">Ждут вашей оценки</div>
+          {deals.map((deal) => (
+            <DealReviewForm
+              key={deal.id}
+              deal={deal}
+              onDone={() => {
+                pending.reload();
+                involved.reload();
+              }}
+            />
+          ))}
+        </>
+      )}
+
+      <AsyncContent state={involved}>
+        {() =>
+          items.length === 0 && deals.length === 0 ? (
+            <EmptyState
+              icon="🤝"
+              title="Участий пока нет"
+              hint="Напишите мастеру, продавцу или откликнитесь на чужой запрос — всё это соберётся здесь"
+            />
+          ) : (
+            <>
+              {INVOLVEMENT_SECTIONS.map((section) => {
+                const group = items.filter((item) => item.kind === section.kind);
+                if (group.length === 0) return null;
+                return (
+                  <div key={section.kind}>
+                    <div className="section-title">
+                      {section.icon} {section.title}
+                    </div>
+                    <div className="card-list">
+                      {group.map((item) => (
+                        <InvolvementCard key={item.id} item={item} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )
+        }
+      </AsyncContent>
+    </>
+  );
+}
+
+/**
+ * Одно участие.
+ *
+ * Карточка ведёт в предмет разговора, а не в переписку: чаще всего человек
+ * возвращается сюда, чтобы посмотреть, что это была за вещь и цела ли она
+ * ещё. Переписка — отдельной ссылкой рядом, вместе с числом непрочитанного.
+ */
+function InvolvementCard({ item }: { item: Involvement }) {
+  const navigate = useNavigate();
+  const fallbackIcon = item.kind === 'SERVICE' ? '🛠' : item.kind === 'BUY' ? '🔎' : '📦';
+
+  return (
+    <div className="my-listing">
+      <button
+        type="button"
+        className="my-listing__head involvement__open"
+        onClick={() => {
+          haptic.tap();
+          navigate(item.href);
+        }}
+      >
+        <div className="my-listing__photo">
+          {item.coverUrl ? (
+            <img src={item.coverUrl} alt="" loading="lazy" />
+          ) : (
+            <span aria-hidden>{fallbackIcon}</span>
+          )}
+        </div>
+        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+          <div className="my-listing__title">{item.title}</div>
+          {item.priceAmount !== null && (
+            <div className="my-listing__price">
+              {item.kind === 'BUY' && <span className="card__headline">до </span>}
+              {formatPrice(item.priceAmount, item.currency ?? 'RUB')}
+            </div>
+          )}
+          {item.subtitle && <div className="card__headline">{item.subtitle}</div>}
+          <div className="card__headline">{item.owner.name}</div>
+        </div>
+        {/*
+          Снятое и проданное помечаем сразу: человек приходит сюда через
+          неделю и должен понять, почему на письмо не отвечают, не открывая
+          объявление.
+        */}
+        {item.isClosed && <span className="listing-status status--hidden">Уже нет</span>}
+      </button>
+
+      <div className="my-listing__actions">
+        <button
+          type="button"
+          className="button button--secondary button--sm"
+          onClick={() => {
+            haptic.tap();
+            navigate(`/chat/${item.id}`);
+          }}
+        >
+          Переписка
+          {item.unread > 0 && <span className="chat-row__badge" style={{ marginLeft: 6 }}>{item.unread}</span>}
+        </button>
+
+        {item.dealId && (
+          <span className="listing-status status--active" style={{ marginLeft: 'auto' }}>
+            {item.isReviewed ? '⭐️ Вы оценили' : '🤝 Сделка состоялась'}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 

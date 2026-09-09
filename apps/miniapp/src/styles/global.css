@@ -2225,6 +2225,19 @@ body::before {
   margin-top: 12px;
 }
 
+/* Строка участия целиком нажимается: кнопка, а не ссылка, потому что
+   внутри уже есть свои кнопки, а вложенные ссылки браузер не разрешает. */
+.involvement__open {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
 /* ─── Строка формы в два поля ─── */
 
 .form-row {

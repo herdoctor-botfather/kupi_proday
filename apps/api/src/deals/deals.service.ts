@@ -1,4 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import type { Involvement } from '@app/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -98,6 +99,126 @@ export class DealsService {
     );
 
     return { dealId: deal.id };
+  }
+
+  /**
+   * Чужие дела, в которых человек участвует.
+   *
+   * Участие начинается с первого сообщения: написал мастеру, откликнулся
+   * на запрос, спросил о товаре — и предмет попадает сюда. Списком владеет
+   * не тот, кто разместил, а тот, кто пришёл, поэтому берём переписки, где
+   * человек — обратившаяся сторона: свои объявления у него в другом месте.
+   *
+   * Переписка отвечает на вопрос «о чём говорили», а этот список — «во что
+   * я ввязался»: тут видно цену, состояние предмета и то, чем всё кончилось.
+   */
+  async involvements(userId: string): Promise<Involvement[]> {
+    const rows = await this.prisma.conversation.findMany({
+      where: { clientId: userId },
+      orderBy: { lastMessageAt: 'desc' },
+      take: 50,
+      select: {
+        id: true,
+        lastMessageAt: true,
+        clientUnread: true,
+        specialist: {
+          select: {
+            slug: true,
+            displayName: true,
+            headline: true,
+            photoUrl: true,
+            status: true,
+            user: { select: { id: true, firstName: true, photoUrl: true, avatarUrl: true } },
+          },
+        },
+        listing: {
+          select: {
+            id: true,
+            slug: true,
+            kind: true,
+            title: true,
+            priceAmount: true,
+            currency: true,
+            status: true,
+            photos: { orderBy: { sortOrder: 'asc' }, take: 1, select: { url: true } },
+            user: { select: { id: true, firstName: true, photoUrl: true, avatarUrl: true } },
+          },
+        },
+      },
+    });
+
+    // Сделки по этим же объявлениям: отмеченная продажа превращает участие
+    // в право оценить продавца, и человек должен видеть это там же, где
+    // видит саму сделку, а не в отдельном углу приложения.
+    const listingIds = rows.map((row) => row.listing?.id).filter((id): id is string => Boolean(id));
+
+    const deals = listingIds.length
+      ? await this.prisma.deal.findMany({
+          where: { buyerId: userId, listingId: { in: listingIds } },
+          select: {
+            id: true,
+            listingId: true,
+            reviews: { where: { authorId: userId }, select: { id: true } },
+          },
+        })
+      : [];
+
+    const dealByListing = new Map(deals.map((deal) => [deal.listingId, deal]));
+
+    return rows.flatMap((row): Involvement[] => {
+      const owner = row.specialist?.user ?? row.listing?.user;
+      // Анкету мог завести администратор — владельца у неё тогда нет,
+      // и участвовать не с кем.
+      if (!owner) return [];
+
+      const base = {
+        id: row.id,
+        owner: {
+          id: owner.id,
+          name: owner.firstName,
+          photoUrl: owner.avatarUrl ?? owner.photoUrl,
+        },
+        lastMessageAt: row.lastMessageAt?.toISOString() ?? null,
+        unread: row.clientUnread,
+      };
+
+      if (row.specialist) {
+        return [
+          {
+            ...base,
+            kind: 'SERVICE' as const,
+            title: row.specialist.displayName,
+            subtitle: row.specialist.headline,
+            href: `/specialist/${row.specialist.slug}`,
+            coverUrl: row.specialist.photoUrl,
+            priceAmount: null,
+            currency: null,
+            isClosed: row.specialist.status !== 'ACTIVE',
+            dealId: null,
+            isReviewed: false,
+          },
+        ];
+      }
+
+      if (!row.listing) return [];
+      const deal = dealByListing.get(row.listing.id) ?? null;
+
+      return [
+        {
+          ...base,
+          kind: row.listing.kind,
+          title: row.listing.title,
+          subtitle: null,
+          href: `/listing/${row.listing.slug}`,
+          coverUrl: row.listing.photos[0]?.url ?? null,
+          priceAmount: row.listing.priceAmount,
+          currency: row.listing.currency,
+          isClosed: row.listing.status !== 'ACTIVE',
+          dealId: deal?.id ?? null,
+          isReviewed: Boolean(deal?.reviews.length),
+        },
+      ];
+    });
   }
 
   /** Сделки, по которым человек ещё не высказался. */

@@ -9,6 +9,7 @@ import type {
   CreateInvoiceDto,
   CreateReportDto,
   CreateReviewDto,
+  Involvement,
   ListingDetail,
   ListingDto,
   ListingListItem,
@@ -212,6 +213,9 @@ export const api = {
     }),
 
   pendingDeals: () => request<PendingDeal[]>('/deals/pending'),
+
+  /** Чужие анкеты, товары и запросы, в которых пользователь участвует. */
+  involvements: () => request<Involvement[]>('/deals/involved'),
 
   reviewDeal: (dealId: string, rating: number, text: string | null) =>
     request<{ revealed: boolean }>(`/deals/${dealId}/review`, {

@@ -28,6 +28,13 @@ export class DealsController {
     return this.deals.markSold(user.id, listingId, dto.buyerId ?? null);
   }
 
+  /** Чужие объявления, анкеты и запросы, в которых человек участвует. */
+  @Get('involved')
+  @UseGuards(JwtAuthGuard)
+  involved(@CurrentUser() user: RequestUser) {
+    return this.deals.involvements(user.id);
+  }
+
   /** Сделки, по которым человек ещё не высказался. */
   @Get('pending')
   @UseGuards(JwtAuthGuard)

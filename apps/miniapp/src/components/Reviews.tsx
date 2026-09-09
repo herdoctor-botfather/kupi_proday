@@ -29,6 +29,16 @@ export function ReviewForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  /*
+   * Форма раскрыта только у того, кто ещё не оценивал.
+   *
+   * Раньше она разворачивалась всегда и подставляла в поля уже
+   * оставленный отзыв. Человек, зашедший посмотреть карточку, видел
+   * открытую форму со своим текстом — будто площадка требует от него
+   * оценить ещё раз, а прежняя оценка не сохранилась. Теперь при
+   * наличии отзыва показывается он сам, а форма открывается по просьбе.
+   */
+  const [editing, setEditing] = useState(false);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -61,15 +71,44 @@ export function ReviewForm({
     );
   }
 
+  if (existing && !editing) {
+    return (
+      <div className="my-review">
+        <div className="my-review__head">
+          <span className="my-review__label">Ваш отзыв</span>
+          <span className="my-review__status">{STATUS_LABEL[existing.status]}</span>
+        </div>
+
+        {/* Те же звёзды, что и в карточке отзыва: своя оценка не должна
+            выглядеть иначе, чем чужая. */}
+        <div className="rating">
+          <span className="rating__star">{'★'.repeat(existing.rating)}</span>
+          <span style={{ color: 'var(--border)' }}>{'★'.repeat(5 - existing.rating)}</span>
+        </div>
+
+        {existing.text && <p className="my-review__text">{existing.text}</p>}
+
+        {existing.status === 'REJECTED' && existing.moderationNote && (
+          <p className="my-review__note">Причина отклонения: {existing.moderationNote}</p>
+        )}
+
+        <button
+          type="button"
+          className="button button--secondary"
+          style={{ marginTop: 12 }}
+          onClick={() => setEditing(true)}
+        >
+          Изменить отзыв
+        </button>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={submit} style={{ margin: '8px 0 20px' }}>
       {existing && (
         <div style={{ fontSize: 13, color: 'var(--text-hint)', marginBottom: 8 }}>
-          Вы уже оценивали этого специалиста ({STATUS_LABEL[existing.status].toLowerCase()}).
-          {existing.status === 'REJECTED' && existing.moderationNote && (
-            <div style={{ color: 'var(--destructive)' }}>Причина: {existing.moderationNote}</div>
-          )}{' '}
-          Новый отзыв заменит прежний.
+          Новый отзыв заменит прежний и снова уйдёт на проверку.
         </div>
       )}
 

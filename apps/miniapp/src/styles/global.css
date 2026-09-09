@@ -3991,3 +3991,51 @@ body {
     transform: translateY(14px);
   }
 }
+
+/* ─── Свой отзыв на карточке специалиста ─── */
+
+/*
+ * Показывается вместо формы тому, кто уже оценивал. Форма со своим же
+ * текстом, открытая при каждом заходе, читается как требование оценить
+ * заново — будто прежняя оценка не сохранилась.
+ */
+.my-review {
+  margin: 8px 0 20px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+}
+
+.my-review__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.my-review__label {
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
+  color: var(--text-hint);
+}
+
+.my-review__status {
+  font-size: 12.5px;
+  color: var(--text-hint);
+}
+
+.my-review__text {
+  margin: 8px 0 0;
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+
+.my-review__note {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--destructive);
+}

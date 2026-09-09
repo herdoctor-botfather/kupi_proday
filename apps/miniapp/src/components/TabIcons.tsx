@@ -64,11 +64,3 @@ export function IconProfile() {
     </svg>
   );
 }
-
-export function IconPlus() {
-  return (
-    <svg {...base} strokeWidth={2.4} width={26} height={26}>
-      <path d="M12 5.4v13.2M5.4 12h13.2" />
-    </svg>
-  );
-}

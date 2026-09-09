@@ -92,9 +92,17 @@ function requestDesktopFullscreen(app: TelegramWebApp): void {
   const sync = () => {
     document.documentElement.dataset.fullscreen = String(Boolean(tg()?.isFullscreen));
   };
-  app.onEvent?.('fullscreenChanged', sync);
-  app.requestFullscreen();
-  sync();
+
+  // Наличия метода недостаточно: скрипт SDK один для всех версий клиента,
+  // и на старом Telegram вызов не молча ничего не делает, а бросает
+  // исключение. Полный экран — украшение, ради него нельзя ронять запуск.
+  try {
+    app.onEvent?.('fullscreenChanged', sync);
+    app.requestFullscreen();
+    sync();
+  } catch {
+    document.documentElement.dataset.fullscreen = 'false';
+  }
 }
 
 /**

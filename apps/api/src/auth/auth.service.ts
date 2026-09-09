@@ -144,7 +144,9 @@ export function toCurrentUser(user: User, hasSpecialistProfile = false): Current
     username: user.username,
     firstName: user.firstName,
     lastName: user.lastName,
-    photoUrl: user.photoUrl,
+    // Своя фотография важнее телеграмной: её человек выбрал, а ту
+    // просто получил вместе с аккаунтом.
+    photoUrl: user.avatarUrl ?? user.photoUrl,
     role: user.role,
     onboardedAs: user.onboardedAs,
     hasSpecialistProfile,

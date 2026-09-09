@@ -242,6 +242,8 @@ export const api = {
 
   paymentHistory: () => request<PaymentHistoryItem[]>('/payments/my'),
 
+  uploadMyAvatar: (file: Blob) => upload<{ photoUrl: string }>('/me/avatar', file),
+
   wallet: () => request<Wallet>('/payments/wallet'),
 
   payFromBalance: (dto: CreateInvoiceDto) =>

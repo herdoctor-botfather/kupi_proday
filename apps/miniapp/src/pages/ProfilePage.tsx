@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { ChipsRow } from '../components/ChipsRow';
 import { useAuth } from '../lib/auth';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SpecialistCard } from '../components/SpecialistCard';
-import { AvatarUpload } from '../components/PhotoUpload';
+import { ImageError, prepareImage } from '../lib/image';
 import { ReviewCard } from '../components/Reviews';
 import { formatDate } from '../lib/format';
 import { Link, useNavigate } from 'react-router-dom';
@@ -54,7 +54,7 @@ export function ProfilePage() {
   return (
     <div className="page">
       <div className="profile__header">
-        <ProfileAvatar telegramPhotoUrl={user.photoUrl} hasCard={user.hasSpecialistProfile} />
+        <ProfileAvatar photoUrl={user.photoUrl} />
         <h1 className="profile__name">{fullName}</h1>
         {user.username && <div className="profile__headline">@{user.username}</div>}
         {user.role !== 'USER' && <span className="badge-promoted">{user.role}</span>}
@@ -77,6 +77,21 @@ export function ProfilePage() {
               ? 'Статус публикации, просмотры и редактирование'
               : 'Расскажите о своих услугах — вас будут находить клиенты'}
           </span>
+        </span>
+        <span className="profile-cta__chevron" aria-hidden>
+          ›
+        </span>
+      </Link>
+
+      {/* Размещение объявления — такое же частое намерение, как анкета,
+          и искать его через раздел товаров человек не обязан. */}
+      <Link to="/market/sell" className="profile-cta" onClick={() => haptic.tap()}>
+        <span className="profile-cta__icon" aria-hidden>
+          🏷
+        </span>
+        <span className="profile-cta__body">
+          <span className="profile-cta__title">Разместить своё объявление</span>
+          <span className="profile-cta__text">Название, цена, фотографии — и на витрину</span>
         </span>
         <span className="profile-cta__chevron" aria-hidden>
           ›
@@ -201,38 +216,80 @@ function FavoritesTab() {
 }
 
 /**
- * Фотография в шапке профиля.
+ * Фотография профиля — своя, а не телеграмная.
  *
- * У кого есть анкета — правит фотографию анкеты: именно её видят
- * в каталоге, на карте и в переписке, и именно она обычно оказывается
- * не той. Своё фото из Telegram здесь только показывается: приложение
- * перечитывает его при каждом входе, и любая наша замена не пережила бы
- * следующий запуск. Менять его нужно в самом Telegram.
+ * Телеграмная приходит при каждом входе и любую замену затирает,
+ * поэтому у человека есть отдельная: он выбирает её сам, и меняется
+ * она здесь же, нажатием.
+ *
+ * Фотография анкеты специалиста живёт отдельно и правится в «Моей
+ * анкете»: это разные вещи — одна про человека, другая про его дело,
+ * и совмещать их значит заставлять выбирать между собой и вывеской.
  */
-function ProfileAvatar({
-  telegramPhotoUrl,
-  hasCard,
-}: {
-  telegramPhotoUrl: string | null;
-  hasCard: boolean;
-}) {
-  const card = useAsync(() => (hasCard ? api.myProfile() : Promise.resolve(null)), [hasCard]);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+function ProfileAvatar({ photoUrl }: { photoUrl: string | null }) {
+  const [shown, setShown] = useState<string | null>(photoUrl);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const shown = photoUrl ?? card.data?.photoUrl ?? telegramPhotoUrl;
+  const pick = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    // Сбрасываем значение: иначе повторный выбор того же файла не вызовет событие.
+    event.target.value = '';
+    if (!file) return;
 
-  if (!hasCard) {
-    return shown ? (
-      <img className="profile__avatar" src={shown} alt="" />
-    ) : (
-      <div className="profile__avatar" />
-    );
-  }
+    setBusy(true);
+    setError(null);
+    let localUrl: string | null = null;
+
+    try {
+      const blob = await prepareImage(file);
+      // Показываем выбранное сразу, не дожидаясь сервера: ожидание
+      // с прежней фотографией выглядит так, будто нажатие не сработало.
+      localUrl = URL.createObjectURL(blob);
+      setShown(localUrl);
+
+      const { photoUrl: saved } = await api.uploadMyAvatar(blob);
+      haptic.success();
+      setShown(saved);
+    } catch (err) {
+      haptic.error();
+      setShown(photoUrl);
+      setError(err instanceof ImageError ? err.message : 'Не удалось загрузить фотографию');
+    } finally {
+      if (localUrl) URL.revokeObjectURL(localUrl);
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="profile__avatar-edit">
-      <AvatarUpload photoUrl={shown} onUploaded={(profile) => setPhotoUrl(profile.photoUrl)} />
-      <span className="profile__avatar-hint">Фотография анкеты — её видят клиенты</span>
+      <button
+        type="button"
+        className="profile__avatar-button"
+        onClick={() => inputRef.current?.click()}
+        disabled={busy}
+        aria-label="Сменить фотографию профиля"
+      >
+        {shown ? (
+          <img className="profile__avatar" src={shown} alt="" />
+        ) : (
+          <div className="profile__avatar" />
+        )}
+        <span className="profile__avatar-badge" aria-hidden>
+          {busy ? '…' : '✎'}
+        </span>
+      </button>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(event) => void pick(event)}
+      />
+
+      {error && <span className="profile__avatar-error">{error}</span>}
     </div>
   );
 }

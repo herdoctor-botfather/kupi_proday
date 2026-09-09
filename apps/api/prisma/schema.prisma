@@ -36,7 +36,14 @@ model User {
   username     String?
   firstName    String
   lastName     String?
+  /// Фотография из Telegram. Перезаписывается при каждом входе, поэтому
+  /// заменить её своей нельзя — для этого есть поле ниже.
   photoUrl     String?
+  /// Своя фотография, загруженная в приложении. Если она есть, показывается
+  /// именно она: человек выбрал её сознательно, а телеграмная просто
+  /// досталась вместе с аккаунтом.
+  avatarUrl    String?
+  avatarKey    String?
   languageCode String?
   isPremium    Boolean @default(false)
   role         Role    @default(USER)

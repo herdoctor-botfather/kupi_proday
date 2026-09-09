@@ -64,9 +64,14 @@ export function ListingsPage() {
       {rows.map((row) => (
         <div key={row.id} className="review-card">
           <div className="review-card__head">
+            {/* Снимок открывается в полный размер по нажатию: на плитке
+                не разглядеть ни состояние товара, ни водяной знак чужого
+                объявления, а проверяют именно это. */}
             <div className="listing-thumb">
               {row.photos[0] ? (
-                <img src={row.photos[0].url} alt="" />
+                <a href={row.photos[0].url} target="_blank" rel="noreferrer">
+                  <img src={row.photos[0].url} alt="" />
+                </a>
               ) : (
                 <span aria-hidden>{row.kind === 'BUY' ? '🔎' : '📦'}</span>
               )}
@@ -109,7 +114,9 @@ export function ListingsPage() {
           {row.photos.length > 1 && (
             <div className="listing-thumbs">
               {row.photos.slice(1).map((photo) => (
-                <img key={photo.id} src={photo.url} alt="" loading="lazy" />
+                <a key={photo.id} href={photo.url} target="_blank" rel="noreferrer">
+                  <img src={photo.url} alt="" loading="lazy" />
+                </a>
               ))}
             </div>
           )}

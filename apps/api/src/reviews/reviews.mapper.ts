@@ -16,7 +16,15 @@ export function toReviewDto(
     reply: row.replyText ? { text: row.replyText, createdAt: (row.repliedAt ?? row.updatedAt).toISOString() } : null,
     author: {
       firstName: row.user.firstName,
-      lastName: row.user.lastName,
+      /*
+       * Только имя, без фамилии.
+       *
+       * Отзыв — единственное место, где подпись работает на доверие:
+       * анонимным верят меньше, и обезличивать их значит обесценивать.
+       * Но фамилия для доверия ничего не добавляет, а человека называет
+       * полностью — поэтому её здесь нет.
+       */
+      lastName: null,
       photoUrl: row.user.photoUrl,
     },
     // Причину отклонения видит только автор отзыва и админ.

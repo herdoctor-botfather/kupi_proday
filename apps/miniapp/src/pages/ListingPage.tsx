@@ -108,20 +108,19 @@ export function ListingPage() {
 
               <h2 className="section-title">{listing.kind === 'BUY' ? 'Покупатель' : 'Продавец'}</h2>
               {/*
-                Продавец стал ссылкой: «а что он ещё продаёт» — вопрос,
-                который покупатель задаёт себе перед тем, как написать,
-                и ответ на него говорит о надёжности больше любых слов.
+                Продавец — ссылка: «а что он ещё продаёт» покупатель
+                спрашивает себя перед тем, как написать, и ответ говорит
+                о надёжности больше любых слов.
 
-                У кого есть анкета — ведём сразу в неё: там отзывы, услуги
-                и цены, то есть куда больше, чем список объявлений.
+                Ведём в профиль человека, а не в его анкету мастера, даже
+                если анкета есть. Из объявления о плите переход на «Иван,
+                электрик» выглядит подменой: человек шёл смотреть вещи,
+                а попал в прайс-лист. Анкета никуда не девается — ссылка
+                на неё стоит в профиле, и туда идут те, кому надо туда.
               */}
               <Link
                 className="seller seller--link"
-                to={
-                  listing.seller.specialistSlug
-                    ? `/specialist/${listing.seller.specialistSlug}`
-                    : `/seller/${listing.seller.id}`
-                }
+                to={`/seller/${listing.seller.id}`}
                 onClick={() => haptic.tap()}
               >
                 {listing.seller.photoUrl ? (
@@ -134,7 +133,7 @@ export function ListingPage() {
                 <div>
                   <div className="seller__name">{listing.seller.name}</div>
                   <div className="card__headline">
-                    {listing.seller.specialistSlug ? 'Открыть анкету' : 'Другие объявления'}
+                    {listing.kind === 'BUY' ? 'Что ещё он ищет' : 'Другие объявления'}
                   </div>
                 </div>
                 <span className="profile-cta__chevron" aria-hidden>

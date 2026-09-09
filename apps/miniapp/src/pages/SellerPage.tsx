@@ -115,11 +115,14 @@ export function SellerPage() {
         )}
       </AsyncContent>
 
+      {/*
+        Продаёт и ищет — два разных занятия одного человека, и пустота
+        в одном не повод объявлять пустым весь профиль. «Объявлений нет»
+        над списком из пяти запросов на покупку — прямая неправда.
+      */}
       <AsyncContent state={sell}>
         {(page) =>
-          page.items.length === 0 ? (
-            <EmptyState icon="📦" title="Объявлений нет" hint="Здесь появятся товары этого человека" />
-          ) : (
+          page.items.length === 0 ? null : (
             <>
               <div className="section-title">
                 {page.total} {pluralize(page.total, ['объявление', 'объявления', 'объявлений'])}
@@ -143,6 +146,14 @@ export function SellerPage() {
             ))}
           </div>
         </>
+      )}
+
+      {sell.data?.items.length === 0 && wantedItems.length === 0 && !wanted.loading && (
+        <EmptyState
+          icon="📦"
+          title="Объявлений нет"
+          hint="Здесь появятся товары и запросы этого человека"
+        />
       )}
     </div>
   );

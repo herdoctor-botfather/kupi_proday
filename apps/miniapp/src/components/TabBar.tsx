@@ -4,9 +4,12 @@ import { haptic } from '../lib/telegram';
 import { api } from '../lib/api';
 import { useIsAuthenticated } from '../lib/auth';
 import { markRoleChosen } from '../lib/session';
-import { IconChats, IconMap, IconProfile, IconWallet } from './TabIcons';
+import { IconCatalog, IconChats, IconMap, IconProfile, IconWallet } from './TabIcons';
 
 const TABS = [
+  // Значок-сетка достался от прежнего «Каталога» и подходит даже лучше:
+  // четыре клетки — это и есть категории.
+  { to: '/', icon: IconCatalog, label: 'Категории', end: true },
   { to: '/map', icon: IconMap, label: 'Карта', end: false },
   { to: '/wallet', icon: IconWallet, label: 'Кошелёк', end: false },
   { to: '/chats', icon: IconChats, label: 'Чаты', end: false },

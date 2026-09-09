@@ -67,9 +67,9 @@ export function OnboardingPage() {
           <span className="role-card__photo">
             <img src="/doors/catalog.jpg" alt="Мужчина у сломанной машины ищет помощь в телефоне" loading="lazy" />
           </span>
-          <span className="role-card__title">Я ищу специалиста</span>
+          <span className="role-card__title">Надо мастера</span>
           <span className="role-card__text">
-            Поиск по категориям и услугам, рейтинги и отзывы, карта мастеров рядом с вами
+            Найдём тех, кто работает рядом. С отзывами, ценами и метками на карте
           </span>
           <span className="role-card__action">
             {saving === 'CLIENT' ? 'Открываем...' : 'Перейти в каталог →'}
@@ -86,11 +86,11 @@ export function OnboardingPage() {
           <span className="role-card__photo">
             <img src="/doors/apply.jpg" alt="Мастер за работой в мастерской" loading="lazy" />
           </span>
-          <span className="role-card__title">Я оказываю услуги</span>
+          <span className="role-card__title">Я и есть мастер</span>
           <span className="role-card__text">
             {user?.hasSpecialistProfile
               ? 'Ваша анкета, её состояние, просмотры и отзывы'
-              : 'Разместите анкету, чтобы вас находили клиенты. Заполнение занимает пару минут, публикация — после проверки модератором'}
+              : 'Разместите анкету — и вас начнут находить те, кому надо. Публикация после проверки'}
           </span>
           <span className="role-card__action">
             {saving === 'SPECIALIST'
@@ -111,9 +111,9 @@ export function OnboardingPage() {
           <span className="role-card__photo">
             <img src="/doors/market.jpg" alt="Вещи, разложенные для продажи" loading="lazy" />
           </span>
-          <span className="role-card__title">Купи-продай</span>
+          <span className="role-card__title">Надо купить или продать</span>
           <span className="role-card__text">
-            Объявления о продаже вещей: купить у людей рядом или продать своё
+            Вещи от людей поблизости. Кому-то надо то, что вам уже нет
           </span>
           <span className="role-card__action">
             {saving === 'MARKET' ? 'Открываем...' : 'Открыть объявления →'}
@@ -136,9 +136,9 @@ export function OnboardingPage() {
           <span className="role-card__photo">
             <img src="/doors/wanted.jpg" alt="Человек ищет нужное в телефоне" loading="lazy" />
           </span>
-          <span className="role-card__title">Люди ищут прямо сейчас</span>
+          <span className="role-card__title">Кому что надо сейчас</span>
           <span className="role-card__text">
-            Кому-то нужна вещь, которая у вас уже есть, — предложите её
+            Люди пишут, что ищут. Возможно, это лежит у вас без дела
           </span>
           <span className="role-card__action">
             {saving === 'WANTED' ? 'Открываем...' : 'Смотреть спрос →'}

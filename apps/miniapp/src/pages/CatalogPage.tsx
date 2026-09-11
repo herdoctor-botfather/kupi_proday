@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { usePagedFeed } from '../lib/usePagedFeed';
@@ -11,7 +11,6 @@ import { useGeolocation } from '../lib/geolocation';
 import { haptic } from '../lib/telegram';
 import { pluralize } from '../lib/format';
 import { categoryStyle } from '../lib/category-colors';
-import { useAuth } from '../lib/auth';
 
 /** Сколько карточек показывает лента за раз. */
 const FEED_PAGE_SIZE = 4;
@@ -19,9 +18,10 @@ const FEED_PAGE_SIZE = 4;
 /**
  * Главный экран.
  *
- * Наверху — три двери в разделы, дальше поиск и категории, внизу — лента
- * мастеров. Она отвечает на вопрос «что здесь вообще есть» тем, кто пришёл
- * без запроса: пустой поиск и сетка категорий этого не показывают,
+ * Поиск, категории и лента мастеров. Двери в другие разделы отсюда убраны:
+ * этот экран про услуги, а переходы в барахолку и запросы живут в нижней
+ * навигации. Лента отвечает на вопрос «что здесь вообще есть» тем, кто
+ * пришёл без запроса: пустой поиск и сетка категорий этого не показывают,
  * а живые карточки показывают сразу.
  *
  * Товары в ленту не попадают: сюда приходят по кнопке «я ищу специалиста»,
@@ -30,7 +30,6 @@ const FEED_PAGE_SIZE = 4;
  */
 export function CatalogPage() {
   const navigate = useNavigate();
-  const { user, status } = useAuth();
   const [query, setQuery] = useState('');
   const geo = useGeolocation();
 
@@ -55,47 +54,8 @@ export function CatalogPage() {
     if (trimmed) navigate(`/specialists?q=${encodeURIComponent(trimmed)}`);
   };
 
-  const applyTo = user?.hasSpecialistProfile ? '/profile/my-card' : '/profile/application';
-
   return (
     <div className="page">
-      {/* Выбор роли повторяет стартовый экран, но в сжатом виде: открыв
-          приложение по ссылке из бота, человек стартовый экран не видит,
-          и без этих кнопок остаётся запертым в одном разделе. */}
-      <nav className="role-row">
-        <Link to="/specialists" className="role-mini" onClick={() => haptic.tap()}>
-          <span className="role-mini__emoji" aria-hidden>
-            🔎
-          </span>
-          <span className="role-mini__label">Я ищу специалиста</span>
-        </Link>
-
-        <Link
-          to={status === 'authenticated' ? applyTo : '/profile'}
-          className="role-mini"
-          onClick={() => haptic.tap()}
-        >
-          <span className="role-mini__emoji" aria-hidden>
-            🛠
-          </span>
-          <span className="role-mini__label">Я оказываю услуги</span>
-        </Link>
-
-        <Link to="/market" className="role-mini" onClick={() => haptic.tap()}>
-          <span className="role-mini__emoji" aria-hidden>
-            🛍
-          </span>
-          <span className="role-mini__label">Купи-продай</span>
-        </Link>
-
-        <Link to="/wanted" className="role-mini" onClick={() => haptic.tap()}>
-          <span className="role-mini__emoji" aria-hidden>
-            🔎
-          </span>
-          <span className="role-mini__label">Люди ищут сейчас</span>
-        </Link>
-      </nav>
-
       <form onSubmit={submitSearch}>
         <SearchInput value={query} onChange={setQuery} />
       </form>

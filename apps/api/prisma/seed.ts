@@ -64,7 +64,12 @@ const adminTelegramIds = (process.env.ADMIN_TELEGRAM_IDS ?? '')
 /** Категории товаров для витрины объявлений. */
 const PRODUCT_CATEGORIES = [
   { slug: 'electronics', name: 'Электроника', icon: '📱', sortOrder: 10 },
+  // Цифровое продаётся здесь наравне с вещами: коды пополнения
+  // и подписки — такой же товар, только без доставки.
+  { slug: 'digital', name: 'Цифровые товары', icon: '💳', sortOrder: 15 },
+  { slug: 'gaming', name: 'Игры и аккаунты', icon: '🎮', sortOrder: 16 },
   { slug: 'home', name: 'Для дома', icon: '🏠', sortOrder: 20 },
+  { slug: 'furniture', name: 'Мебель', icon: '🪑', sortOrder: 25 },
   { slug: 'clothes', name: 'Одежда и обувь', icon: '👕', sortOrder: 30 },
   { slug: 'kids', name: 'Детское', icon: '🧸', sortOrder: 40 },
   { slug: 'sport', name: 'Спорт и отдых', icon: '⚽️', sortOrder: 50 },
@@ -220,6 +225,11 @@ const CATEGORIES = [
   { slug: 'health', name: 'Здоровье', icon: '🩺', sortOrder: 40 },
   { slug: 'tutors', name: 'Репетиторы', icon: '📚', sortOrder: 50 },
   { slug: 'cleaning', name: 'Уборка', icon: '🧹', sortOrder: 60 },
+  // Оплата зарубежных сервисов — живая потребность, а не экзотика:
+  // подписки и пополнения оттуда сейчас недоступны напрямую.
+  { slug: 'payments', name: 'Пополнение и оплата', icon: '💳', sortOrder: 55 },
+  { slug: 'delivery', name: 'Перевозки и грузчики', icon: '🚚', sortOrder: 65 },
+  { slug: 'legal', name: 'Документы и право', icon: '📄', sortOrder: 75 },
   { slug: 'photo', name: 'Фото и видео', icon: '📷', sortOrder: 70 },
   { slug: 'it', name: 'IT и техника', icon: '💻', sortOrder: 80 },
   { slug: 'pets', name: 'Животные', icon: '🐾', sortOrder: 90 },

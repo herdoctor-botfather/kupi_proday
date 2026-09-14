@@ -111,20 +111,9 @@ export function ProfilePage() {
         </span>
       </Link>
 
-      {/* Размещение объявления — такое же частое намерение, как анкета,
-          и искать его через раздел товаров человек не обязан. */}
-      <Link to="/market/sell" className="profile-cta" onClick={() => haptic.tap()}>
-        <span className="profile-cta__icon" aria-hidden>
-          🏷
-        </span>
-        <span className="profile-cta__body">
-          <span className="profile-cta__title">Разместить своё объявление</span>
-          <span className="profile-cta__text">Название, цена, фотографии — и на витрину</span>
-        </span>
-        <span className="profile-cta__chevron" aria-hidden>
-          ›
-        </span>
-      </Link>
+      {/* Отдельной кнопки размещения здесь больше нет: она вела туда же,
+          куда и «Мои объявления», где такая кнопка и так стоит первой.
+          Два входа в одно место на одном экране — выбор без выбора. */}
 
       <button
         type="button"

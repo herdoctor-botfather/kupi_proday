@@ -39,6 +39,8 @@ import { HealthController } from './common/health.controller';
     InternalModule,
     DealsModule,
     ServiceRequestsModule,
+    ImagesModule,
+    TextModule,
   ],
   controllers: [HealthController],
 })

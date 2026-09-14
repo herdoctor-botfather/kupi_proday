@@ -422,6 +422,26 @@ export const dealReviewSchema = z.object({
 export type DealReviewDto = z.infer<typeof dealReviewSchema>;
 
 /**
+ * Подписка на чужой спрос.
+ *
+ * Хотя бы одно условие обязательно: подписка «на всё» через неделю
+ * заканчивается отключёнными уведомлениями, и мы теряем канал, который
+ * дороже одной подписки.
+ */
+export const demandWatchSchema = z
+  .object({
+    kind: z.enum(['PRODUCT', 'SERVICE']),
+    categoryId: z.string().trim().max(40).nullable().optional(),
+    city: z.string().trim().max(100).nullable().optional(),
+    keyword: z.string().trim().max(60).nullable().optional(),
+  })
+  .refine((v) => Boolean(v.categoryId || v.city?.trim() || v.keyword?.trim()), {
+    message: 'Выберите категорию, город или слово',
+    path: ['categoryId'],
+  });
+export type DemandWatchDto = z.infer<typeof demandWatchSchema>;
+
+/**
  * Просьба составить черновик текста.
  *
  * Полей ровно столько, сколько человек уже ввёл в форму: свободного

@@ -13,6 +13,7 @@ import type {
 } from '@app/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { DemandService } from '../demand/demand.service';
 import { recalculateRating, toReviewDto } from '../reviews/reviews.mapper';
 import { detailInclude } from '../specialists/specialists.mapper';
 
@@ -21,6 +22,7 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly demand: DemandService,
   ) {}
 
   // ─────────── Статистика ───────────
@@ -341,6 +343,11 @@ export class AdminService {
           : `🏷 <b>Объявление отклонено</b>\n\n${escapeHtml(dto.reason ?? 'Причина не указана')}\n\nИсправьте и отправьте снова.`,
       this.notifications.miniAppUrl,
     );
+
+    // Проверенный запрос — повод сообщить тем, кто на такое подписан.
+    // Рассылаем именно после проверки: разослать непроверенное значит
+    // поручиться за то, чего мы не видели.
+    if (approved && isWanted) void this.demand.notifyAboutListing(id);
 
     return updated;
   }

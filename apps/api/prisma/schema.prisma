@@ -104,6 +104,7 @@ model User {
   referralQualifiedAt DateTime?
 
   referralAwards ReferralAward[]
+  demandWatches  DemandWatch[]
 
   @@index([role])
   @@map("users")
@@ -142,6 +143,7 @@ model Category {
   specialists SpecialistCategory[]
 
   listings  ListingCategory[]
+  demandWatches DemandWatch[]
 
   @@index([kind, isActive, sortOrder])
   @@map("categories")
@@ -614,6 +616,46 @@ model ServiceRequest {
   @@index([specialistId, status, createdAt])
   @@index([clientId, createdAt])
   @@map("service_requests")
+}
+
+// ─────────────────── Охота за спросом ───────────────────
+
+/// Подписка на чужой спрос.
+///
+/// Человек говорит один раз: «я продаю велосипеды», «я электрик в Нижнем
+/// Новгороде» — и получает уведомление, когда появляется подходящий
+/// запрос. Не он ищет клиентов, а спрос находит его.
+///
+/// Это работает там, где витрина ещё не работает. Витрине нужен объём:
+/// пока объявлений два десятка, ходить по ней незачем. А уведомление
+/// полезно при любом количестве — даже один запрос в неделю стоит того,
+/// чтобы держать приложение установленным.
+model DemandWatch {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// За чем следим: за запросами на товары или за услугами.
+  kind CategoryKind
+
+  /// Категория, которая интересна. null — любая: так подписываются те,
+  /// кому важен город, а не предмет.
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  /// Город. Пусто — вся страна: доставка и удалённая работа существуют.
+  city String?
+
+  /// Ключевое слово в заголовке. Пусто — без разбора.
+  /// Нужно там, где категории мало: «велосипед» точнее, чем «спорт».
+  keyword String?
+
+  createdAt DateTime @default(now())
+
+  @@index([kind, categoryId])
+  @@index([userId])
+  @@map("demand_watches")
 }
 
 // ─────────────────── Приглашения ───────────────────

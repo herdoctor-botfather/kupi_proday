@@ -26,6 +26,8 @@ import type {
   Review,
   SpecialistApplicationDto,
   SpecialistDetail,
+  DemandWatch,
+  DemandWatchDto,
   ReferralSummary,
   SpecialistListItem,
   TextDraftDto,
@@ -142,6 +144,14 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ initData, startParam }),
     }),
+
+  // ─── Охота за спросом ───
+
+  demandWatches: () => request<DemandWatch[]>('/demand/watches'),
+  addDemandWatch: (dto: DemandWatchDto) =>
+    request<DemandWatch[]>('/demand/watches', { method: 'POST', body: JSON.stringify(dto) }),
+  removeDemandWatch: (id: string) =>
+    request<DemandWatch[]>(`/demand/watches/${id}`, { method: 'DELETE' }),
 
   /** Приглашения: ссылка, счёт приведённых и рубежи. */
   referrals: () => request<ReferralSummary>('/referrals/me'),

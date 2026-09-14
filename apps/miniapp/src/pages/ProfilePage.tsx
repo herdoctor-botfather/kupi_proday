@@ -115,6 +115,23 @@ export function ProfilePage() {
           куда и «Мои объявления», где такая кнопка и так стоит первой.
           Два входа в одно место на одном экране — выбор без выбора. */}
 
+      {/* Охота за спросом — то, ради чего продавцу стоит держать
+          приложение установленным: работает и при пустой витрине. */}
+      <Link to="/profile/demand" className="profile-cta" onClick={() => haptic.tap()}>
+        <span className="profile-cta__icon" aria-hidden>
+          🔔
+        </span>
+        <span className="profile-cta__body">
+          <span className="profile-cta__title">Когда кто-то ищет</span>
+          <span className="profile-cta__text">
+            Сообщим, если появится запрос на то, что вы продаёте или делаете
+          </span>
+        </span>
+        <span className="profile-cta__chevron" aria-hidden>
+          ›
+        </span>
+      </Link>
+
       <Link to="/profile/referrals" className="profile-cta" onClick={() => haptic.tap()}>
         <span className="profile-cta__icon" aria-hidden>
           🎁

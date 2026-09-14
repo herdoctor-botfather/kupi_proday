@@ -227,6 +227,16 @@ export interface ConversationSummary {
   role: 'CLIENT' | 'SPECIALIST';
 }
 
+/** Подписка на спрос в том виде, в каком её показывают человеку. */
+export interface DemandWatch {
+  id: string;
+  kind: CategoryKind;
+  city: string | null;
+  keyword: string | null;
+  category: { id: string; name: string; icon: string } | null;
+  createdAt: string;
+}
+
 /** Что человек видит в разделе приглашений. */
 export interface ReferralSummary {
   /** Ссылка, которой он делится. */

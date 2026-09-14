@@ -19,6 +19,7 @@ import { ServiceRequestsModule } from './service-requests/service-requests.modul
 import { ImagesModule } from './images/images.module';
 import { TextModule } from './text/text.module';
 import { ReferralsModule } from './referrals/referrals.module';
+import { DemandModule } from './demand/demand.module';
 import { HealthController } from './common/health.controller';
 
 @Module({
@@ -43,6 +44,7 @@ import { HealthController } from './common/health.controller';
     ImagesModule,
     TextModule,
     ReferralsModule,
+    DemandModule,
   ],
   controllers: [HealthController],
 })

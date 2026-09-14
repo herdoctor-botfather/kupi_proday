@@ -105,6 +105,8 @@ model User {
 
   referralAwards ReferralAward[]
   demandWatches  DemandWatch[]
+  urgentAsClient UrgentRequest[] @relation("UrgentAsClient")
+  urgentAsMaster UrgentRequest[] @relation("UrgentAsMaster")
 
   @@index([role])
   @@map("users")
@@ -144,6 +146,7 @@ model Category {
 
   listings  ListingCategory[]
   demandWatches DemandWatch[]
+  urgentRequests UrgentRequest[]
 
   @@index([kind, isActive, sortOrder])
   @@map("categories")
@@ -616,6 +619,61 @@ model ServiceRequest {
   @@index([specialistId, status, createdAt])
   @@index([clientId, createdAt])
   @@map("service_requests")
+}
+
+// ─────────────────── Надо срочно ───────────────────
+
+/// Чем кончился срочный вызов.
+enum UrgentStatus {
+  /// Ждёт, пока кто-нибудь возьмётся.
+  OPEN
+  /// Мастер взял заказ — дальше они разговаривают в чате.
+  TAKEN
+  /// Срок вышел, никто не взялся.
+  EXPIRED
+  /// Заказчик передумал.
+  CANCELLED
+}
+
+/// Вызов мастера на сейчас.
+///
+/// Отличается от анкеты и от заявки тем, что адресован не одному
+/// человеку, а всем подходящим сразу: когда прорвало трубу, выбирать
+/// из каталога некогда. Берёт тот, кто первым согласился, — остальным
+/// приходит «уже взяли», и это честнее, чем оставить их звонить
+/// в занятую линию.
+///
+/// Название площадки — про это: NADO значит «надо сейчас», а не
+/// «посмотрю на выходных».
+model UrgentRequest {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation("UrgentAsClient", fields: [userId], references: [id], onDelete: Cascade)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  city        String
+  title       String
+  description String? @db.Text
+
+  status UrgentStatus @default(OPEN)
+
+  /// До какого момента нужна помощь. После него вызов гаснет сам:
+  /// «нужен электрик до восьми» в девять никому не интересен.
+  neededBy DateTime
+
+  /// Кто взял. Пусто, пока не взяли.
+  takenById String?
+  takenBy   User?   @relation("UrgentAsMaster", fields: [takenById], references: [id], onDelete: SetNull)
+  takenAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([status, neededBy])
+  @@index([userId, createdAt])
+  @@map("urgent_requests")
 }
 
 // ─────────────────── Охота за спросом ───────────────────

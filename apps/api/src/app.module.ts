@@ -20,6 +20,7 @@ import { ImagesModule } from './images/images.module';
 import { TextModule } from './text/text.module';
 import { ReferralsModule } from './referrals/referrals.module';
 import { DemandModule } from './demand/demand.module';
+import { UrgentModule } from './urgent/urgent.module';
 import { HealthController } from './common/health.controller';
 
 @Module({
@@ -45,6 +46,7 @@ import { HealthController } from './common/health.controller';
     TextModule,
     ReferralsModule,
     DemandModule,
+    UrgentModule,
   ],
   controllers: [HealthController],
 })

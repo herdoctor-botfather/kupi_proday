@@ -51,6 +51,15 @@ export class InternalController {
     );
   }
 
+  /** Мастер взял срочный вызов кнопкой под уведомлением. */
+  @Post('urgent/take')
+  @HttpCode(200)
+  takeUrgent(
+    @Body() body: { telegramId?: string; requestId?: string },
+  ): Promise<{ conversationId: string | null }> {
+    return this.internal.takeUrgent(String(body?.telegramId ?? ''), String(body?.requestId ?? ''));
+  }
+
   /** Бот рисует картинку по описанию из переписки. */
   @Post('draw')
   @HttpCode(200)

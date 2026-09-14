@@ -422,6 +422,22 @@ export const dealReviewSchema = z.object({
 export type DealReviewDto = z.infer<typeof dealReviewSchema>;
 
 /**
+ * Срочный вызов мастера.
+ *
+ * Срок задаётся часами, а не датой: «нужно до восьми» человек скажет
+ * охотнее, чем выберет время в календаре, а больше суток «срочно»
+ * уже не значит ничего.
+ */
+export const urgentRequestSchema = z.object({
+  categoryId: z.string().trim().min(1, "Выберите, кто нужен").max(40),
+  city: z.string().trim().min(2, "Укажите город").max(100),
+  title: z.string().trim().min(5, "Опишите, что случилось").max(160),
+  description: z.string().trim().max(1000).nullable().optional(),
+  hours: z.coerce.number().int().min(1).max(24),
+});
+export type UrgentRequestDto = z.infer<typeof urgentRequestSchema>;
+
+/**
  * Подписка на чужой спрос.
  *
  * Хотя бы одно условие обязательно: подписка «на всё» через неделю

@@ -6,9 +6,10 @@ import { SpecialistsModule } from '../specialists/specialists.module';
 import { ListingsModule } from '../listings/listings.module';
 import { ServiceRequestsModule } from '../service-requests/service-requests.module';
 import { ImagesModule } from '../images/images.module';
+import { UrgentModule } from '../urgent/urgent.module';
 
 @Module({
-  imports: [PaymentsModule, SpecialistsModule, ListingsModule, ServiceRequestsModule, ImagesModule],
+  imports: [PaymentsModule, SpecialistsModule, ListingsModule, ServiceRequestsModule, ImagesModule, UrgentModule],
   controllers: [InternalController],
   providers: [InternalService],
 })

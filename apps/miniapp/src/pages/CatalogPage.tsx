@@ -60,9 +60,23 @@ export function CatalogPage() {
         <SearchInput value={query} onChange={setQuery} />
       </form>
 
+      {/* Срочный вызов стоит выше поиска по каталогу: когда прорвало трубу,
+          листать карточки некогда, и путь к помощи должен быть коротким.
+          Само название площадки — про это. */}
       <button
         type="button"
-        className="button"
+        className="button urgent-call"
+        onClick={() => {
+          haptic.tap();
+          navigate('/urgent');
+        }}
+      >
+        ⚡️ Надо срочно — позвать мастера сейчас
+      </button>
+
+      <button
+        type="button"
+        className="button button--secondary"
         onClick={() => {
           haptic.tap();
           geo.request();

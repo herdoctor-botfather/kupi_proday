@@ -27,6 +27,8 @@ import type {
   SpecialistApplicationDto,
   SpecialistDetail,
   DemandWatch,
+  UrgentRequest,
+  UrgentRequestDto,
   DemandWatchDto,
   ReferralSummary,
   SpecialistListItem,
@@ -144,6 +146,14 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ initData, startParam }),
     }),
+
+  // ─── Надо срочно ───
+
+  createUrgent: (dto: UrgentRequestDto) =>
+    request<UrgentRequest>('/urgent', { method: 'POST', body: JSON.stringify(dto) }),
+  myUrgent: () => request<UrgentRequest[]>('/urgent/mine'),
+  cancelUrgent: (id: string) =>
+    request<UrgentRequest[]>(`/urgent/${id}/cancel`, { method: 'POST' }),
 
   // ─── Охота за спросом ───
 

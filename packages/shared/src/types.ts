@@ -227,6 +227,22 @@ export interface ConversationSummary {
   role: 'CLIENT' | 'SPECIALIST';
 }
 
+export type UrgentStatus = "OPEN" | "TAKEN" | "EXPIRED" | "CANCELLED";
+
+/** Срочный вызов глазами заказчика. */
+export interface UrgentRequest {
+  id: string;
+  title: string;
+  description: string | null;
+  city: string;
+  category: { name: string; icon: string };
+  status: UrgentStatus;
+  neededBy: string;
+  createdAt: string;
+  /** Кто взялся. Пусто, пока никто. */
+  takenBy: ConversationParty | null;
+}
+
 /** Подписка на спрос в том виде, в каком её показывают человеку. */
 export interface DemandWatch {
   id: string;

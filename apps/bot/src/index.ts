@@ -8,6 +8,7 @@ import { registerPayments } from './payments';
 import { cabinetKeyboard, registerCabinet } from './cabinet';
 import { registerServiceRequests } from './service-requests';
 import { registerDraw } from './draw';
+import { registerUrgent } from './urgent';
 
 /**
  * Бот-обёртка вокруг Mini App.
@@ -158,6 +159,7 @@ registerPayments(bot);
 registerCabinet(bot);
 registerServiceRequests(bot, appUrl);
 registerDraw(bot, appUrl);
+registerUrgent(bot, appUrl);
 
 // Любое сообщение вне команд возвращает пользователя к кнопкам запуска,
 // иначе диалог с ботом выглядит как тупик.

@@ -25,6 +25,7 @@ import { MapPage } from './pages/MapPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { ReferralsPage } from './pages/ReferralsPage';
 import { DemandWatchPage } from './pages/DemandWatchPage';
+import { UrgentPage } from './pages/UrgentPage';
 import { EmptyState } from './components/states';
 import { useBackButtonEffect } from './lib/telegram';
 import { isRoleChosenThisSession, markRoleChosen } from './lib/session';
@@ -143,6 +144,7 @@ function Shell() {
       <Route path="/seller/:id" element={<PersonPage by="user" />} />
       <Route path="/profile/referrals" element={<ReferralsPage />} />
       <Route path="/profile/demand" element={<DemandWatchPage />} />
+      <Route path="/urgent" element={<UrgentPage />} />
       <Route path="/chats" element={<ChatsPage />} />
       <Route path="/chat/:id" element={<ChatPage />} />
       <Route path="/profile" element={<ProfilePage />} />

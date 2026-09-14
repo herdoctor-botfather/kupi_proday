@@ -6,6 +6,7 @@ import { MySpecialistService } from '../specialists/my-specialist.service';
 import { ListingsService } from '../listings/listings.service';
 import { ServiceRequestsService } from '../service-requests/service-requests.service';
 import { ImagesService } from '../images/images.service';
+import { UrgentService } from '../urgent/urgent.service';
 
 /** Что бот показывает в кабинете. Ровно то, что помещается в одно сообщение. */
 export interface CabinetSummary {
@@ -43,7 +44,19 @@ export class InternalService {
     private readonly listings: ListingsService,
     private readonly requests: ServiceRequestsService,
     private readonly images: ImagesService,
+    private readonly urgent: UrgentService,
   ) {}
+
+  /**
+   * Мастер взял срочный вызов.
+   *
+   * Правила — не поздно ли, не взяли ли уже, свой ли это вызов — живут
+   * в службе вызовов; бот передаёт только нажатие и того, кто нажал.
+   */
+  async takeUrgent(telegramId: string, requestId: string) {
+    const user = await this.findUser(telegramId);
+    return this.urgent.take(user.id, String(requestId ?? ''));
+  }
 
   /**
    * Нарисовать картинку по описанию из переписки с ботом.

@@ -4282,3 +4282,12 @@ body {
 .referral-step__title {
   font-weight: 600;
 }
+
+/* Срочный вызов: единственная кнопка на экране, которой позволено кричать.
+   Она про беду, а не про выбор, и теряться среди остальных не должна. */
+.urgent-call {
+  background: linear-gradient(135deg, #ff6b35, #f7482f);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+}

@@ -23,6 +23,7 @@ import { SellPage } from './pages/SellPage';
 import { SpecialistsPage } from './pages/SpecialistsPage';
 import { MapPage } from './pages/MapPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { ReferralsPage } from './pages/ReferralsPage';
 import { EmptyState } from './components/states';
 import { useBackButtonEffect } from './lib/telegram';
 import { isRoleChosenThisSession, markRoleChosen } from './lib/session';
@@ -139,6 +140,7 @@ function Shell() {
       <Route path="/market/sell" element={<SellPage />} />
       <Route path="/listing/:idOrSlug" element={<ListingPage />} />
       <Route path="/seller/:id" element={<PersonPage by="user" />} />
+      <Route path="/profile/referrals" element={<ReferralsPage />} />
       <Route path="/chats" element={<ChatsPage />} />
       <Route path="/chat/:id" element={<ChatPage />} />
       <Route path="/profile" element={<ProfilePage />} />

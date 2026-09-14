@@ -1,5 +1,8 @@
 import type { Counts } from './stats';
 
+/** Перевод строки: внутри шаблона он читался бы как случайная пустая строка. */
+const NEW_LINE = String.fromCharCode(10);
+
 /**
  * Тексты бота.
  *
@@ -195,3 +198,17 @@ function plural(count: number, forms: [string, string, string]): string {
 function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
+/**
+ * Встреча пришедшего по приглашению.
+ *
+ * Ни слова о том, что кто-то получит за него подарок: человек пришёл
+ * не ради чужой награды, и напоминание об этом делает его средством,
+ * а не гостем.
+ */
+export const INVITED = [
+  '<b>Вас пригласили в NADO</b>',
+  '',
+  'Здесь находят мастеров, продают вещи и говорят, что им надо прямо сейчас.',
+  'Откройте — и посмотрите, что есть рядом с вами.',
+].join(NEW_LINE);

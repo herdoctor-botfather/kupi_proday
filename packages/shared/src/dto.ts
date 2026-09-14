@@ -267,6 +267,13 @@ export type StartConversationDto = z.infer<typeof startConversationSchema>;
 export const authSchema = z.object({
   /** Сырая строка window.Telegram.WebApp.initData. */
   initData: z.string().min(1),
+  /**
+   * Параметр запуска: по нему приложение узнаёт, что человек пришёл
+   * по чужой ссылке-приглашению. Значение приходит от Telegram, но
+   * доверия ему нужно ровно столько, сколько требуется: это подсказка,
+   * кого записать пригласившим, а не право на что-либо.
+   */
+  startParam: z.string().trim().max(64).optional(),
 });
 export type AuthDto = z.infer<typeof authSchema>;
 

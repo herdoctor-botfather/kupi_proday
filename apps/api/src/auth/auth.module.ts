@@ -4,6 +4,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard } from '../common/guards';
 import { config } from '../config';
+import { ReferralsModule } from '../referrals/referrals.module';
 
 @Global()
 @Module({
@@ -13,6 +14,9 @@ import { config } from '../config';
       secret: config.JWT_SECRET,
       signOptions: { expiresIn: config.JWT_EXPIRES_IN },
     }),
+    // Вход — единственное место, где видно параметр запуска, а значит
+    // и то, по чьей ссылке человек пришёл.
+    ReferralsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard],

@@ -27,7 +27,7 @@ export class AuthController {
   @Post('telegram')
   @UsePipes(new ZodValidationPipe(authSchema))
   telegram(@Body() dto: AuthDto): Promise<AuthResponse> {
-    return this.auth.loginWithInitData(dto.initData);
+    return this.auth.loginWithInitData(dto.initData, dto.startParam);
   }
 
   /** Вход в веб-админку через Telegram Login Widget. */

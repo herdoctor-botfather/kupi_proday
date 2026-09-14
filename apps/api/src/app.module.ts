@@ -18,6 +18,7 @@ import { DealsModule } from './deals/deals.module';
 import { ServiceRequestsModule } from './service-requests/service-requests.module';
 import { ImagesModule } from './images/images.module';
 import { TextModule } from './text/text.module';
+import { ReferralsModule } from './referrals/referrals.module';
 import { HealthController } from './common/health.controller';
 
 @Module({
@@ -41,6 +42,7 @@ import { HealthController } from './common/health.controller';
     ServiceRequestsModule,
     ImagesModule,
     TextModule,
+    ReferralsModule,
   ],
   controllers: [HealthController],
 })

@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import type { AuthResponse, CurrentUser } from '@app/shared';
 import type { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { ReferralsService } from '../referrals/referrals.service';
 import { config } from '../config';
 import { InitDataError, verifyInitData } from './telegram-init-data';
 import { verifyLoginWidget } from './telegram-login-widget';
@@ -21,7 +22,7 @@ export class AuthService {
    * Единственный вход в приложение: клиент присылает initData,
    * мы проверяем подпись и заводим или обновляем пользователя.
    */
-  async loginWithInitData(initData: string): Promise<AuthResponse> {
+  async loginWithInitData(initData: string, startParam?: string): Promise<AuthResponse> {
     let parsed;
     try {
       parsed = verifyInitData(initData, config.TELEGRAM_BOT_TOKEN);

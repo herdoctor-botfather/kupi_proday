@@ -15,6 +15,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { ContactPolicyService } from '../notifications/contact-policy.service';
 import { StorageService } from '../storage/storage.service';
 import { PaymentsService } from '../payments/payments.service';
+import { ReferralsService } from '../referrals/referrals.service';
 import { detailInclude, listInclude, toDetail, toListItem, toMyListing } from './listings.mapper';
 
 /** Больше этого числа снимков в объявлении не пролистают. */
@@ -40,6 +41,7 @@ export class ListingsService {
     private readonly contactPolicy: ContactPolicyService,
     private readonly storage: StorageService,
     private readonly payments: PaymentsService,
+    private readonly referrals: ReferralsService,
   ) {}
 
   // ─────────── Витрина ───────────
@@ -174,6 +176,8 @@ export class ListingsService {
     // случайному посетителю ничего не меняют, а человеку, который уже
     // что-то выложил, дают повод попробовать платное.
     void this.payments.grantWelcomeBonus(userId, 'Подарок за первое объявление');
+    // Тот же повод засчитывает и приглашение: человек перестал быть зрителем.
+    void this.referrals.qualify(userId);
 
     return this.findOwnOne(userId, listing.id);
   }

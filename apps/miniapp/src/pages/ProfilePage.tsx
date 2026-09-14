@@ -115,6 +115,21 @@ export function ProfilePage() {
           куда и «Мои объявления», где такая кнопка и так стоит первой.
           Два входа в одно место на одном экране — выбор без выбора. */}
 
+      <Link to="/profile/referrals" className="profile-cta" onClick={() => haptic.tap()}>
+        <span className="profile-cta__icon" aria-hidden>
+          🎁
+        </span>
+        <span className="profile-cta__body">
+          <span className="profile-cta__title">Реферальная система</span>
+          <span className="profile-cta__text">
+            Приглашайте друзей — за каждый рубеж подарок
+          </span>
+        </span>
+        <span className="profile-cta__chevron" aria-hidden>
+          ›
+        </span>
+      </Link>
+
       <button
         type="button"
         className="role-switch"

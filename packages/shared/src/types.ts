@@ -227,6 +227,26 @@ export interface ConversationSummary {
   role: 'CLIENT' | 'SPECIALIST';
 }
 
+/** Что человек видит в разделе приглашений. */
+export interface ReferralSummary {
+  /** Ссылка, которой он делится. */
+  link: string;
+  /** Перешли по ссылке и открыли приложение. */
+  invited: number;
+  /** Из них те, кто уже что-то выложил, — именно они идут в зачёт. */
+  qualified: number;
+  milestones: {
+    invited: number;
+    title: string;
+    /** Рубеж взят. */
+    reached: boolean;
+    /** Подарок вручён. */
+    granted: boolean;
+  }[];
+  /** Сколько осталось до следующего рубежа. null — акция пройдена. */
+  toNext: number | null;
+}
+
 export type ServiceRequestStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED';
 
 /**

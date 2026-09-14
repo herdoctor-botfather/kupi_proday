@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { CurrentUser } from '@app/shared';
+import { startParam } from './start-param';
 import { api, setToken } from './api';
 import { isInsideTelegram, tg } from './telegram';
 
@@ -43,7 +44,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const { token, user } = await api.authTelegram(initData);
+        // Параметр запуска отдаём вместе с входом: только здесь видно,
+        // что человек пришёл по чужой ссылке-приглашению.
+        const { token, user } = await api.authTelegram(initData, startParam() ?? undefined);
         setToken(token);
         if (!cancelled) setState({ user, status: 'authenticated', error: null });
       } catch (error) {

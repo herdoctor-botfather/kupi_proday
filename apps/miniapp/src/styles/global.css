@@ -4209,3 +4209,76 @@ body {
   border-radius: var(--radius);
   margin-bottom: 12px;
 }
+
+/* ─── Приглашения ─── */
+
+/* Два числа рядом: сколько пришло и сколько в зачёте. Показывать одно
+   значило бы либо скрыть работу ссылки, либо обещать больше, чем есть. */
+.referral-score {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.referral-score__item {
+  flex: 1;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+  border: 1px solid var(--hairline);
+  text-align: center;
+}
+
+.referral-score__value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.referral-score__label {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-hint);
+}
+
+/* Ссылку показываем целиком: человек должен видеть, чем делится. */
+.referral-link {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  border: 1px solid var(--hairline);
+  font-size: 12px;
+  color: var(--text-hint);
+  word-break: break-all;
+}
+
+.referral-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+  border: 1px solid var(--hairline);
+}
+
+.referral-step--reached {
+  border-color: var(--accent);
+}
+
+.referral-step__mark {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--bg);
+  font-weight: 700;
+}
+
+.referral-step__title {
+  font-weight: 600;
+}

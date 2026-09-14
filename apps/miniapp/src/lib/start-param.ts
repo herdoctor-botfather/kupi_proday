@@ -22,7 +22,24 @@ const ROUTES: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
   [/^sell$/i, () => '/market/sell'],
   [/^apply$/i, () => '/profile/my-card'],
   [/^chats$/i, () => '/chats'],
+  // Приглашение — не адрес: код уже ушёл на сервер при входе, а человека
+  // ведём на главную, а не на пустой экран «страница не найдена».
+  [/^ref_[a-z0-9]{1,40}$/i, () => '/'],
 ];
+
+/**
+ * Сырое значение параметра запуска.
+ *
+ * Разбор маршрута отбрасывает всё, чего нет в списке адресов, — и это
+ * правильно: чужой путь брать нельзя. Но приглашение маршрутом не
+ * является, а знать о нём нужно, поэтому исходную строку отдаём отдельно.
+ */
+export function startParam(): string | null {
+  return (
+    window.Telegram?.WebApp?.initDataUnsafe?.start_param ??
+    new URLSearchParams(window.location.search).get("tgWebAppStartParam")
+  );
+}
 
 function resolve(): string | null {
   const raw =

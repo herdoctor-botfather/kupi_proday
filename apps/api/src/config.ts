@@ -10,6 +10,8 @@ const envSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().min(1, 'TELEGRAM_BOT_TOKEN обязателен: им проверяется подпись initData'),
   /** Адрес Mini App для кнопки под уведомлениями. Без него кнопки просто не будет. */
   MINIAPP_URL: z.string().default(''),
+  /** Имя бота без «@» — из него собирается ссылка-приглашение. */
+  TELEGRAM_BOT_USERNAME: z.string().default(''),
   API_PORT: z.coerce.number().int().default(3000),
   JWT_SECRET: z.string().min(16, 'JWT_SECRET должен быть не короче 16 символов'),
   JWT_EXPIRES_IN: z.string().default('7d'),

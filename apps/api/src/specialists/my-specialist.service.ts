@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { ContactPolicyService } from '../notifications/contact-policy.service';
 import { PaymentsService } from '../payments/payments.service';
+import { ReferralsService } from '../referrals/referrals.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { detailInclude, toDetail } from './specialists.mapper';
 
@@ -28,6 +29,8 @@ export class MySpecialistService {
     private readonly storage: StorageService,
     private readonly notifications: NotificationsService,
     private readonly contactPolicy: ContactPolicyService,
+    private readonly payments: PaymentsService,
+    private readonly referrals: ReferralsService,
   ) {}
 
   async findOwn(userId: string): Promise<MySpecialistProfile | null> {
@@ -96,6 +99,12 @@ export class MySpecialistService {
     );
 
     if (prepared.hadContacts) this.contactPolicy.register(userId, 'profile');
+
+    // Подарок за первое дело — такой же, как за первое объявление: повод
+    // у человека разный, а поступок один. Тот же повод засчитывает
+    // и приглашение: пришедший по ссылке перестал быть зрителем.
+    void this.payments.grantWelcomeBonus(userId, 'Подарок за первую анкету');
+    void this.referrals.qualify(userId);
 
     return (await this.findOwn(userId))!;
   }

@@ -26,6 +26,7 @@ import type {
   Review,
   SpecialistApplicationDto,
   SpecialistDetail,
+  ReferralSummary,
   SpecialistListItem,
   TextDraftDto,
 } from '@app/shared';
@@ -136,8 +137,14 @@ export interface SpecialistFilters {
 }
 
 export const api = {
-  authTelegram: (initData: string) =>
-    request<AuthResponse>('/auth/telegram', { method: 'POST', body: JSON.stringify({ initData }) }),
+  authTelegram: (initData: string, startParam?: string) =>
+    request<AuthResponse>('/auth/telegram', {
+      method: 'POST',
+      body: JSON.stringify({ initData, startParam }),
+    }),
+
+  /** Приглашения: ссылка, счёт приведённых и рубежи. */
+  referrals: () => request<ReferralSummary>('/referrals/me'),
 
   categories: (kind: CategoryKind = 'SERVICE') => request<Category[]>(`/categories${qs({ kind })}`),
 

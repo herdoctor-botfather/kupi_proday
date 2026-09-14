@@ -92,6 +92,19 @@ model User {
   /// и проверять это надо надёжно, а не перебором истории.
   welcomeBonusAt DateTime?
 
+  /// Кто пригласил. Записывается при первом входе по ссылке и больше
+  /// не меняется: приглашение бывает однажды.
+  referrerId String?
+  referrer   User?   @relation("Referrals", fields: [referrerId], references: [id], onDelete: SetNull)
+  referrals  User[]  @relation("Referrals")
+
+  /// Когда приглашённый сделал первое дело — выложил объявление или подал
+  /// анкету. До этого момента он не засчитывается: иначе приглашением
+  /// считался бы простой переход по ссылке, который ничего не стоит.
+  referralQualifiedAt DateTime?
+
+  referralAwards ReferralAward[]
+
   @@index([role])
   @@map("users")
 }
@@ -601,6 +614,33 @@ model ServiceRequest {
   @@index([specialistId, status, createdAt])
   @@index([clientId, createdAt])
   @@map("service_requests")
+}
+
+// ─────────────────── Приглашения ───────────────────
+
+/// Награда за приглашённых.
+///
+/// Строка появляется, когда человек добрал очередной рубеж, и остаётся
+/// навсегда: это и запись о достижении, и защита от повторной выдачи.
+/// Подарок вручается вручную — Telegram Premium стоит настоящих денег,
+/// и решение об этом принимает человек, а не счётчик.
+model ReferralAward {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Сколько приглашённых было достигнуто: 20, 50, 80.
+  milestone Int
+
+  createdAt DateTime  @default(now())
+  /// Когда подарок действительно выдан. Пусто — ждёт вручения.
+  grantedAt DateTime?
+
+  /// Один рубеж — одна награда.
+  @@unique([userId, milestone])
+  @@index([grantedAt])
+  @@map("referral_awards")
 }
 
 // ─────────────────── Рисованные картинки ───────────────────

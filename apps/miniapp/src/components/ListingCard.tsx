@@ -36,6 +36,11 @@ export function ListingCard({ listing }: { listing: ListingListItem }) {
             в списке её замечают, а строку «обменяю на…» читать некогда. */}
         {listing.exchangeFor && <span className="listing-card__exchange">обмен</span>}
       </div>
+      {/* Срочность — над названием, а не рядом с ценой: цена и так
+          занята торгом и обменом, а повод поторопиться должен читаться
+          первым. */}
+      {listing.isUrgent && <div className="card__urgent">⚡️ СРОЧНО</div>}
+
       <div className="listing-card__title">{listing.title}</div>
       <div className="listing-card__meta">
         {category && (

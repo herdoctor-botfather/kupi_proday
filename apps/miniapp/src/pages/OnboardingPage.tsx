@@ -30,7 +30,9 @@ export function OnboardingPage() {
       markRoleChosen();
       // У кого анкета уже есть — сразу к ней, а не к пустой форме.
       const target =
-        role === 'WANTED'
+        role === 'URGENT'
+          ? '/market/urgent'
+          : role === 'WANTED'
           ? '/wanted'
           : role === 'MARKET'
             ? '/market'
@@ -142,6 +144,31 @@ export function OnboardingPage() {
           </span>
           <span className="role-card__action">
             {saving === 'WANTED' ? 'Открываем...' : 'Смотреть спрос →'}
+          </span>
+        </button>
+
+        {/*
+          Срочное отдельной дверью.
+          Человек приходит сюда не выбирать, а успеть: здесь вещи, которые
+          отдают дешевле ради скорости. На общей витрине такая вещь тонет
+          среди тех, что висят месяцами, и повод поторопиться пропадает.
+        */}
+        <button
+          type="button"
+          className={`role-card role-card--banner${user?.onboardedAs === 'URGENT' ? ' role-card--previous' : ''}`}
+          onClick={() => choose('URGENT')}
+          disabled={saving !== null}
+        >
+          {user?.onboardedAs === 'URGENT' && <span className="role-card__mark">Прошлый выбор</span>}
+          <span className="role-card__photo">
+            <img src="/doors/market.jpg" alt="Вещи, выставленные на срочную продажу" loading="lazy" />
+          </span>
+          <span className="role-card__title">⚡️ Надо срочно продать или купить</span>
+          <span className="role-card__text">
+            Вещи, которые отдают быстрее и дешевле. Кто торопится — тот уступает
+          </span>
+          <span className="role-card__action">
+            {saving === 'URGENT' ? 'Открываем...' : 'Смотреть срочное →'}
           </span>
         </button>
       </div>

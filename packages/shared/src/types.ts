@@ -3,7 +3,7 @@
 export type Role = 'USER' | 'MODERATOR' | 'ADMIN';
 
 /** Что пользователь выбрал на стартовом экране. */
-export type Onboarding = 'CLIENT' | 'SPECIALIST' | 'MARKET' | 'WANTED';
+export type Onboarding = 'CLIENT' | 'SPECIALIST' | 'MARKET' | 'WANTED' | 'URGENT';
 
 export type CategoryKind = 'SERVICE' | 'PRODUCT';
 export type ListingStatus = 'DRAFT' | 'PENDING' | 'ACTIVE' | 'SOLD' | 'HIDDEN' | 'REJECTED';
@@ -157,6 +157,8 @@ export interface ListingListItem {
    * null — сделка только за деньги.
    */
   exchangeFor: string | null;
+  /** Продаётся срочно — с уступкой ради скорости. */
+  isUrgent: boolean;
   condition: ListingCondition;
   city: string;
   /** Первое фото: в списке показывается только оно. */

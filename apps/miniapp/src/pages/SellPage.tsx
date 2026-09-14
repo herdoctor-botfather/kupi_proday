@@ -25,6 +25,7 @@ interface FormState {
   description: string;
   price: string;
   isNegotiable: boolean;
+  isUrgent: boolean;
   exchangeFor: string;
   condition: ListingCondition;
   city: string;
@@ -36,6 +37,7 @@ const EMPTY: FormState = {
   description: '',
   price: '',
   isNegotiable: false,
+  isUrgent: false,
   exchangeFor: '',
   condition: 'USED',
   city: '',
@@ -130,6 +132,7 @@ export function SellPage() {
         // В базе копейки, в форме рубли.
         price: String(listing.priceAmount / 100),
         isNegotiable: listing.isNegotiable,
+        isUrgent: listing.isUrgent,
         exchangeFor: listing.exchangeFor ?? '',
         condition: listing.condition,
         city: listing.city,
@@ -154,6 +157,7 @@ export function SellPage() {
       description: form.description.trim() || null,
       price: form.price.trim() ? Number(form.price) : Number.NaN,
       isNegotiable: form.isNegotiable,
+      isUrgent: form.isUrgent,
       exchangeFor: form.exchangeFor.trim() || null,
       condition: form.condition,
       city: form.city.trim(),
@@ -335,6 +339,33 @@ export function SellPage() {
                 торг
               </label>
             </div>
+
+            {/*
+              Срочная продажа — только у продавца: запрос «куплю» и так
+              висит до тех пор, пока не найдётся вещь, и торопиться там
+              некому.
+
+              Отдельная витрина, а не пометка на общей: её листают охотнее,
+              потому что там всегда есть повод поторопиться. Срок недельный
+              и истекает сам — раздел, где «срочное» месячной давности,
+              перестаёт что-либо значить.
+            */}
+            {!wanted && (
+              <label className="urgent-toggle">
+                <input
+                  type="checkbox"
+                  checked={form.isUrgent}
+                  onChange={(e) => set('isUrgent', e.target.checked)}
+                />
+                <span>
+                  <span className="urgent-toggle__title">⚡️ Продать срочно</span>
+                  <span className="urgent-toggle__text">
+                    Попадёт в отдельную витрину срочного на неделю. Ставьте, если
+                    готовы уступить ради скорости, — туда идут именно за этим.
+                  </span>
+                </span>
+              </label>
+            )}
 
             {/*
               Обмен предлагает тот, кто ищет, — у продавца этого поля нет:

@@ -322,6 +322,11 @@ export class ListingsService {
     // Страница продавца: все его объявления одной выдачей.
     if (query.sellerId) where.userId = query.sellerId;
     if (query.condition) where.condition = query.condition;
+    // Срочная витрина: только то, у чего срок срочности ещё не вышел.
+    if (query.urgent) {
+      where.isUrgent = true;
+      where.urgentUntil = { gt: new Date() };
+    }
 
     if (query.minPrice !== undefined || query.maxPrice !== undefined) {
       // Цены в запросе приходят в рублях, в базе хранятся в копейках.
@@ -377,6 +382,16 @@ export class ListingsService {
       exchangeFor: dto.kind === 'BUY' ? clean(dto.exchangeFor) : null,
       condition: dto.condition,
       city: dto.city.trim(),
+      isUrgent: dto.isUrgent,
+      /*
+       * Срочность с собственным сроком.
+       *
+       * Неделя — не формальность: витрину срочного листают ради повода
+       * поторопиться, и объявление месячной давности этот повод убивает.
+       * По истечении оно остаётся на общей витрине и просто уходит
+       * из срочной, без всякого участия человека.
+       */
+      urgentUntil: dto.isUrgent ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null,
     };
 
     return { data, hadContacts };

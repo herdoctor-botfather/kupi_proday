@@ -26,6 +26,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { ReferralsPage } from './pages/ReferralsPage';
 import { DemandWatchPage } from './pages/DemandWatchPage';
 import { UrgentPage } from './pages/UrgentPage';
+import { UrgentSalePage } from './pages/UrgentSalePage';
 import { EmptyState } from './components/states';
 import { useBackButtonEffect } from './lib/telegram';
 import { isRoleChosenThisSession, markRoleChosen } from './lib/session';
@@ -33,7 +34,7 @@ import { clearStartRoute, startRoute } from './lib/start-param';
 import { useGoBack } from './lib/navigation';
 
 /** Вкладки нижней навигации: с них не «возвращаются», на них переключаются. */
-const ROOT_ROUTES = new Set(['/', '/onboarding', '/map', '/chats', '/profile', '/market', '/wallet']);
+const ROOT_ROUTES = new Set(['/', '/onboarding', '/map', '/chats', '/profile', '/market', '/market/urgent', '/wallet']);
 
 /**
  * Есть ли куда возвращаться.
@@ -145,6 +146,7 @@ function Shell() {
       <Route path="/profile/referrals" element={<ReferralsPage />} />
       <Route path="/profile/demand" element={<DemandWatchPage />} />
       <Route path="/urgent" element={<UrgentPage />} />
+      <Route path="/market/urgent" element={<UrgentSalePage />} />
       <Route path="/chats" element={<ChatsPage />} />
       <Route path="/chat/:id" element={<ChatPage />} />
       <Route path="/profile" element={<ProfilePage />} />

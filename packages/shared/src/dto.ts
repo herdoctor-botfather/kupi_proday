@@ -77,7 +77,7 @@ export const createReviewSchema = z.object({
 export type CreateReviewDto = z.infer<typeof createReviewSchema>;
 
 export const onboardingSchema = z.object({
-  role: z.enum(['CLIENT', 'SPECIALIST', 'MARKET', 'WANTED']),
+  role: z.enum(['CLIENT', 'SPECIALIST', 'MARKET', 'WANTED', 'URGENT']),
 });
 export type OnboardingDto = z.infer<typeof onboardingSchema>;
 
@@ -179,6 +179,15 @@ const MAX_PRICE_RUB = 1_000_000_000;
 
 export const listingSchema = z.object({
   /**
+   * Продать срочно: человек готов уступить ради скорости.
+   *
+   * Отдельная витрина, а не пометка на общей: её листают охотнее,
+   * потому что там всегда есть повод поторопиться. Срочность истекает
+   * через неделю сама — раздел, где «срочное» месячной давности,
+   * перестаёт что-либо значить.
+   */
+  isUrgent: z.boolean().default(false),
+  /**
    * Что это за объявление. По умолчанию продажа: обратная витрина
    * появилась позже, и старые клиенты про неё ничего не знают.
    */
@@ -213,6 +222,8 @@ export const listingQuerySchema = paginationSchema.extend({
   minPrice: z.coerce.number().int().min(0).optional(),
   maxPrice: z.coerce.number().int().min(0).optional(),
   condition: z.enum(['NEW', 'USED_PERFECT', 'USED']).optional(),
+  /** Только срочные: отдельная витрина, где всё продаётся с уступкой. */
+  urgent: z.coerce.boolean().optional(),
   sort: z.enum(['new', 'cheap', 'expensive']).default('new'),
 }).refine((v) => v.minPrice === undefined || v.maxPrice === undefined || v.minPrice <= v.maxPrice, {
   message: 'Нижняя граница цены выше верхней',

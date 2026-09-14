@@ -36,6 +36,9 @@ export function toListItem(row: ListRow): ListingListItem {
     priceAmount: row.priceAmount,
     currency: row.currency,
     isNegotiable: row.isNegotiable,
+    // Срочность показываем, только пока она не истекла: пометка на старом
+    // объявлении обесценивает её на всех остальных.
+    isUrgent: row.isUrgent && (row.urgentUntil?.getTime() ?? 0) > Date.now(),
     exchangeFor: row.exchangeFor,
     condition: row.condition,
     city: row.city,

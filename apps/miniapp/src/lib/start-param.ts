@@ -20,6 +20,7 @@ const ROUTES: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
   [/^wanted$/i, () => '/wanted'],
   [/^buy$/i, () => '/market/browse'],
   [/^sell$/i, () => '/market/sell'],
+  [/^urgent$/i, () => '/market/urgent'],
   [/^apply$/i, () => '/profile/my-card'],
   [/^chats$/i, () => '/chats'],
   // Приглашение — не адрес: код уже ушёл на сервер при входе, а человека

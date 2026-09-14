@@ -370,7 +370,12 @@ export function SellPage() {
               </ChipsRow>
             </Field>
 
-            <Field label="Категория" error={errors.categoryIds} required hint="Не больше трёх">
+            <Field
+              label="Категория"
+              error={errors.categoryIds}
+              required
+              hint="Не больше трёх. Не нашли подходящую — возьмите «Другое» и опишите словами"
+            >
               <div className="category-picker">
                 {allCategories.map((category) => {
                   const active = form.categoryIds.includes(category.id);

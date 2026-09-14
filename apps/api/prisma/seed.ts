@@ -76,6 +76,11 @@ const PRODUCT_CATEGORIES = [
   { slug: 'auto-parts', name: 'Запчасти', icon: '🔩', sortOrder: 60 },
   { slug: 'tools', name: 'Инструменты', icon: '🧰', sortOrder: 70 },
   { slug: 'hobby', name: 'Хобби', icon: '🎸', sortOrder: 80 },
+  // Приёмник для того, чему места не нашлось. Без него человек с товаром
+  // вне списка не может разместить объявление вовсе — категория
+  // обязательна, — и уходит. Заодно это счётчик: что копится в «Другом»,
+  // то и пора заводить отдельной категорией.
+  { slug: 'other-goods', name: 'Другое', icon: '📦', sortOrder: 999 },
 ];
 
 /**
@@ -234,6 +239,7 @@ const CATEGORIES = [
   { slug: 'it', name: 'IT и техника', icon: '💻', sortOrder: 80 },
   { slug: 'pets', name: 'Животные', icon: '🐾', sortOrder: 90 },
   { slug: 'events', name: 'Праздники', icon: '🎉', sortOrder: 100 },
+  { slug: 'other-services', name: 'Другое', icon: '🧩', sortOrder: 999 },
 ];
 
 /** Демо-карточки. Координаты — центр Москвы, чтобы карта была не пустой. */

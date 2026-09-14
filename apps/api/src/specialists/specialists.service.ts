@@ -158,7 +158,7 @@ export class SpecialistsService {
     const rows = await this.prisma.specialist.groupBy({
       by: ['city'],
       where: {
-        status: 'ACTIVE',
+        ...this.visibleInCatalog(),
         ...(query ? { city: { contains: query, mode: 'insensitive' } } : {}),
       },
       _count: { city: true },
@@ -173,7 +173,7 @@ export class SpecialistsService {
   async findInBounds(query: MapBoundsQuery): Promise<SpecialistListItem[]> {
     const rows = await this.prisma.specialist.findMany({
       where: {
-        status: 'ACTIVE',
+        ...this.visibleInCatalog(),
         lat: { gte: query.south, lte: query.north },
         ...this.buildLngBounds(query),
         ...(query.categorySlug ? { categories: { some: { category: { slug: query.categorySlug } } } } : {}),
@@ -260,8 +260,25 @@ export class SpecialistsService {
     }
   }
 
+  /**
+   * Кого показывать в каталоге.
+   *
+   * Анкету заводят бесплатно, а показывают, пока оплачен показ: это
+   * ровно та ценность, за которой мастер сюда и приходит, и брать деньги
+   * честнее за неё, чем за саму возможность зарегистрироваться.
+   *
+   * Карточки, заведённые администрацией, платы не требуют: у них нет
+   * владельца, платить за них некому, и это витрина самой площадки.
+   */
+  private visibleInCatalog(): Prisma.SpecialistWhereInput {
+    return {
+      status: 'ACTIVE',
+      OR: [{ subscriptionUntil: { gt: new Date() } }, { userId: null }],
+    };
+  }
+
   private buildWhere(query: SpecialistQuery): Prisma.SpecialistWhereInput {
-    const where: Prisma.SpecialistWhereInput = { status: 'ACTIVE' };
+    const where: Prisma.SpecialistWhereInput = this.visibleInCatalog();
 
     if (query.categorySlug) {
       where.categories = { some: { category: { slug: query.categorySlug } } };
@@ -273,14 +290,24 @@ export class SpecialistsService {
       where.ratingAvg = { gte: query.minRating };
     }
     if (query.q) {
-      // Ищем и по карточке, и по названиям услуг: «маникюр» чаще
-      // встречается в прайсе, чем в имени мастера.
-      where.OR = [
-        { displayName: { contains: query.q, mode: 'insensitive' } },
-        { headline: { contains: query.q, mode: 'insensitive' } },
-        { about: { contains: query.q, mode: 'insensitive' } },
-        { services: { some: { name: { contains: query.q, mode: 'insensitive' } } } },
-        { categories: { some: { category: { name: { contains: query.q, mode: 'insensitive' } } } } },
+      /*
+       * Ищем и по карточке, и по названиям услуг: «маникюр» чаще
+       * встречается в прайсе, чем в имени мастера.
+       *
+       * Условие кладём в AND, а не в OR верхнего уровня: там уже лежит
+       * проверка оплаты, и запись поверх неё показывала бы в поиске
+       * анкеты, которых в каталоге нет.
+       */
+      where.AND = [
+        {
+          OR: [
+            { displayName: { contains: query.q, mode: 'insensitive' } },
+            { headline: { contains: query.q, mode: 'insensitive' } },
+            { about: { contains: query.q, mode: 'insensitive' } },
+            { services: { some: { name: { contains: query.q, mode: 'insensitive' } } } },
+            { categories: { some: { category: { name: { contains: query.q, mode: 'insensitive' } } } } },
+          ],
+        },
       ];
     }
     return where;

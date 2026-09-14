@@ -170,6 +170,11 @@ export class ListingsService {
     );
     if (prepared.hadContacts) this.contactPolicy.register(userId, 'profile');
 
+    // Подарок за первое дело. Выдаём здесь, а не при регистрации: звёзды
+    // случайному посетителю ничего не меняют, а человеку, который уже
+    // что-то выложил, дают повод попробовать платное.
+    void this.payments.grantWelcomeBonus(userId, 'Подарок за первое объявление');
+
     return this.findOwnOne(userId, listing.id);
   }
 

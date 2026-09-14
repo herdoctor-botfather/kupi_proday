@@ -3,6 +3,7 @@ import { SpecialistsController } from './specialists.controller';
 import { SpecialistsService } from './specialists.service';
 import { MySpecialistController } from './my-specialist.controller';
 import { MySpecialistService } from './my-specialist.service';
+import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
   controllers: [SpecialistsController, MySpecialistController],

@@ -5,6 +5,7 @@ import { maskContacts } from '@app/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { ContactPolicyService } from '../notifications/contact-policy.service';
+import { PaymentsService } from '../payments/payments.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { detailInclude, toDetail } from './specialists.mapper';
 

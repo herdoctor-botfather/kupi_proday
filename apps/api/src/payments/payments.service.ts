@@ -16,6 +16,8 @@ import {
   isListingPromotion,
   isSpecialistPlan,
   IMAGE_GENERATION_STARS,
+  CASHBACK_PERCENT,
+  WELCOME_BONUS_STARS,
   isTopupAmount,
   type CreateInvoiceDto,
   type ConfirmPaymentDto,
@@ -155,6 +157,8 @@ export class PaymentsService {
       }
       // LISTING_SLOT выдавать нечего: оплаченное место — это сама запись,
       // и лимит считает её при следующей попытке разместить объявление.
+
+      await this.addCashback(tx, payment.userId, payment.purpose, payment.stars, payment.id);
     });
 
     return { applied: true };
@@ -291,7 +295,16 @@ export class PaymentsService {
         await this.applyPromotion(tx, order.listingId ?? null, dto.plan ?? null);
       }
 
-      return { balance: user.starsBalance };
+      await this.addCashback(tx, userId, dto.purpose, order.stars, payment.id);
+
+      // Баланс перечитываем: кэшбек мог его поднять уже после списания,
+      // и показать человеку число до начисления значило бы соврать.
+      const after = await tx.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { starsBalance: true },
+      });
+
+      return { balance: after.starsBalance };
     });
   }
 
@@ -323,6 +336,83 @@ export class PaymentsService {
         },
       });
     });
+  }
+
+  /**
+   * Кэшбек с покупки.
+   *
+   * Начисляется в той же транзакции, что и сама покупка: если платёж
+   * откатится, подарок не должен остаться. Пополнение кошелька покупкой
+   * не считается — иначе звёзды делали бы звёзды из воздуха.
+   */
+  private async addCashback(
+    tx: Parameters<Parameters<PrismaService['$transaction']>[0]>[0],
+    userId: string,
+    purpose: string,
+    stars: number,
+    paymentId: string,
+  ): Promise<void> {
+    if (purpose === 'WALLET_TOPUP') return;
+
+    // Округление вниз: с мелкой покупки кэшбека нет вовсе, и обещать его
+    // строкой «0 ★» в истории кошелька незачем.
+    const bonus = Math.floor((stars * CASHBACK_PERCENT) / 100);
+    if (bonus <= 0) return;
+
+    const user = await tx.user.update({
+      where: { id: userId },
+      data: { starsBalance: { increment: bonus } },
+      select: { starsBalance: true },
+    });
+
+    await tx.walletEntry.create({
+      data: {
+        userId,
+        kind: 'BONUS',
+        stars: bonus,
+        balanceAfter: user.starsBalance,
+        title: `Кэшбек ${CASHBACK_PERCENT}% с покупки`,
+        paymentId,
+      },
+    });
+  }
+
+  /**
+   * Приветственные звёзды за первое дело.
+   *
+   * Разовость обеспечивает условие в самом обновлении: две одновременные
+   * попытки не дадут двух подарков, потому что вторая не найдёт строки
+   * с пустой отметкой.
+   */
+  async grantWelcomeBonus(userId: string, reason: string): Promise<void> {
+    await this.prisma
+      .$transaction(async (tx) => {
+        const claimed = await tx.user.updateMany({
+          where: { id: userId, welcomeBonusAt: null },
+          data: { welcomeBonusAt: new Date(), starsBalance: { increment: WELCOME_BONUS_STARS } },
+        });
+        if (claimed.count === 0) return;
+
+        const user = await tx.user.findUniqueOrThrow({
+          where: { id: userId },
+          select: { starsBalance: true },
+        });
+
+        await tx.walletEntry.create({
+          data: {
+            userId,
+            kind: 'BONUS',
+            stars: WELCOME_BONUS_STARS,
+            balanceAfter: user.starsBalance,
+            title: reason,
+          },
+        });
+      })
+      // Подарок — приятная мелочь, а не часть размещения: если он
+      // не начислился, объявление всё равно должно выйти.
+      .catch((error: unknown) => {
+        this.logger.warn(`Не удалось начислить приветственные звёзды ${userId}: ${String(error)}`);
+      });
   }
 
   /** Что именно покупают, почём и можно ли это купить. */

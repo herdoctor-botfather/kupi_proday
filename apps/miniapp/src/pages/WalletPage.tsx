@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { TOPUP_MAX_STARS, TOPUP_MIN_STARS, TOPUP_PACKS, isTopupAmount } from '@app/shared';
+import {
+  CASHBACK_PERCENT,
+  TOPUP_MAX_STARS,
+  TOPUP_MIN_STARS,
+  TOPUP_PACKS,
+  isTopupAmount,
+} from '@app/shared';
 import { api, type Wallet } from '../lib/api';
 import { usePurchase } from '../lib/usePurchase';
 
@@ -54,6 +60,11 @@ export function WalletPage() {
         </h1>
         <p className="hero__subtitle">
           Звёздами оплачивается показ анкеты в каталоге и продвижение объявлений
+        </p>
+        {/* Про кэшбек человек должен знать до того, как заплатит, —
+            иначе это не стимул, а приятная неожиданность постфактум. */}
+        <p className="hero__subtitle">
+          С каждой покупки {CASHBACK_PERCENT}% возвращается звёздами на баланс
         </p>
       </header>
 

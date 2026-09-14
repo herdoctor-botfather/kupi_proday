@@ -12,6 +12,8 @@ import { useGeolocation } from '../lib/geolocation';
 import { haptic } from '../lib/telegram';
 import { useAuth } from '../lib/auth';
 import { AvatarUpload } from '../components/PhotoUpload';
+import { WriteText } from '../components/WriteText';
+import { DrawImage } from '../components/DrawImage';
 import { useGoBack } from '../lib/navigation';
 import { CityInput } from '../components/CityInput';
 
@@ -166,6 +168,28 @@ export function ApplicationPage() {
                 onChange={(e) => set('about', e.target.value)}
                 placeholder="Расскажите о себе так, как рассказали бы клиенту при первой встрече"
               />
+              {/* Заготовку делаем по имени, занятиям и городу — по тому,
+                  что человек уже ввёл. Выдумывать опыт и цены модели
+                  запрещено: анкета его, и отвечать за слова ему. */}
+              <div style={{ marginTop: 8 }}>
+                <WriteText
+                  disabled={saving}
+                  draft={() =>
+                    form.displayName.trim().length < 2
+                      ? null
+                      : {
+                          purpose: 'SPECIALIST',
+                          title: form.displayName.trim(),
+                          city: form.city.trim() || undefined,
+                          categories: categories.data
+                            ?.filter((c) => form.categoryIds.includes(c.id))
+                            .map((c) => c.name),
+                          extra: form.headline.trim() || undefined,
+                        }
+                  }
+                  onWritten={(text) => set('about', text)}
+                />
+              </div>
             </Field>
 
             {/* Аватар грузится отдельным запросом и сохраняется сразу,
@@ -176,6 +200,18 @@ export function ApplicationPage() {
                   photoUrl={form.photoUrl || null}
                   onUploaded={(profile) => set('photoUrl', profile.photoUrl ?? '')}
                 />
+                {/* Не у всякого мастера есть снимок, который не стыдно
+                    поставить на вывеску. Рисунок здесь обещает услугу,
+                    а не изображает конкретную вещь — и потому честен. */}
+                <div style={{ marginTop: 10 }}>
+                  <DrawImage
+                    hint="Опишите вывеску или обложку анкеты. Себя рисовать не стоит — лучше то, чем вы занимаетесь."
+                    onReady={async (image) => {
+                      const profile = await api.uploadAvatar(image);
+                      set('photoUrl', profile.photoUrl ?? '');
+                    }}
+                  />
+                </div>
               </Field>
             ) : (
               <div className="field">

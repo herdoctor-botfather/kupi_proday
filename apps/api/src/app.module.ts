@@ -17,6 +17,7 @@ import { InternalModule } from './internal/internal.module';
 import { DealsModule } from './deals/deals.module';
 import { ServiceRequestsModule } from './service-requests/service-requests.module';
 import { ImagesModule } from './images/images.module';
+import { TextModule } from './text/text.module';
 import { HealthController } from './common/health.controller';
 
 @Module({

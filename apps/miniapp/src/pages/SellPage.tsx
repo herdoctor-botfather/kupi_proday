@@ -15,6 +15,7 @@ import { AsyncContent } from '../components/states';
 import { CityInput } from '../components/CityInput';
 import { ImageError, prepareImage } from '../lib/image';
 import { DrawImage } from '../components/DrawImage';
+import { WriteText } from '../components/WriteText';
 import { haptic, tg } from '../lib/telegram';
 import { useGoBack } from '../lib/navigation';
 import { pluralize } from '../lib/format';
@@ -424,6 +425,28 @@ export function SellPage() {
                     : 'Расскажите о товаре так, чтобы не пришлось переспрашивать'
                 }
               />
+              {/* Заготовку составляем по тому, что уже введено: заголовку,
+                  городу и цене. Больше модель ничего не знает — и выдумывать
+                  ей запрещено: отвечать за написанное всё равно продавцу. */}
+              <div style={{ marginTop: 8 }}>
+                <WriteText
+                  disabled={saving}
+                  draft={() =>
+                    form.title.trim().length < 2
+                      ? null
+                      : {
+                          purpose: wanted ? 'LISTING_BUY' : 'LISTING_SELL',
+                          title: form.title.trim(),
+                          city: form.city.trim() || undefined,
+                          price: form.price.trim() ? `${form.price.trim()} руб.` : undefined,
+                          categories: categories.data
+                            ?.filter((c) => form.categoryIds.includes(c.id))
+                            .map((c) => c.name),
+                        }
+                  }
+                  onWritten={(text) => set('description', text)}
+                />
+              </div>
             </Field>
 
             <h2 className="form-section">Фотографии</h2>
@@ -489,10 +512,14 @@ export function SellPage() {
               обман покупателя, который поедет через весь город к тому,
               чего не существует.
             */}
-            {wanted && photoCount < LISTING_PHOTOS_MAX && (
+            {photoCount < LISTING_PHOTOS_MAX && (
               <div style={{ marginTop: 10 }}>
                 <DrawImage
-                  hint="Опишите вещь, которую ищете, — рисунок покажет продавцам, что именно вам нужно."
+                  hint={
+                    wanted
+                      ? "Опишите вещь, которую ищете, — рисунок покажет продавцам, что именно вам нужно."
+                      : "Рисунок не заменяет фотографию товара: покупатель приедет к настоящей вещи. Годится как обложка или пояснение."
+                  }
                   onReady={async (image) => {
                     if (editingId) {
                       const updated = await api.addListingPhoto(editingId, image);

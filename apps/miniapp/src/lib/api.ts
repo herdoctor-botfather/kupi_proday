@@ -27,6 +27,7 @@ import type {
   SpecialistApplicationDto,
   SpecialistDetail,
   SpecialistListItem,
+  TextDraftDto,
 } from '@app/shared';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '';
@@ -216,6 +217,10 @@ export const api = {
     }),
 
   pendingDeals: () => request<PendingDeal[]>('/deals/pending'),
+
+  /** Черновик описания по тому, что уже введено в форму. */
+  draftText: (dto: TextDraftDto) =>
+    request<{ text: string }>('/text/draft', { method: 'POST', body: JSON.stringify(dto) }),
 
   // ─── Рисованные картинки ───
 

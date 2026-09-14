@@ -51,6 +51,8 @@ const envSchema = z.object({
   IMAGE_API_URL: z.string().default('https://api.proxyapi.ru/v1'),
   IMAGE_API_KEY: z.string().default(''),
   IMAGE_MODEL: z.string().default('gpt-image-1-mini'),
+  /** Модель для черновиков текста. Дешёвая: текста нужно немного. */
+  TEXT_MODEL: z.string().default('openai/gpt-5-mini'),
 })
   // Драйвер s3 без параметров бакета молча не заработает — ловим на старте,
   // а не на первой загрузке файла пользователем.
@@ -93,6 +95,7 @@ export const config = {
     baseUrl: env.IMAGE_API_URL,
     apiKey: env.IMAGE_API_KEY,
     model: env.IMAGE_MODEL,
+    textModel: env.TEXT_MODEL,
   },
 
   storage: {

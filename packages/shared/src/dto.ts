@@ -414,6 +414,24 @@ export const dealReviewSchema = z.object({
 });
 export type DealReviewDto = z.infer<typeof dealReviewSchema>;
 
+/**
+ * Просьба составить черновик текста.
+ *
+ * Полей ровно столько, сколько человек уже ввёл в форму: свободного
+ * запроса здесь нет намеренно, иначе площадка превратилась бы
+ * в бесплатный чат общего назначения.
+ */
+export const textDraftSchema = z.object({
+  purpose: z.enum(["LISTING_SELL", "LISTING_BUY", "SPECIALIST"]),
+  title: z.string().trim().min(2, "Сначала напишите заголовок").max(160),
+  city: z.string().trim().max(100).optional(),
+  price: z.string().trim().max(40).optional(),
+  categories: z.array(z.string().trim().max(60)).max(5).optional(),
+  /** Пара слов от человека: «торг уместен», «работаю с выездом». */
+  extra: z.string().trim().max(300).optional(),
+});
+export type TextDraftDto = z.infer<typeof textDraftSchema>;
+
 /** Заявка на услугу: кому и, необязательно, что именно нужно. */
 export const serviceRequestSchema = z.object({
   specialistId: z.string().trim().min(1).max(40),

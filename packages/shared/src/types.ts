@@ -237,6 +237,8 @@ export interface UrgentRequest {
   city: string;
   category: { name: string; icon: string };
   status: UrgentStatus;
+  /** Начало удобного окна. Пусто — можно хоть сейчас. */
+  neededFrom: string | null;
   neededBy: string;
   createdAt: string;
   /** Кто взялся. Пусто, пока никто. */

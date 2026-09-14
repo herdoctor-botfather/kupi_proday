@@ -42,6 +42,35 @@ export class UrgentService {
       });
     }
 
+    /*
+     * Срок задаётся одним из двух способов.
+     *
+     * Быстрый выбор считаем от «сейчас»: «в ближайшие два часа» — это
+     * ровно два часа от нажатия. Своё окно приходит готовыми моментами
+     * времени: часовой пояс знает браузер человека, и угадывать его
+     * на сервере — верный способ назначить встречу на три часа ночи.
+     */
+    const neededFrom = dto.fromAt ? new Date(dto.fromAt) : null;
+    const neededBy = dto.toAt
+      ? new Date(dto.toAt)
+      : new Date(Date.now() + (dto.hours ?? 4) * 60 * 60 * 1000);
+
+    if (neededBy.getTime() <= Date.now()) {
+      throw new BadRequestException({
+        code: 'URGENT_IN_PAST',
+        message: 'Это время уже прошло',
+      });
+    }
+    // Неделя — предел не формальный: вызов зовёт всех сразу и просит
+    // бросить дела. «Приезжайте через месяц» этого не стоит, для такого
+    // есть обычный поиск по каталогу.
+    if (neededBy.getTime() - Date.now() > 7 * 24 * 60 * 60 * 1000) {
+      throw new BadRequestException({
+        code: 'URGENT_TOO_FAR',
+        message: 'Срочный вызов — не дальше недели. Для остального есть каталог мастеров.',
+      });
+    }
+
     const request = await this.prisma.urgentRequest.create({
       data: {
         userId,
@@ -49,7 +78,8 @@ export class UrgentService {
         city: dto.city.trim(),
         title: dto.title.trim(),
         description: dto.description?.trim() || null,
-        neededBy: new Date(Date.now() + dto.hours * 60 * 60 * 1000),
+        neededFrom,
+        neededBy,
       },
       select: { id: true },
     });
@@ -79,6 +109,7 @@ export class UrgentService {
       city: row.city,
       category: row.category,
       status: this.effectiveStatus(row),
+      neededFrom: row.neededFrom?.toISOString() ?? null,
       neededBy: row.neededBy.toISOString(),
       createdAt: row.createdAt.toISOString(),
       takenBy: row.takenBy
@@ -201,10 +232,23 @@ export class UrgentService {
         take: 50,
       });
 
-      const until = request.neededBy.toLocaleTimeString('ru-RU', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      /*
+       * Время в уведомлении — по московскому поясу.
+       *
+       * Сервер живёт по UTC, и без явного указания мастер прочитал бы
+       * «нужно до 15:00» там, где заказчик имел в виду 18:00. Пояс
+       * площадки один и назван прямо: спорить с этим проще, чем гадать.
+       */
+      const clock = (date: Date): string =>
+        date.toLocaleTimeString('ru-RU', {
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: 'Europe/Moscow',
+        });
+
+      const when = request.neededFrom
+        ? `с ${clock(request.neededFrom)} до ${clock(request.neededBy)} (мск)`
+        : `до ${clock(request.neededBy)} (мск)`;
 
       let called = 0;
       for (const master of masters) {
@@ -216,7 +260,7 @@ export class UrgentService {
           `⚡️ <b>Надо срочно: ${escapeHtml(request.category.name)}</b>\n\n` +
             `${escapeHtml(request.title)}\n` +
             (request.description ? `${escapeHtml(request.description)}\n` : '') +
-            `\n📍 ${escapeHtml(request.city)} · нужно до ${until}\n\n` +
+            `\n📍 ${escapeHtml(request.city)} · нужно ${when}\n\n` +
             'Возьмёте — откроется переписка с заказчиком.',
           [{ text: '⚡️ Беру', data: `urg:take:${request.id}` }],
         );

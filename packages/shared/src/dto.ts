@@ -428,13 +428,30 @@ export type DealReviewDto = z.infer<typeof dealReviewSchema>;
  * охотнее, чем выберет время в календаре, а больше суток «срочно»
  * уже не значит ничего.
  */
-export const urgentRequestSchema = z.object({
-  categoryId: z.string().trim().min(1, "Выберите, кто нужен").max(40),
-  city: z.string().trim().min(2, "Укажите город").max(100),
-  title: z.string().trim().min(5, "Опишите, что случилось").max(160),
-  description: z.string().trim().max(1000).nullable().optional(),
-  hours: z.coerce.number().int().min(1).max(24),
-});
+export const urgentRequestSchema = z
+  .object({
+    categoryId: z.string().trim().min(1, "Выберите, кто нужен").max(40),
+    city: z.string().trim().min(2, "Укажите город").max(100),
+    title: z.string().trim().min(5, "Опишите, что случилось").max(160),
+    description: z.string().trim().max(1000).nullable().optional(),
+    /** Быстрый выбор: «в ближайшие два часа». */
+    hours: z.coerce.number().int().min(1).max(24).optional(),
+    /**
+     * Своё окно. Приходит готовыми моментами времени, а не часами
+     * и минутами: часовой пояс знает браузер человека, а сервер
+     * угадывать его не должен.
+     */
+    fromAt: z.string().datetime().optional(),
+    toAt: z.string().datetime().optional(),
+  })
+  .refine((v) => Boolean(v.hours) || Boolean(v.toAt), {
+    message: "Выберите срок или укажите своё время",
+    path: ["hours"],
+  })
+  .refine((v) => !v.toAt || !v.fromAt || new Date(v.toAt) > new Date(v.fromAt), {
+    message: "Время «до» должно быть позже времени «с»",
+    path: ["toAt"],
+  });
 export type UrgentRequestDto = z.infer<typeof urgentRequestSchema>;
 
 /**

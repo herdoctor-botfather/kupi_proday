@@ -7,6 +7,21 @@ import { ChipsRow } from '../components/ChipsRow';
 import { CityInput } from '../components/CityInput';
 import { haptic } from '../lib/telegram';
 
+/** Время вызова человеческими словами: окно или крайний срок. */
+function when(request: UrgentRequest): string {
+  const clock = (value: string) =>
+    new Date(value).toLocaleString('ru-RU', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+  return request.neededFrom
+    ? `с ${clock(request.neededFrom)} до ${clock(request.neededBy)}`
+    : `до ${clock(request.neededBy)}`;
+}
+
 /** Насколько срочно. Часы, а не календарь: «до восьми» человек скажет охотнее. */
 const HOURS = [
   { value: 2, label: 'В ближайшие 2 часа' },
@@ -39,6 +54,10 @@ export function UrgentPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [hours, setHours] = useState(4);
+  /** Человек назначает окно сам, а не выбирает из готовых сроков. */
+  const [custom, setCustom] = useState(false);
+  const [fromAt, setFromAt] = useState('');
+  const [toAt, setToAt] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +71,15 @@ export function UrgentPage() {
         city: city.trim(),
         title: title.trim(),
         description: description.trim() || null,
-        hours,
+        // Своё время отправляем готовыми моментами: часовой пояс знает
+        // браузер, и пересчитывать его на сервере значит однажды назначить
+        // встречу на три часа ночи.
+        ...(custom
+          ? {
+              fromAt: fromAt ? new Date(fromAt).toISOString() : undefined,
+              toAt: new Date(toAt).toISOString(),
+            }
+          : { hours }),
       });
       haptic.success();
       setTitle('');
@@ -130,30 +157,77 @@ export function UrgentPage() {
         <CityInput value={city} onChange={setCity} placeholder="Где нужна помощь" />
       </div>
 
-      <h2 className="section-title">Насколько срочно</h2>
+      <h2 className="section-title">Когда нужно</h2>
 
       <ChipsRow>
         {HOURS.map((option) => (
           <button
             key={option.value}
             type="button"
-            className={`chip${hours === option.value ? ' chip--active' : ''}`}
+            className={`chip${!custom && hours === option.value ? ' chip--active' : ''}`}
             onClick={() => {
               haptic.tap();
+              setCustom(false);
               setHours(option.value);
             }}
           >
             {option.label}
           </button>
         ))}
+        {/*
+          Своё окно — для тех, у кого срочность не в минутах, а в попадании
+          в промежуток: «буду дома с двух до шести». Готовые кнопки такому
+          человеку не подходят, а без своего времени он не вызовет никого.
+        */}
+        <button
+          type="button"
+          className={`chip${custom ? ' chip--active' : ''}`}
+          onClick={() => {
+            haptic.tap();
+            setCustom(true);
+          }}
+        >
+          Своё время
+        </button>
       </ChipsRow>
+
+      {custom && (
+        <div className="form-row">
+          <div className="field">
+            <span className="field__label">С</span>
+            <input
+              className="form-input"
+              type="datetime-local"
+              value={fromAt}
+              onChange={(event) => setFromAt(event.target.value)}
+            />
+          </div>
+          <div className="field">
+            <span className="field__label">До</span>
+            <input
+              className="form-input"
+              type="datetime-local"
+              value={toAt}
+              onChange={(event) => setToAt(event.target.value)}
+            />
+          </div>
+        </div>
+      )}
 
       {error && <p className="form-error">{error}</p>}
 
       <button
         type="button"
         className="button"
-        disabled={busy || !categoryId || title.trim().length < 5 || city.trim().length < 2}
+        disabled={
+          busy ||
+          !categoryId ||
+          title.trim().length < 5 ||
+          city.trim().length < 2 ||
+          // Своё время выбрано, но не заполнено: кнопка, которая заведомо
+          // откажет, хуже недоступной.
+          (custom && !toAt)
+        }
         onClick={() => void send()}
       >
         {busy ? 'Зовём мастеров...' : '⚡️ Позвать мастеров'}
@@ -177,6 +251,7 @@ export function UrgentPage() {
                         <div className="card__headline">
                           {request.category.icon} {request.category.name} · {request.city}
                         </div>
+                        <div className="card__headline">{when(request)}</div>
                         <div className="card__headline">
                           {view.icon} {view.text}
                           {request.takenBy ? `: ${request.takenBy.name}` : ''}

@@ -44,9 +44,13 @@ const envSchema = z.object({
   S3_FORCE_PATH_STYLE: z.coerce.boolean().default(false),
 
   // ─── Рисование картинок ───
-  /** Ключ и каталог YandexART. Пока пусты — рисование выключено. */
-  YANDEX_ART_API_KEY: z.string().default(''),
-  YANDEX_ART_FOLDER_ID: z.string().default(''),
+  /**
+   * Поставщик картинок, говорящий на языке OpenAI. Пока адрес и ключ
+   * пусты, рисование выключено и честно об этом сообщает.
+   */
+  IMAGE_API_URL: z.string().default('https://api.proxyapi.ru/v1'),
+  IMAGE_API_KEY: z.string().default(''),
+  IMAGE_MODEL: z.string().default('gpt-image-1-mini'),
 })
   // Драйвер s3 без параметров бакета молча не заработает — ловим на старте,
   // а не на первой загрузке файла пользователем.
@@ -86,8 +90,9 @@ export const config = {
   notificationsEnabled: env.NOTIFICATIONS_ENABLED === 'true',
 
   images: {
-    apiKey: env.YANDEX_ART_API_KEY,
-    folderId: env.YANDEX_ART_FOLDER_ID,
+    baseUrl: env.IMAGE_API_URL,
+    apiKey: env.IMAGE_API_KEY,
+    model: env.IMAGE_MODEL,
   },
 
   storage: {

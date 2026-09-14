@@ -10,50 +10,56 @@ import { config } from '../config';
  * заплатить и открывается ли сервис из России. Всё остальное —
  * списание звёзд, хранение, кнопки — от этого не зависит и переписываться
  * при смене поставщика не должно.
+ *
+ * Первым был YandexART: он понимает русский и платится рублями. От него
+ * пришлось отказаться — облаку, оформленному на физическое лицо, доступ
+ * к модели не выдают, и никакими настройками это не обходится. Текстовые
+ * модели при этом работают, поэтому Яндекс остался как переводчик
+ * (см. translate ниже).
  */
 export interface ImageProvider {
   readonly name: string;
-  /** Понимает ли поставщик русский запрос без перевода. */
-  readonly understandsRussian: boolean;
   draw(prompt: string): Promise<Buffer>;
 }
 
 /**
- * YandexART.
+ * Рисовалка, говорящая на языке OpenAI.
  *
- * Выбран за то, что понимает русский родным образом: пользователь пишет
- * «плитка в ванной, светлая», и это работает без перевода. Заграничные
- * модели дешевле и рисуют лучше, но на русское описание отвечают
- * посторонней картинкой, а перевод — ещё один сервис, который может
- * отказать посреди оплаченного действия.
+ * Этот протокол стал общим: по нему работают и сам OpenAI, и российские
+ * посредники, через которых у нас проходит оплата рублями. Поэтому
+ * поставщик задаётся тремя настройками — адрес, ключ, модель, — и смена
+ * одного на другого не требует ни строчки кода.
  */
-class YandexArtProvider implements ImageProvider {
-  readonly name = 'yandex-art';
-  readonly understandsRussian = true;
-
-  private readonly url = 'https://ai.api.cloud.yandex.net/v1/images/generations';
+class OpenAiImagesProvider implements ImageProvider {
+  readonly name: string;
 
   constructor(
+    private readonly baseUrl: string,
     private readonly apiKey: string,
-    private readonly folderId: string,
-  ) {}
+    private readonly model: string,
+  ) {
+    this.name = `${new URL(baseUrl).host}:${model}`;
+  }
 
   async draw(prompt: string): Promise<Buffer> {
-    const response = await fetch(this.url, {
+    const response = await fetch(`${this.baseUrl.replace(/\/$/, '')}/images/generations`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Api-Key ${this.apiKey}`,
-        'OpenAI-Project': this.folderId,
+        Authorization: `Bearer ${this.apiKey}`,
       },
       body: JSON.stringify({
-        model: `art://${this.folderId}/yandex-art/latest`,
+        model: this.model,
         prompt,
+        n: 1,
         size: '1024x1024',
+        // Просим картинку содержимым, а не ссылкой: ссылки у посредников
+        // живут считаные минуты, а нам файл нужен свой и навсегда.
+        response_format: 'b64_json',
       }),
       // Рисование занимает секунды, но зависать навсегда оно не должно:
       // человек ждёт ответа, а звёзды уже списаны.
-      signal: AbortSignal.timeout(90_000),
+      signal: AbortSignal.timeout(120_000),
     });
 
     if (!response.ok) {
@@ -65,17 +71,24 @@ class YandexArtProvider implements ImageProvider {
       });
     }
 
-    const payload = (await response.json()) as { data?: { b64_json?: string }[] };
-    const encoded = payload.data?.[0]?.b64_json;
+    const payload = (await response.json()) as {
+      data?: { b64_json?: string; url?: string }[];
+    };
+    const first = payload.data?.[0];
 
-    if (!encoded) {
-      throw new ServiceUnavailableException({
-        code: 'PROVIDER_EMPTY',
-        message: 'Рисовалка вернула пустой ответ. Звёзды вернулись на баланс.',
-      });
+    if (first?.b64_json) return Buffer.from(first.b64_json, 'base64');
+
+    // Не все модели умеют отдавать содержимое; тогда забираем по ссылке,
+    // пока она жива.
+    if (first?.url) {
+      const file = await fetch(first.url, { signal: AbortSignal.timeout(60_000) });
+      if (file.ok) return Buffer.from(await file.arrayBuffer());
     }
 
-    return Buffer.from(encoded, 'base64');
+    throw new ServiceUnavailableException({
+      code: 'PROVIDER_EMPTY',
+      message: 'Рисовалка вернула пустой ответ. Звёзды вернулись на баланс.',
+    });
   }
 }
 
@@ -88,7 +101,6 @@ class YandexArtProvider implements ImageProvider {
  */
 class MissingProvider implements ImageProvider {
   readonly name = 'none';
-  readonly understandsRussian = false;
 
   async draw(): Promise<Buffer> {
     throw new ServiceUnavailableException({
@@ -101,13 +113,14 @@ class MissingProvider implements ImageProvider {
 const logger = new Logger('ImageProvider');
 
 export function createImageProvider(): ImageProvider {
-  const { apiKey, folderId } = config.images;
+  const { baseUrl, apiKey, model } = config.images;
 
-  if (!apiKey || !folderId) {
-    logger.warn('Рисование выключено: не заданы YANDEX_ART_API_KEY и YANDEX_ART_FOLDER_ID');
+  if (!apiKey || !baseUrl) {
+    logger.warn('Рисование выключено: не заданы IMAGE_API_KEY и IMAGE_API_URL');
     return new MissingProvider();
   }
 
-  logger.log('Рисование картинок: yandex-art');
-  return new YandexArtProvider(apiKey, folderId);
+  const provider = new OpenAiImagesProvider(baseUrl, apiKey, model);
+  logger.log(`Рисование картинок: ${provider.name}`);
+  return provider;
 }

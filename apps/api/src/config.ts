@@ -42,6 +42,11 @@ const envSchema = z.object({
   S3_SECRET_ACCESS_KEY: z.string().default(''),
   S3_PUBLIC_URL: z.string().default(''),
   S3_FORCE_PATH_STYLE: z.coerce.boolean().default(false),
+
+  // ─── Рисование картинок ───
+  /** Ключ и каталог YandexART. Пока пусты — рисование выключено. */
+  YANDEX_ART_API_KEY: z.string().default(''),
+  YANDEX_ART_FOLDER_ID: z.string().default(''),
 })
   // Драйвер s3 без параметров бакета молча не заработает — ловим на старте,
   // а не на первой загрузке файла пользователем.
@@ -79,6 +84,11 @@ export const config = {
   adminDevToken: env.NODE_ENV === 'production' ? '' : env.ADMIN_DEV_TOKEN,
 
   notificationsEnabled: env.NOTIFICATIONS_ENABLED === 'true',
+
+  images: {
+    apiKey: env.YANDEX_ART_API_KEY,
+    folderId: env.YANDEX_ART_FOLDER_ID,
+  },
 
   storage: {
     driver: env.STORAGE_DRIVER,

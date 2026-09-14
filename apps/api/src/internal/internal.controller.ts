@@ -51,6 +51,15 @@ export class InternalController {
     );
   }
 
+  /** Бот рисует картинку по описанию из переписки. */
+  @Post('draw')
+  @HttpCode(200)
+  draw(
+    @Body() body: { telegramId?: string; prompt?: string },
+  ): Promise<{ id: string; url: string; prompt: string }> {
+    return this.internal.draw(String(body?.telegramId ?? ''), String(body?.prompt ?? ''));
+  }
+
   @Post('invoice')
   @HttpCode(200)
   invoice(

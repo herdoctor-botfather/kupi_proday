@@ -79,6 +79,7 @@ model User {
   writtenUserReviews  UserReview[] @relation("WrittenUserReviews")
   receivedUserReviews UserReview[] @relation("ReceivedUserReviews")
   serviceRequests     ServiceRequest[] @relation("ServiceRequests")
+  generatedImages     GeneratedImage[]
 
   /// Остаток звёзд на балансе. Хранится числом ради скорости: считать
   /// его по всем движениям на каждый показ экрана слишком дорого.
@@ -597,6 +598,34 @@ model ServiceRequest {
   @@map("service_requests")
 }
 
+// ─────────────────── Рисованные картинки ───────────────────
+
+/// Картинка, нарисованная по описанию пользователя.
+///
+/// Храним не ради истории, а потому что между «нарисовали» и «поставил
+/// на анкету» проходит отдельное действие человека: он смотрит, решает
+/// и только потом ставит. Без записи картинку не к чему привязать,
+/// а описание — единственный способ разобраться, за что списаны звёзды,
+/// если человек придёт с вопросом.
+model GeneratedImage {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Что человек попросил нарисовать — своими словами.
+  prompt String @db.Text
+
+  url String
+  /// Ключ файла в хранилище: по одному URL файл не удалить.
+  key String
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("generated_images")
+}
+
 // ─────────────────────────── Оплата ───────────────────────────
 
 /// Что человек покупает.
@@ -609,6 +638,8 @@ enum PaymentPurpose {
   LISTING_PROMOTION
   /// Пополнение кошелька: звёзды переходят на баланс и тратятся потом.
   WALLET_TOPUP
+  /// Рисованная картинка для анкеты или запроса.
+  IMAGE_GENERATION
 }
 
 /// Куда движутся звёзды на балансе.

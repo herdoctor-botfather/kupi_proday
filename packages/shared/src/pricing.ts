@@ -102,12 +102,32 @@ export const TOPUP_MAX_STARS = 10_000;
 export const isTopupAmount = (value: number): boolean =>
   Number.isInteger(value) && value >= TOPUP_MIN_STARS && value <= TOPUP_MAX_STARS;
 
+/**
+ * Рисованная картинка.
+ *
+ * Нужна там, где фотографии нет и быть не может: обложка анкеты мастера,
+ * иллюстрация к запросу «куплю велосипед». Вещи на продажу так не
+ * оформляются — нарисованная плита вместо настоящей это обман покупателя,
+ * а не украшение объявления.
+ *
+ * Цена выше себестоимости втрое: с первого раза картинка нравится редко,
+ * и запас нужен, чтобы человек мог переделать, не считая каждый рубль.
+ */
+export const IMAGE_GENERATION_STARS = 10;
+
+/**
+ * Предел длины описания: столько принимает сама рисовалка. Обрезать
+ * молча нельзя — человек не поймёт, почему половина его замысла пропала.
+ */
+export const IMAGE_PROMPT_MAX = 500;
+
 /** За что именно платят. Хранится в базе и разбирается при подтверждении оплаты. */
 export const PAYMENT_PURPOSES = [
   'SPECIALIST_SUBSCRIPTION',
   'LISTING_SLOT',
   'LISTING_PROMOTION',
   'WALLET_TOPUP',
+  'IMAGE_GENERATION',
 ] as const;
 
 export type PaymentPurpose = (typeof PAYMENT_PURPOSES)[number];

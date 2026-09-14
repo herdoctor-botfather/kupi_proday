@@ -13,7 +13,7 @@ import {
 } from './storage.types';
 
 /** Куда кладём файл — влияет только на префикс ключа, для порядка в бакете. */
-export type UploadPurpose = 'avatar' | 'gallery';
+export type UploadPurpose = 'avatar' | 'gallery' | 'drawn';
 
 @Injectable()
 export class StorageService {

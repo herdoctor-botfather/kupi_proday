@@ -123,6 +123,10 @@ function render(cabinet: Cabinet): { text: string; keyboard: InlineKeyboard } {
 
   keyboard.text('Пополнить кошелёк', 'cab:topup').row();
 
+  // Рисование — рядом с кошельком: это такая же трата звёзд,
+  // и путь к ней человек ищет там же, где смотрит баланс.
+  keyboard.text('🎨 Нарисовать картинку', 'draw:start').row();
+
   if (cabinet.specialist) {
     const active = cabinet.specialist.status === 'ACTIVE';
     const hidden = cabinet.specialist.status === 'HIDDEN';

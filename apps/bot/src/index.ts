@@ -7,6 +7,7 @@ import { replyWithBanner } from './banner';
 import { registerPayments } from './payments';
 import { cabinetKeyboard, registerCabinet } from './cabinet';
 import { registerServiceRequests } from './service-requests';
+import { registerDraw } from './draw';
 
 /**
  * Бот-обёртка вокруг Mini App.
@@ -140,6 +141,7 @@ bot.command('help', async (ctx) => {
 registerPayments(bot);
 registerCabinet(bot);
 registerServiceRequests(bot, appUrl);
+registerDraw(bot, appUrl);
 
 // Любое сообщение вне команд возвращает пользователя к кнопкам запуска,
 // иначе диалог с ботом выглядит как тупик.

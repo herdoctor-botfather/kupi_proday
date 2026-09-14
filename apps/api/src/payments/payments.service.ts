@@ -15,6 +15,7 @@ import {
   TOPUP_MIN_STARS,
   isListingPromotion,
   isSpecialistPlan,
+  IMAGE_GENERATION_STARS,
   isTopupAmount,
   type CreateInvoiceDto,
   type ConfirmPaymentDto,
@@ -294,6 +295,36 @@ export class PaymentsService {
     });
   }
 
+  /**
+   * Вернуть звёзды на баланс.
+   *
+   * Нужен там, где между оплатой и выдачей стоит чужая служба: списали,
+   * а она не ответила. Брать деньги за несделанное нельзя, и решать это
+   * перепиской с поддержкой — тоже: возврат должен случаться сам, в той
+   * же секунде, что и отказ.
+   */
+  async refundToBalance(userId: string, stars: number, title: string): Promise<void> {
+    if (stars <= 0) return;
+
+    await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: { starsBalance: { increment: stars } },
+        select: { starsBalance: true },
+      });
+
+      await tx.walletEntry.create({
+        data: {
+          userId,
+          kind: 'REFUND',
+          stars,
+          balanceAfter: user.starsBalance,
+          title,
+        },
+      });
+    });
+  }
+
   /** Что именно покупают, почём и можно ли это купить. */
   private async describeOrder(userId: string, dto: CreateInvoiceDto) {
     if (dto.purpose === 'WALLET_TOPUP') {
@@ -346,6 +377,16 @@ export class PaymentsService {
         stars: LISTING_EXTRA_STARS,
         title: 'Ещё одно объявление',
         description: 'Право разместить объявление сверх бесплатного месячного лимита',
+        specialistId: undefined as string | undefined,
+        listingId: undefined as string | undefined,
+      };
+    }
+
+    if (dto.purpose === 'IMAGE_GENERATION') {
+      return {
+        stars: IMAGE_GENERATION_STARS,
+        title: 'Рисованная картинка',
+        description: 'Изображение по описанию для анкеты или запроса',
         specialistId: undefined as string | undefined,
         listingId: undefined as string | undefined,
       };

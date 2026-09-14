@@ -5,9 +5,10 @@ import { PaymentsModule } from '../payments/payments.module';
 import { SpecialistsModule } from '../specialists/specialists.module';
 import { ListingsModule } from '../listings/listings.module';
 import { ServiceRequestsModule } from '../service-requests/service-requests.module';
+import { ImagesModule } from '../images/images.module';
 
 @Module({
-  imports: [PaymentsModule, SpecialistsModule, ListingsModule, ServiceRequestsModule],
+  imports: [PaymentsModule, SpecialistsModule, ListingsModule, ServiceRequestsModule, ImagesModule],
   controllers: [InternalController],
   providers: [InternalService],
 })

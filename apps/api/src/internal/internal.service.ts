@@ -5,6 +5,7 @@ import { PaymentsService } from '../payments/payments.service';
 import { MySpecialistService } from '../specialists/my-specialist.service';
 import { ListingsService } from '../listings/listings.service';
 import { ServiceRequestsService } from '../service-requests/service-requests.service';
+import { ImagesService } from '../images/images.service';
 
 /** Что бот показывает в кабинете. Ровно то, что помещается в одно сообщение. */
 export interface CabinetSummary {
@@ -41,7 +42,22 @@ export class InternalService {
     private readonly specialists: MySpecialistService,
     private readonly listings: ListingsService,
     private readonly requests: ServiceRequestsService,
+    private readonly images: ImagesService,
   ) {}
+
+  /**
+   * Нарисовать картинку по описанию из переписки с ботом.
+   *
+   * Правила — цена, суточный предел, возврат звёзд при отказе рисовалки —
+   * живут в службе рисования. Бот передаёт только слова человека и то,
+   * кто он: заводить здесь вторую копию тех же правил значило бы однажды
+   * получить два разных ответа на вопрос «сколько это стоит».
+   */
+  async draw(telegramId: string, prompt: string) {
+    const user = await this.findUser(telegramId);
+    const image = await this.images.draw(user.id, prompt);
+    return { id: image.id, url: image.url, prompt: image.prompt };
+  }
 
   /**
    * Ответ мастера на заявку прямо из переписки с ботом.

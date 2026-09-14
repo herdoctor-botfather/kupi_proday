@@ -4201,3 +4201,11 @@ body {
   font-size: 13px;
   color: var(--text-hint);
 }
+/* Показ нарисованной картинки перед тем, как её поставить. Человек
+   сначала смотрит, и только потом решает: с первого раза выходит редко. */
+.drawn__preview {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}

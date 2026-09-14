@@ -8,6 +8,7 @@ import { formatPrice, pluralize } from '../lib/format';
 import { haptic, tg } from '../lib/telegram';
 import { useState } from 'react';
 import { AvatarUpload, GalleryUpload } from '../components/PhotoUpload';
+import { DrawImage } from '../components/DrawImage';
 import { ReviewsAboutMe } from '../components/ReviewsAboutMe';
 import { ShareButton } from '../components/ShareButton';
 
@@ -195,6 +196,19 @@ export function MyCardPage() {
 
               <h2 className="section-title">Фотография</h2>
               <AvatarUpload photoUrl={profile.photoUrl} onUploaded={() => state.reload()} />
+
+              {/* Не у каждого мастера есть снимок, который не стыдно
+                  поставить на вывеску. Нарисованная обложка здесь уместна:
+                  она обещает услугу, а не изображает конкретную вещь. */}
+              <div style={{ marginTop: 10 }}>
+                <DrawImage
+                  hint="Опишите вывеску или обложку анкеты. Себя рисовать не стоит — лучше то, чем вы занимаетесь."
+                  onReady={async (image) => {
+                    await api.uploadAvatar(image);
+                    state.reload();
+                  }}
+                />
+              </div>
 
               <h2 className="section-title">Ваши работы</h2>
               <GalleryUpload profile={profile} onChanged={() => state.reload()} />

@@ -217,6 +217,15 @@ export const api = {
 
   pendingDeals: () => request<PendingDeal[]>('/deals/pending'),
 
+  // ─── Рисованные картинки ───
+
+  /** Нарисовать картинку по описанию. Списывает звёзды с баланса. */
+  drawImage: (prompt: string) =>
+    request<{ id: string; url: string; prompt: string; createdAt: string }>('/images/draw', {
+      method: 'POST',
+      body: JSON.stringify({ prompt }),
+    }),
+
   /** Чужие анкеты, товары и запросы, в которых пользователь участвует. */
   involvements: () => request<Involvement[]>('/deals/involved'),
 

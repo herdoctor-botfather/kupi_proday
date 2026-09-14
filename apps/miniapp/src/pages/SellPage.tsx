@@ -14,6 +14,7 @@ import { ChipsRow } from '../components/ChipsRow';
 import { AsyncContent } from '../components/states';
 import { CityInput } from '../components/CityInput';
 import { ImageError, prepareImage } from '../lib/image';
+import { DrawImage } from '../components/DrawImage';
 import { haptic, tg } from '../lib/telegram';
 import { useGoBack } from '../lib/navigation';
 import { pluralize } from '../lib/format';
@@ -475,6 +476,33 @@ export function SellPage() {
                   : 'Первая фотография станет обложкой. Объявления без фото смотрят заметно реже.'}
             </div>
             {photoError && <div className="field__error">{photoError}</div>}
+
+            {/*
+              Рисованная картинка — только в запросе на покупку. Там она
+              показывает, что человек ищет, и ничего не подменяет. В
+              объявлении о продаже нарисованная вещь вместо настоящей —
+              обман покупателя, который поедет через весь город к тому,
+              чего не существует.
+            */}
+            {wanted && photoCount < LISTING_PHOTOS_MAX && (
+              <div style={{ marginTop: 10 }}>
+                <DrawImage
+                  hint="Опишите вещь, которую ищете, — рисунок покажет продавцам, что именно вам нужно."
+                  onReady={async (image) => {
+                    if (editingId) {
+                      const updated = await api.addListingPhoto(editingId, image);
+                      setPhotos(updated.photos);
+                    } else {
+                      setPendingPhotos((prev) => [
+                        ...prev,
+                        { id: `drawn-${prev.length}`, blob: image, preview: URL.createObjectURL(image) },
+                      ]);
+                    }
+                  }}
+                />
+              </div>
+            )}
+
             <input
               ref={inputRef}
               type="file"

@@ -404,20 +404,23 @@ export class ListingsService {
     const attributes = await this.attributesFor(categoryIds);
     const bySlug = new Map(attributes.map((attribute) => [attribute.slug, attribute]));
 
-    const rows = entries.flatMap(([slug, value]) => {
+    const rows: Prisma.ListingAttributeCreateManyInput[] = [];
+    for (const [slug, value] of entries) {
       const attribute = bySlug.get(slug);
-      if (!attribute) return [];
+      if (!attribute) continue;
 
       if (attribute.kind === 'NUMBER') {
         const parsed = typeof value === 'number' ? value : Number(String(value).replace(',', '.'));
-        if (!Number.isFinite(parsed)) return [];
-        return [{ listingId, attributeId: attribute.id, valueNumber: parsed }];
+        if (!Number.isFinite(parsed)) continue;
+        rows.push({ listingId, attributeId: attribute.id, valueNumber: parsed });
+        continue;
       }
       if (attribute.kind === 'BOOLEAN') {
-        return [{ listingId, attributeId: attribute.id, valueBool: value === true || value === 'true' }];
+        rows.push({ listingId, attributeId: attribute.id, valueBool: value === true || value === 'true' });
+        continue;
       }
-      return [{ listingId, attributeId: attribute.id, valueText: String(value).slice(0, 200) }];
-    });
+      rows.push({ listingId, attributeId: attribute.id, valueText: String(value).slice(0, 200) });
+    }
 
     if (rows.length > 0) await this.prisma.listingAttribute.createMany({ data: rows, skipDuplicates: true });
   }

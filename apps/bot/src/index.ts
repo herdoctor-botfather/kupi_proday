@@ -137,18 +137,8 @@ bot.command('start', async (ctx) => {
     messages.PROMO,
   );
 
-  // Каждая дверь — отдельное сообщение: у кнопок Telegram картинок нет,
-  // и связать снимок с конкретным разделом иначе нечем. Отправляем
-  // по очереди, а не разом: параллельная отправка перемешивает порядок.
-  for (const door of messages.DOORS) {
-    await replyWithBanner(
-      ctx,
-      door.banner,
-      door.caption,
-      singleButton(door.button, door.param),
-      door.caption,
-    );
-  }
+  // Двери с картинками здесь больше не шлём: четыре снимка подряд
+  // заваливали чат, а те же разделы есть в самом приложении и в меню.
 });
 
 bot.command('market', async (ctx) => {

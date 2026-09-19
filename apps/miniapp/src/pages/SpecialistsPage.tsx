@@ -71,14 +71,29 @@ export function SpecialistsPage() {
 
   const filterKey = [debouncedQuery, categorySlug, city, sort, minRating, lat, lng, radiusParam ?? ''].join('|');
 
+  /*
+   * В радиусе никого — показываем ближайших по стране.
+   *
+   * Пустой экран «никого не нашли» на первом же нажатии «Найти рядом»
+   * читался как поломка: человек в Петербурге при мастерах в Москве
+   * видел пустоту, а стоило выбрать город — список появлялся. Ближайший
+   * мастер в семистах километрах всё равно полезнее, чем ничего, если
+   * честно сказать, что он далеко.
+   *
+   * Расширение запоминается на всю выдачу: следующие страницы должны
+   * продолжать тот же список, а не возвращаться к пустому радиусу.
+   */
+  const [widened, setWidened] = useState(false);
+
   // Любое изменение фильтров начинает выдачу заново.
   useEffect(() => {
     setPage(1);
     setLoadedItems([]);
+    setWidened(false);
   }, [filterKey]);
 
-  const result = useAsync(
-    () =>
+  const result = useAsync(async () => {
+    const load = (radius: number | null) =>
       api.specialists({
         q: debouncedQuery.trim() || undefined,
         categorySlug,
@@ -86,10 +101,18 @@ export function SpecialistsPage() {
         sort,
         minRating: minRating ? Number(minRating) : undefined,
         page,
-        ...(hasCoords ? { lat: Number(lat), lng: Number(lng), ...(radiusKm ? { radiusKm } : { radiusKm: WHOLE_COUNTRY_KM }) } : {}),
-      }),
-    [filterKey, page],
-  );
+        ...(hasCoords ? { lat: Number(lat), lng: Number(lng), radiusKm: radius ?? WHOLE_COUNTRY_KM } : {}),
+      });
+
+    if (widened || !radiusKm) return load(null);
+
+    const near = await load(radiusKm);
+    if (near.total > 0 || page > 1 || !hasCoords) return near;
+
+    const far = await load(null);
+    if (far.total > 0) setWidened(true);
+    return far;
+  }, [filterKey, page]);
 
   // Первая страница заменяет список, последующие — дополняют.
   useEffect(() => {
@@ -195,6 +218,11 @@ export function SpecialistsPage() {
             />
           ) : (
             <>
+              {widened && (
+                <div className="alert alert--info" style={{ marginBottom: 12 }}>
+                  В радиусе {radiusKm} км мастеров пока нет — показываем ближайших по России.
+                </div>
+              )}
               <div style={{ color: 'var(--text-hint)', fontSize: 13, marginBottom: 12 }}>
                 Найдено: {pageData.total}
               </div>

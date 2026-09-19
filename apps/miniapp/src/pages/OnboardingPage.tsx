@@ -101,7 +101,7 @@ export function OnboardingPage() {
           <span className="role-card__photo">
             <img src={doorApply} alt="Мастер за работой в мастерской" loading="lazy" />
           </span>
-          <span className="role-card__title">Я и есть мастер</span>
+          <span className="role-card__title">Я мастер</span>
           <span className="role-card__text">
             {user?.hasSpecialistProfile
               ? 'Ваша анкета, её состояние, просмотры и отзывы'

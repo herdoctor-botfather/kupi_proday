@@ -4340,3 +4340,65 @@ body {
   font-weight: 700;
   letter-spacing: 0.04em;
 }
+
+/* ─── Помощь ─── */
+
+/* Кнопка в углу экрана: подсказка, а не раздел. Круглая и приглушённая —
+   заметить её должен тот, кто растерялся, а не каждый входящий. */
+.help-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: -8px;
+}
+
+.help-button {
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--bg-secondary);
+  color: var(--text-hint);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.help-button:active {
+  background: var(--bg);
+}
+
+/* Советов много, и они длиннее обычного набора действий: лист должен
+   прокручиваться, а не обрезаться на середине четвёртого. */
+.sheet--tall {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.tip {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.tip:last-of-type {
+  border-bottom: none;
+}
+
+.tip__icon {
+  font-size: 20px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.tip__title {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.tip__text {
+  display: block;
+  font-size: 13px;
+  color: var(--text-hint);
+}

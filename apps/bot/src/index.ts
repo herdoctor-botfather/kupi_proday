@@ -9,6 +9,7 @@ import { cabinetKeyboard, registerCabinet } from './cabinet';
 import { registerServiceRequests } from './service-requests';
 import { registerDraw } from './draw';
 import { registerUrgent } from './urgent';
+import { COMMANDS } from './identity';
 
 /**
  * Бот-обёртка вокруг Mini App.
@@ -223,17 +224,7 @@ async function main() {
    * и есть единственное место, где бот рассказывает, что умеет.
    */
   try {
-    await bot.api.setMyCommands([
-      { command: 'start', description: 'Начать и выбрать раздел' },
-      { command: 'urgent', description: '⚡️ Надо срочно — позвать мастера' },
-      { command: 'market', description: '🛍 Купи-продай: витрина и объявления' },
-      { command: 'sell', description: '🏷 Разместить объявление' },
-      { command: 'wanted', description: '🔍 Запросы на покупку и обмен' },
-      { command: 'draw', description: '🎨 Нарисовать картинку' },
-      { command: 'cabinet', description: '👤 Личный кабинет: баланс и анкета' },
-      { command: 'referrals', description: '🎁 Пригласить друзей' },
-      { command: 'help', description: 'Что умеет бот' },
-    ]);
+    await bot.api.setMyCommands(COMMANDS);
   } catch (error) {
     console.error('Не удалось обновить список команд:', error);
   }

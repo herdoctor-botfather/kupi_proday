@@ -1,5 +1,6 @@
 import { Bot } from 'grammy';
 import { config } from './config';
+import { COMMANDS, DESCRIPTION } from './identity';
 
 /**
  * Разовая настройка бота в Telegram: команды, описание и кнопка меню,
@@ -13,12 +14,7 @@ import { config } from './config';
 async function main() {
   const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 
-  await bot.api.setMyCommands([
-    { command: 'start', description: '🚀 Начать' },
-    { command: 'market', description: '🛍 Надо купить или продать' },
-    { command: 'cabinet', description: '👤 Личный кабинет' },
-    { command: 'help', description: '❓ Как здесь всё устроено' },
-  ]);
+  await bot.api.setMyCommands(COMMANDS);
 
   // Имя бота — то, что видно в списке чатов. Задаётся через API с Bot API 7.0,
   // и лучше здесь, чем руками: при переезде на другой токен не забудется.
@@ -29,15 +25,7 @@ async function main() {
   // и оно должно отвечать на вопрос «зачем сюда заходить», а не описывать
   // устройство приложения.
   // Предел — 512 символов; этот текст занимает 319, запас есть.
-  await bot.api.setMyDescription(
-    'Всё начинается одинаково: «надо мастера», «надо продать шкаф», ' +
-      '«надо найти коляску».\n\n' +
-      '🔧 Мастера рядом — с отзывами, ценами и картой.\n' +
-      '🛍 Вещи от людей поблизости — купить или продать.\n' +
-      '🔍 Запросы соседей — кому что надо прямо сейчас.\n' +
-      '💬 Переписка здесь же, уходить никуда не нужно.\n\n' +
-      'Нажмите «Начать» и скажите, что надо.',
-  );
+  await bot.api.setMyDescription(DESCRIPTION);
 
   await bot.api.setMyShortDescription('Скажите, что надо, — найдём рядом. Мастера и вещи внутри Telegram');
 

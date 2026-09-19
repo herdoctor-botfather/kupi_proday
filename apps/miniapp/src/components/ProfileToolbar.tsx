@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { haptic } from '../lib/telegram';
+import { haptic, tg } from '../lib/telegram';
 
 /**
  * Советы новичку.
@@ -73,12 +73,34 @@ const TIPS: { icon: string; title: string; text: string }[] = [
   },
 ];
 
-export function HelpButton() {
+/**
+ * Аккаунт поддержки. Живой человек, а не форма обратной связи: пока
+ * площадка маленькая, ответить лично быстрее и полезнее, чем заводить
+ * очередь обращений, которую некому разбирать.
+ */
+const SUPPORT = 'tatisun92';
+
+/** Верхняя строка кабинета: поддержка слева, помощь справа. */
+export function ProfileToolbar() {
   const [open, setOpen] = useState(false);
+
+  const writeToSupport = () => {
+    haptic.tap();
+    const link = `https://t.me/${SUPPORT}`;
+    const app = tg();
+    // Внутри Telegram открываем переписку прямо в нём, а не в браузере:
+    // иначе человек попадает на веб-страницу и возвращается обратно руками.
+    if (app) app.openTelegramLink(link);
+    else window.open(link, '_blank', 'noopener');
+  };
 
   return (
     <>
       <div className="help-row">
+        <button type="button" className="help-button" onClick={writeToSupport}>
+          Поддержка
+        </button>
+
         <button
           type="button"
           className="help-button"

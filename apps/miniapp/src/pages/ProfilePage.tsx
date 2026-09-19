@@ -4,7 +4,7 @@ import { api, type PendingDeal } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { ChipsRow } from '../components/ChipsRow';
 import { useAuth } from '../lib/auth';
-import { HelpButton } from '../components/HelpButton';
+import { ProfileToolbar } from '../components/ProfileToolbar';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SpecialistCard } from '../components/SpecialistCard';
 import { ImageError, prepareImage } from '../lib/image';
@@ -58,9 +58,9 @@ export function ProfilePage() {
 
   return (
     <div className="page">
-      {/* Помощь — в углу экрана, а не строкой в списке: это не раздел,
-          в который ходят, а подсказка на случай «я не понял». */}
-      <HelpButton />
+      {/* Поддержка и помощь — в углах экрана, а не строками в списке:
+          это не разделы, в которые ходят, а выход на случай «я не понял». */}
+      <ProfileToolbar />
 
       <div className="profile__header">
         <ProfileAvatar photoUrl={user.photoUrl} />

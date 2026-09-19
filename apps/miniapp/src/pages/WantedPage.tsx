@@ -30,11 +30,19 @@ export function WantedPage() {
   const isAuthenticated = useIsAuthenticated();
   const [searchParams, setSearchParams] = useSearchParams();
   const categorySlug = searchParams.get('category') ?? undefined;
+  const city = searchParams.get('city') ?? undefined;
 
   const [query, setQuery] = useState(searchParams.get('q') ?? '');
   const debouncedQuery = useDebounced(query);
 
   const categories = useAsync(() => api.categories('PRODUCT', 'BUY'), []);
+  /*
+   * Города запросов, а не всей барахолки: человек предлагает вещь, которую
+   * держит в руках, и запрос из другого города для него бесполезен.
+   * Координат у объявления нет — только город, указанный автором, — поэтому
+   * «рядом» здесь определяется городом, а не расстоянием.
+   */
+  const cities = useAsync(() => api.listingCities('BUY'), []);
   const feed = usePagedFeed(
     (page) =>
       api.listings({
@@ -44,8 +52,9 @@ export function WantedPage() {
         page,
         q: debouncedQuery.trim() || undefined,
         categorySlug,
+        city,
       }),
-    [debouncedQuery, categorySlug],
+    [debouncedQuery, categorySlug, city],
   );
 
   const setParam = (key: string, value: string | null) => {
@@ -94,6 +103,31 @@ export function WantedPage() {
         </ChipsRow>
       )}
 
+      {(cities.data?.length ?? 0) > 1 && (
+        <ChipsRow>
+          <button
+            type="button"
+            className={`chip${!city ? ' chip--active' : ''}`}
+            onClick={() => setParam('city', null)}
+          >
+            Все города
+          </button>
+          {cities.data!.slice(0, 10).map((item) => (
+            <button
+              key={item.name}
+              type="button"
+              className={`chip${city === item.name ? ' chip--active' : ''}`}
+              onClick={() => {
+                haptic.tap();
+                setParam('city', item.name);
+              }}
+            >
+              {item.name} <span style={{ opacity: 0.6 }}>{item.count}</span>
+            </button>
+          ))}
+        </ChipsRow>
+      )}
+
       {isAuthenticated && (
         <Link to="/wanted/new" className="profile-cta" onClick={() => haptic.tap()}>
           <span className="profile-cta__icon" aria-hidden>
@@ -127,10 +161,10 @@ export function WantedPage() {
         !feed.loading && (
           <EmptyState
             icon="🔎"
-            title={debouncedQuery || categorySlug ? 'Ничего не нашли' : 'Запросов пока нет'}
+            title={debouncedQuery || categorySlug || city ? 'Ничего не нашли' : 'Запросов пока нет'}
             hint={
-              debouncedQuery || categorySlug
-                ? 'Попробуйте изменить запрос или снять фильтр'
+              debouncedQuery || categorySlug || city
+                ? 'Попробуйте изменить запрос, выбрать другой город или снять фильтр'
                 : 'Создайте первый — продавцы увидят его и откликнутся'
             }
           />

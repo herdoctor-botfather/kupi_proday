@@ -10,6 +10,7 @@ import { ListingCard } from '../components/ListingCard';
 import { FeedMore } from '../components/Feed';
 import { haptic } from '../lib/telegram';
 import { useIsAuthenticated } from '../lib/auth';
+import { CitySheet } from '../components/CitySheet';
 
 /** Сколько запросов показываем за раз. */
 const FEED_PAGE_SIZE = 6;
@@ -33,6 +34,7 @@ export function WantedPage() {
   const city = searchParams.get('city') ?? undefined;
 
   const [query, setQuery] = useState(searchParams.get('q') ?? '');
+  const [citiesOpen, setCitiesOpen] = useState(false);
   const debouncedQuery = useDebounced(query);
 
   const categories = useAsync(() => api.categories('PRODUCT', 'BUY'), []);
@@ -112,7 +114,7 @@ export function WantedPage() {
           >
             Все города
           </button>
-          {cities.data!.slice(0, 10).map((item) => (
+          {cities.data!.slice(0, 8).map((item) => (
             <button
               key={item.name}
               type="button"
@@ -125,7 +127,21 @@ export function WantedPage() {
               {item.name} <span style={{ opacity: 0.6 }}>{item.count}</span>
             </button>
           ))}
+          {/* Свой город человек ищет сам: в ряду только те, где уже
+              что-то выложено, и остальных там не бывает по определению. */}
+          <button type="button" className="chip" onClick={() => setCitiesOpen(true)}>
+            Все города ›
+          </button>
         </ChipsRow>
+      )}
+
+      {citiesOpen && (
+        <CitySheet
+          current={city}
+          withCounts={cities.data ?? []}
+          onPick={(value) => setParam('city', value)}
+          onClose={() => setCitiesOpen(false)}
+        />
       )}
 
       {isAuthenticated && (

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
+import { CitySheet } from '../components/CitySheet';
 import { useAsync } from '../lib/useAsync';
 import { ChipsRow } from '../components/ChipsRow';
 import { usePagedFeed } from '../lib/usePagedFeed';
@@ -32,6 +33,7 @@ export function MarketCatalogPage() {
 
   const categories = useAsync(() => api.categories('PRODUCT'), []);
   const cities = useAsync(() => api.listingCities(), []);
+  const [citiesOpen, setCitiesOpen] = useState(false);
   const feed = usePagedFeed(
     (page) => api.listings({ pageSize: FEED_PAGE_SIZE, sort: 'new', page }),
     [],
@@ -122,8 +124,21 @@ export function MarketCatalogPage() {
                 {city.name} · {city.count}
               </button>
             ))}
+            <button type="button" className="chip" onClick={() => setCitiesOpen(true)}>
+              Все города ›
+            </button>
           </ChipsRow>
         </>
+      )}
+
+      {citiesOpen && (
+        <CitySheet
+          withCounts={cities.data ?? []}
+          onPick={(value) => {
+            navigate(value ? `/market/listings?city=${encodeURIComponent(value)}` : '/market/listings');
+          }}
+          onClose={() => setCitiesOpen(false)}
+        />
       )}
 
       {/* Лента новых объявлений.

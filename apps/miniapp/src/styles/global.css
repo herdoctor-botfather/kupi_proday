@@ -1338,6 +1338,68 @@ body::before {
   font-size: 11.5px;
 }
 
+/*
+ * «Мой город» под дверями.
+ *
+ * Отдельной строкой и с отступом от дверей: это не шестая дверь, а
+ * настройка, и стоять вплотную к ним она не должна. Название и выбранный
+ * город идут друг под другом — в одну строку они слипались в «Мой
+ * городМосква».
+ */
+.home-city {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 28px 0 4px;
+  padding: 13px 15px;
+  border-radius: 18px;
+  text-align: left;
+  background: var(--bg-secondary);
+  border: 1px solid var(--hairline);
+  color: var(--text);
+}
+
+.home-city:active {
+  transform: scale(0.99);
+}
+
+.home-city__pin {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.home-city__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.home-city__label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
+  color: var(--text-hint);
+}
+
+.home-city__value {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  /* Длинная подсказка не должна распирать кнопку в три строки. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-city__chevron {
+  color: var(--text-hint);
+  font-size: 18px;
+}
+
 /* ─── Список городов ─── */
 
 .city-sheet__list {

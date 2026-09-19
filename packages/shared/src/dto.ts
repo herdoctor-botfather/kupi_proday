@@ -208,6 +208,14 @@ export const listingSchema = z.object({
   condition: z.enum(['NEW', 'USED_PERFECT', 'USED']).default('USED'),
   city: z.string().trim().min(2, 'Укажите город').max(100),
   categoryIds: z.array(z.string()).min(1, 'Выберите категорию').max(3, 'Не больше трёх категорий'),
+  /**
+   * Характеристики: ключ — слаг характеристики, значение — что выбрал
+   * продавец. Строкой, числом или «да/нет»; пустое значение означает
+   * «не указано» и просто не сохраняется.
+   */
+  attributes: z
+    .record(z.union([z.string(), z.number(), z.boolean(), z.null()]))
+    .default({}),
 });
 export type ListingDto = z.infer<typeof listingSchema>;
 
@@ -225,6 +233,13 @@ export const listingQuerySchema = paginationSchema.extend({
   /** Только срочные: отдельная витрина, где всё продаётся с уступкой. */
   urgent: z.coerce.boolean().optional(),
   sort: z.enum(['new', 'cheap', 'expensive']).default('new'),
+  /**
+   * Фильтры по характеристикам: «brand=Apple,model=iPhone 15».
+   *
+   * Одной строкой, а не отдельными полями: набор характеристик у каждой
+   * категории свой, и перечислить их в схеме заранее невозможно.
+   */
+  attrs: z.string().trim().max(500).optional(),
 }).refine((v) => v.minPrice === undefined || v.maxPrice === undefined || v.minPrice <= v.maxPrice, {
   message: 'Нижняя граница цены выше верхней',
   path: ['minPrice'],

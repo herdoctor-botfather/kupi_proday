@@ -165,6 +165,8 @@ export class ListingsService {
       },
     });
 
+    await this.saveAttributes(listing.id, dto.categoryIds, dto.attributes);
+
     void this.notifications.notifyStaff(
       dto.kind === 'BUY'
         ? `🔎 <b>Новый запрос на проверку</b>\n\nИщут: ${escapeHtml(dto.title)} — до ${formatPrice(dto.price)}`
@@ -214,7 +216,12 @@ export class ListingsService {
           categories: { create: dto.categoryIds.map((categoryId) => ({ categoryId })) },
         },
       });
+      // Категории могли смениться, а с ними и набор характеристик:
+      // старые значения от прежней категории здесь уже не значат ничего.
+      await tx.listingAttribute.deleteMany({ where: { listingId: id } });
     });
+
+    await this.saveAttributes(id, dto.categoryIds, dto.attributes);
 
     if (prepared.hadContacts) this.contactPolicy.register(userId, 'profile');
 
@@ -321,6 +328,20 @@ export class ListingsService {
     // «Электронику», человек ждёт увидеть и телефоны, и ноутбуки.
     if (query.categorySlug) where.categories = { some: { category: { OR: [{ slug: query.categorySlug }, { parent: { slug: query.categorySlug } }] } } };
     if (query.city) where.city = { equals: query.city, mode: 'insensitive' };
+
+    /*
+     * Характеристики: каждая сужает выдачу отдельно.
+     *
+     * Условия складываются через AND по одному `some` на характеристику —
+     * иначе «Apple» и «256 ГБ» в одном `some` означали бы «или то, или
+     * другое у любой характеристики», и в выдачу попал бы Samsung на 256.
+     */
+    for (const [slug, value] of parseAttrs(query.attrs)) {
+      const condition: Prisma.ListingWhereInput = {
+        attributes: { some: { attribute: { slug }, valueText: value } },
+      };
+      where.AND = Array.isArray(where.AND) ? [...where.AND, condition] : [condition];
+    }
     // Страница продавца: все его объявления одной выдачей.
     if (query.sellerId) where.userId = query.sellerId;
     if (query.condition) where.condition = query.condition;
@@ -358,6 +379,78 @@ export class ListingsService {
       default:
         return [{ publishedAt: 'desc' }, { createdAt: 'desc' }];
     }
+  }
+
+  /**
+   * Сохраняет характеристики объявления.
+   *
+   * Принимаются только те, что заведены у выбранных категорий или их
+   * предков: присланное поле, которого в категории нет, молча
+   * отбрасывается — иначе через форму можно было бы записать что угодно.
+   *
+   * Пустое значение означает «не указано» и просто не сохраняется:
+   * хранить пустую строку значит утверждать, что ответ был дан.
+   */
+  private async saveAttributes(
+    listingId: string,
+    categoryIds: string[],
+    values: Record<string, string | number | boolean | null>,
+  ): Promise<void> {
+    const entries = Object.entries(values ?? {}).filter(
+      ([, value]) => value !== null && value !== undefined && value !== '',
+    );
+    if (entries.length === 0) return;
+
+    const attributes = await this.attributesFor(categoryIds);
+    const bySlug = new Map(attributes.map((attribute) => [attribute.slug, attribute]));
+
+    const rows = entries.flatMap(([slug, value]) => {
+      const attribute = bySlug.get(slug);
+      if (!attribute) return [];
+
+      if (attribute.kind === 'NUMBER') {
+        const parsed = typeof value === 'number' ? value : Number(String(value).replace(',', '.'));
+        if (!Number.isFinite(parsed)) return [];
+        return [{ listingId, attributeId: attribute.id, valueNumber: parsed }];
+      }
+      if (attribute.kind === 'BOOLEAN') {
+        return [{ listingId, attributeId: attribute.id, valueBool: value === true || value === 'true' }];
+      }
+      return [{ listingId, attributeId: attribute.id, valueText: String(value).slice(0, 200) }];
+    });
+
+    if (rows.length > 0) await this.prisma.listingAttribute.createMany({ data: rows, skipDuplicates: true });
+  }
+
+  /**
+   * Характеристики выбранных категорий вместе с унаследованными.
+   *
+   * «Марка» заведена у «Телефонов», а объявление лежит в них же или
+   * глубже — поэтому поднимаемся по дереву до корня и собираем всё,
+   * что встретилось по дороге.
+   */
+  async attributesFor(categoryIds: string[]): Promise<
+    { id: string; slug: string; kind: string }[]
+  > {
+    const chain = new Set(categoryIds);
+    let frontier = categoryIds;
+
+    // Дерево двухуровневое, но на всякий случай идём вверх циклом:
+    // вырастет третий уровень — код останется верным.
+    for (let depth = 0; depth < 5 && frontier.length > 0; depth += 1) {
+      const parents = await this.prisma.category.findMany({
+        where: { id: { in: frontier } },
+        select: { parentId: true },
+      });
+      frontier = parents.flatMap((row) => (row.parentId ? [row.parentId] : []));
+      for (const id of frontier) chain.add(id);
+    }
+
+    return this.prisma.categoryAttribute.findMany({
+      where: { categoryId: { in: [...chain] } },
+      orderBy: { sortOrder: 'asc' },
+      select: { id: true, slug: true, kind: true },
+    });
   }
 
   private toData(dto: ListingDto) {
@@ -458,4 +551,25 @@ function formatPrice(rubles: number): string {
 
 function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * Разбирает строку фильтров «brand=Apple,model=iPhone 15» в пары.
+ *
+ * Значения приходят из адреса, поэтому длину ограничиваем, а всё, что
+ * не похоже на пару, отбрасываем: пустой фильтр лучше неверного.
+ */
+function parseAttrs(raw: string | undefined): [string, string][] {
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .flatMap((pair) => {
+      const at = pair.indexOf('=');
+      if (at <= 0) return [];
+      const slug = pair.slice(0, at).trim();
+      const value = pair.slice(at + 1).trim();
+      if (!slug || !value) return [];
+      return [[slug, value.slice(0, 120)] as [string, string]];
+    })
+    .slice(0, 8);
 }

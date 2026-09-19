@@ -14,19 +14,19 @@ datasource db {
 // ─────────────────────────── Пользователи ───────────────────────────
 
 enum Role {
-  USER       // обычный клиент
-  MODERATOR  // модерирует отзывы
-  ADMIN      // полный доступ к админ-панели
+  USER // обычный клиент
+  MODERATOR // модерирует отзывы
+  ADMIN // полный доступ к админ-панели
 }
 
 /// Что пользователь выбрал на стартовом экране. Не влияет на права —
 /// определяет только то, какой интерфейс ему показывать.
 enum Onboarding {
-  CLIENT      // ищет специалистов
-  SPECIALIST  // сам оказывает услуги
-  MARKET      // пришёл покупать или продавать товары
-  WANTED      // пришёл в раздел спроса: что людям нужно прямо сейчас
-  URGENT      // пришёл за срочным: успеть забрать, пока дёшево
+  CLIENT // ищет специалистов
+  SPECIALIST // сам оказывает услуги
+  MARKET // пришёл покупать или продавать товары
+  WANTED // пришёл в раздел спроса: что людям нужно прямо сейчас
+  URGENT // пришёл за срочным: успеть забрать, пока дёшево
 }
 
 /// Пользователь Telegram. Создаётся автоматически при первом открытии Mini App.
@@ -56,29 +56,29 @@ model User {
   /// Сколько раз пользователь пытался передать контакты в обход правил.
   /// Первая попытка — повод объяснить правило, регулярные — повод
   /// показать пользователя администратору.
-  contactAttempts Int @default(0)
+  contactAttempts Int         @default(0)
   /// null — выбор ещё не сделан, показываем стартовый экран.
-  onboardedAs  Onboarding?
+  onboardedAs     Onboarding?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   lastSeenAt DateTime @default(now())
 
   /// Если пользователь сам является специалистом — обратная связь на карточку.
-  specialist Specialist?
-  reviews    Review[]
-  views      ProfileView[]
-  favorites  Favorite[]
-  reports    Report[]
-  conversations Conversation[] @relation("ClientConversations")
-  messages      Message[]      @relation("SentMessages")
-  listings      Listing[]
-  payments      Payment[]
-  walletEntries WalletEntry[]
-  dealsAsSeller Deal[]       @relation("DealsAsSeller")
-  dealsAsBuyer  Deal[]       @relation("DealsAsBuyer")
-  writtenUserReviews  UserReview[] @relation("WrittenUserReviews")
-  receivedUserReviews UserReview[] @relation("ReceivedUserReviews")
+  specialist          Specialist?
+  reviews             Review[]
+  views               ProfileView[]
+  favorites           Favorite[]
+  reports             Report[]
+  conversations       Conversation[]   @relation("ClientConversations")
+  messages            Message[]        @relation("SentMessages")
+  listings            Listing[]
+  payments            Payment[]
+  walletEntries       WalletEntry[]
+  dealsAsSeller       Deal[]           @relation("DealsAsSeller")
+  dealsAsBuyer        Deal[]           @relation("DealsAsBuyer")
+  writtenUserReviews  UserReview[]     @relation("WrittenUserReviews")
+  receivedUserReviews UserReview[]     @relation("ReceivedUserReviews")
   serviceRequests     ServiceRequest[] @relation("ServiceRequests")
   generatedImages     GeneratedImage[]
 
@@ -125,17 +125,17 @@ enum CategoryKind {
 
 /// Категория: «Ремонт», «Красота» — для услуг; «Электроника», «Одежда» — для товаров.
 model Category {
-  id        String  @id @default(cuid())
-  kind      CategoryKind @default(SERVICE)
+  id       String       @id @default(cuid())
+  kind     CategoryKind @default(SERVICE)
   /// Человекочитаемый идентификатор для URL: "beauty", "repair".
-  slug      String  @unique
-  name      String
+  slug     String       @unique
+  name     String
   /// Emoji или имя иконки из набора фронтенда.
-  icon      String  @default("🔧")
+  icon     String       @default("🔧")
   /// Родительская категория — на будущее, для подкатегорий. null = корневая.
-  parentId  String?
-  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
-  children  Category[] @relation("CategoryTree")
+  parentId String?
+  parent   Category?    @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[]   @relation("CategoryTree")
 
   sortOrder Int     @default(0)
   isActive  Boolean @default(true)
@@ -145,8 +145,9 @@ model Category {
 
   specialists SpecialistCategory[]
 
-  listings  ListingCategory[]
-  demandWatches DemandWatch[]
+  listings       ListingCategory[]
+  attributes     CategoryAttribute[]
+  demandWatches  DemandWatch[]
   urgentRequests UrgentRequest[]
 
   @@index([kind, isActive, sortOrder])
@@ -156,11 +157,11 @@ model Category {
 // ─────────────────────────── Специалисты ───────────────────────────
 
 enum SpecialistStatus {
-  DRAFT     // черновик, не виден в каталоге
-  PENDING   // подана заявка, ждёт проверки админом
-  ACTIVE    // опубликован
-  HIDDEN    // скрыт админом или по окончании подписки
-  BLOCKED   // заблокирован за нарушения
+  DRAFT // черновик, не виден в каталоге
+  PENDING // подана заявка, ждёт проверки админом
+  ACTIVE // опубликован
+  HIDDEN // скрыт админом или по окончании подписки
+  BLOCKED // заблокирован за нарушения
 }
 
 /// Карточка специалиста в каталоге.
@@ -189,8 +190,8 @@ model Specialist {
 
   // — Контакты. Приложение не хранит переписку, только точки входа. —
   phone     String?
-  telegram  String?  // @username или ссылка t.me
-  whatsapp  String?  // номер в международном формате
+  telegram  String? // @username или ссылка t.me
+  whatsapp  String? // номер в международном формате
   instagram String?
   website   String?
 
@@ -254,7 +255,7 @@ model SpecialistCategory {
 
 /// Позиция прайс-листа. Цены информационные — платежи приложение не проводит.
 model Service {
-  id           String  @id @default(cuid())
+  id           String     @id @default(cuid())
   specialistId String
   specialist   Specialist @relation(fields: [specialistId], references: [id], onDelete: Cascade)
 
@@ -273,16 +274,16 @@ model Service {
 
 /// Фотография в галерее работ.
 model SpecialistPhoto {
-  id           String  @id @default(cuid())
+  id           String     @id @default(cuid())
   specialistId String
   specialist   Specialist @relation(fields: [specialistId], references: [id], onDelete: Cascade)
 
-  url       String
+  url        String
   /// Ключ в хранилище — по нему файл удаляется вместе с записью.
   storageKey String?
-  caption   String?
-  sortOrder Int     @default(0)
-  createdAt DateTime @default(now())
+  caption    String?
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
 
   @@index([specialistId, sortOrder])
   @@map("specialist_photos")
@@ -291,18 +292,18 @@ model SpecialistPhoto {
 // ─────────────────────────── Объявления ───────────────────────────
 
 enum ListingStatus {
-  DRAFT     // черновик
-  PENDING   // ждёт проверки
-  ACTIVE    // опубликовано
-  SOLD      // продано, остаётся в истории продавца
-  HIDDEN    // снято с публикации
-  REJECTED  // отклонено модератором
+  DRAFT // черновик
+  PENDING // ждёт проверки
+  ACTIVE // опубликовано
+  SOLD // продано, остаётся в истории продавца
+  HIDDEN // снято с публикации
+  REJECTED // отклонено модератором
 }
 
 enum ListingCondition {
-  NEW           // новый
-  USED_PERFECT  // как новый
-  USED          // бывший в употреблении
+  NEW // новый
+  USED_PERFECT // как новый
+  USED // бывший в употреблении
 }
 
 /// Объявление о продаже товара.
@@ -335,8 +336,8 @@ model Listing {
 
   /// Цена в минимальных единицах (копейках) — как и у услуг,
   /// чтобы не ловить ошибки округления.
-  priceAmount Int
-  currency    String @default("RUB")
+  priceAmount  Int
+  currency     String  @default("RUB")
   /// Цена договорная: сумма показывается как ориентир.
   isNegotiable Boolean @default(false)
 
@@ -361,7 +362,7 @@ model Listing {
   status          ListingStatus @default(PENDING)
   rejectionReason String?
   /// Опубликованное объявление изменили — нужна повторная проверка.
-  needsReview     Boolean @default(false)
+  needsReview     Boolean       @default(false)
 
   viewCount Int @default(0)
 
@@ -376,6 +377,7 @@ model Listing {
   soldAt      DateTime?
 
   categories    ListingCategory[]
+  attributes    ListingAttribute[]
   photos        ListingPhoto[]
   conversations Conversation[]
   deals         Deal[]
@@ -387,6 +389,84 @@ model Listing {
   @@index([city, status])
   @@index([userId])
   @@map("listings")
+}
+
+/// Что за характеристика: от этого зависит и поле в форме, и вид фильтра.
+enum AttributeKind {
+  /// Выбор одного значения из списка: марка, цвет, коробка передач.
+  SELECT
+  /// Число с единицей измерения: пробег, диагональ, год выпуска.
+  NUMBER
+  /// Да или нет: «торг уместен», «есть гарантия».
+  BOOLEAN
+  /// Произвольная строка, когда перечислить варианты невозможно.
+  TEXT
+}
+
+/// Характеристика категории: «Память» у телефона, «Пробег» у автомобиля.
+///
+/// Висит на категории и наследуется вниз по дереву: характеристики
+/// «Телефонов» действуют и на их подкатегории. Так общее описывается
+/// один раз, а частное добавляется там, где появляется.
+model CategoryAttribute {
+  id         String   @id @default(cuid())
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  /// Устойчивое имя для адресов и фильтров: "brand", "storage".
+  slug String
+  name String
+  kind AttributeKind @default(SELECT)
+
+  /// Варианты для SELECT — по порядку показа.
+  ///
+  /// У зависимой характеристики вариант хранится с приставкой родителя
+  /// через «::» — "Apple::iPhone 15". Иначе список моделей пришлось бы
+  /// заводить отдельной таблицей ради той же пары «марка — модель».
+  options   String[] @default([])
+  /// Слаг характеристики, от которой зависит список вариантов: модель от марки.
+  dependsOn String?
+  /// Единица измерения для NUMBER: «км», «ГБ», «″».
+  unit      String?
+
+  /// Спрашивается ли при размещении обязательно.
+  required   Boolean @default(false)
+  /// Показывать ли шагом при выборе категории: так ищут марку и модель.
+  isStep     Boolean @default(false)
+  /// Годится ли как фильтр в выдаче.
+  filterable Boolean @default(true)
+
+  sortOrder Int @default(0)
+
+  values ListingAttribute[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([categoryId, slug])
+  @@index([categoryId])
+  @@map("category_attributes")
+}
+
+/// Значение характеристики у конкретного объявления.
+///
+/// Текст и число хранятся раздельно: по числам нужны диапазоны
+/// («от 100 000 км»), а сравнивать их как строки нельзя — «9» окажется
+/// больше «10».
+model ListingAttribute {
+  listingId   String
+  attributeId String
+  listing     Listing           @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  attribute   CategoryAttribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+
+  valueText   String?
+  valueNumber Float?
+  valueBool   Boolean?
+
+  @@id([listingId, attributeId])
+  @@index([attributeId, valueText])
+  @@index([attributeId, valueNumber])
+  @@map("listing_attributes")
 }
 
 /// Одно объявление может попадать в несколько категорий товаров.
@@ -418,14 +498,14 @@ model ListingPhoto {
 // ─────────────────────────── Отзывы ───────────────────────────
 
 enum ReviewStatus {
-  PENDING   // ждёт модерации
-  APPROVED  // опубликован, учитывается в рейтинге
-  REJECTED  // отклонён модератором
+  PENDING // ждёт модерации
+  APPROVED // опубликован, учитывается в рейтинге
+  REJECTED // отклонён модератором
 }
 
 /// Отзыв клиента. В рейтинг попадают только APPROVED.
 model Review {
-  id           String @id @default(cuid())
+  id           String     @id @default(cuid())
   specialistId String
   userId       String
   specialist   Specialist @relation(fields: [specialistId], references: [id], onDelete: Cascade)
@@ -435,16 +515,16 @@ model Review {
   rating Int
   text   String? @db.Text
 
-  status           ReviewStatus @default(PENDING)
+  status         ReviewStatus @default(PENDING)
   /// Причина отклонения — показывается автору отзыва.
-  moderationNote   String?
+  moderationNote String?
 
   /// Публичный ответ специалиста. Виден всем рядом с отзывом.
   /// Мастер с одним резким отзывом и спокойным ответом вызывает больше
   /// доверия, чем мастер без отзывов вообще — без права ответа он беззащитен.
-  replyText   String?   @db.Text
-  repliedAt   DateTime?
-  moderatedAt      DateTime?
+  replyText         String?   @db.Text
+  repliedAt         DateTime?
+  moderatedAt       DateTime?
   moderatedByUserId String?
 
   createdAt DateTime @default(now())
@@ -461,7 +541,7 @@ model Review {
 
 /// История просмотров для личного кабинета.
 model ProfileView {
-  id           String @id @default(cuid())
+  id           String     @id @default(cuid())
   userId       String
   specialistId String
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -493,21 +573,21 @@ model Favorite {
 /// Отметка об оплаченном периоде размещения.
 /// Деньги проходят мимо приложения — админ фиксирует факт оплаты вручную.
 model Subscription {
-  id           String @id @default(cuid())
+  id           String     @id @default(cuid())
   specialistId String
   specialist   Specialist @relation(fields: [specialistId], references: [id], onDelete: Cascade)
 
   /// Название тарифа: "month", "quarter", "year".
-  plan      String
-  startsAt  DateTime
-  endsAt    DateTime
+  plan            String
+  startsAt        DateTime
+  endsAt          DateTime
   /// Сумма в минимальных единицах, для отчётности.
-  amount    Int?
-  currency  String   @default("RUB")
+  amount          Int?
+  currency        String   @default("RUB")
   /// Комментарий админа: способ оплаты, номер чека и т.п.
-  note      String?
+  note            String?
   createdByUserId String?
-  createdAt DateTime @default(now())
+  createdAt       DateTime @default(now())
 
   /// Оплата, которой продлена подписка. Пусто у выданных админом вручную —
   /// такие выдачи никуда не делись: ими закрывают спорные случаи и
@@ -682,7 +762,7 @@ model UrgentRequest {
 
   /// Кто взял. Пусто, пока не взяли.
   takenById String?
-  takenBy   User?   @relation("UrgentAsMaster", fields: [takenById], references: [id], onDelete: SetNull)
+  takenBy   User?     @relation("UrgentAsMaster", fields: [takenById], references: [id], onDelete: SetNull)
   takenAt   DateTime?
 
   createdAt DateTime @default(now())
@@ -829,9 +909,9 @@ model WalletEntry {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  kind  WalletEntryKind
+  kind         WalletEntryKind
   /// Со знаком: пополнение положительное, списание отрицательное.
-  stars Int
+  stars        Int
   /// Остаток после операции — для сверки и для истории в приложении.
   balanceAfter Int
 
@@ -896,8 +976,8 @@ model Payment {
   /// защищает от двойного зачисления, если подтверждение придёт дважды.
   telegramChargeId String? @unique
 
-  createdAt DateTime  @default(now())
-  paidAt    DateTime?
+  createdAt  DateTime  @default(now())
+  paidAt     DateTime?
   refundedAt DateTime?
 
   subscription Subscription?
@@ -965,10 +1045,10 @@ model Message {
   sender   User   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 
   /// Текст, который видят собеседники: контакты в нём скрыты.
-  text String @db.Text
+  text              String  @db.Text
   /// Исходник до вычистки. Нужен для разбора жалоб — без него нельзя
   /// доказать, что специалист уводил клиента с площадки.
-  originalText String? @db.Text
+  originalText      String? @db.Text
   /// В сообщении были контакты, и они скрыты.
   hasMaskedContacts Boolean @default(false)
 
@@ -987,8 +1067,8 @@ enum ReportTarget {
 }
 
 enum ReportStatus {
-  OPEN      // ждёт рассмотрения
-  RESOLVED  // меры приняты
+  OPEN // ждёт рассмотрения
+  RESOLVED // меры приняты
   DISMISSED // жалоба отклонена
 }
 
@@ -1031,7 +1111,7 @@ model Report {
 model AuditLog {
   id         String   @id @default(cuid())
   actorId    String?
-  action     String   // "review.approve", "specialist.block", ...
+  action     String // "review.approve", "specialist.block", ...
   entityType String
   entityId   String
   payload    Json?

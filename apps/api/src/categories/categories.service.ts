@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { Category, CategoryKind, ListingKind } from '@app/shared';
+import type { Category, CategoryAttribute, CategoryKind, ListingKind } from '@app/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -66,4 +66,49 @@ export class CategoriesService {
     });
   }
 
+
+  /**
+   * Характеристики категории вместе с унаследованными от раздела.
+   *
+   * «Марка» и «Модель» заведены у «Телефонов»: спрашивать их отдельно
+   * у каждой полки внутри — значит держать один и тот же список в
+   * десятке мест и однажды разойтись.
+   */
+  async attributes(slug: string): Promise<CategoryAttribute[]> {
+    const ids: string[] = [];
+    let current = await this.prisma.category.findUnique({
+      where: { slug },
+      select: { id: true, parentId: true },
+    });
+
+    for (let depth = 0; current && depth < 5; depth += 1) {
+      ids.push(current.id);
+      current = current.parentId
+        ? await this.prisma.category.findUnique({
+            where: { id: current.parentId },
+            select: { id: true, parentId: true },
+          })
+        : null;
+    }
+
+    if (ids.length === 0) return [];
+
+    const rows = await this.prisma.categoryAttribute.findMany({
+      where: { categoryId: { in: ids } },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      kind: row.kind,
+      options: row.options,
+      unit: row.unit,
+      required: row.required,
+      isStep: row.isStep,
+      filterable: row.filterable,
+      dependsOn: row.dependsOn,
+    }));
+  }
 }

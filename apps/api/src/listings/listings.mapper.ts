@@ -10,6 +10,9 @@ export const listInclude = {
 
 export const detailInclude = {
   categories: { include: { category: true } },
+  // Характеристики показываем в карточке: память телефона и пробег
+  // машины решают дело раньше, чем описание словами.
+  attributes: { include: { attribute: true }, orderBy: { attribute: { sortOrder: 'asc' } } },
   photos: { orderBy: { sortOrder: 'asc' } },
   user: {
     select: {
@@ -56,6 +59,13 @@ export function toListItem(row: ListRow): ListingListItem {
 export function toDetail(row: DetailRow, viewerId: string | null): ListingDetail {
   return {
     ...toListItem({ ...row, photos: row.photos.slice(0, 1) } as ListRow),
+    attributes: row.attributes
+      .map((value) => ({
+        slug: value.attribute.slug,
+        name: value.attribute.name,
+        value: formatValue(value),
+      }))
+      .filter((item) => item.value !== ''),
     description: row.description,
     photos: row.photos.map((photo) => ({ id: photo.id, url: photo.url })),
     viewCount: row.viewCount,
@@ -81,4 +91,25 @@ export function toMyListing(row: DetailRow): MyListing {
     rejectionReason: row.rejectionReason,
     soldAt: row.soldAt?.toISOString() ?? null,
   };
+}
+
+/**
+ * Значение характеристики одной строкой.
+ *
+ * Число показывается с единицей измерения, «да/нет» — словами: сырое
+ * «true» в карточке читается как ошибка, а не как ответ.
+ */
+function formatValue(value: {
+  valueText: string | null;
+  valueNumber: number | null;
+  valueBool: boolean | null;
+  attribute: { unit: string | null };
+}): string {
+  if (value.valueText) return value.valueText;
+  if (value.valueNumber !== null) {
+    const unit = value.attribute.unit;
+    return unit ? `${value.valueNumber} ${unit}` : String(value.valueNumber);
+  }
+  if (value.valueBool !== null) return value.valueBool ? 'Да' : 'Нет';
+  return '';
 }

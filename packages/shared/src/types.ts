@@ -46,6 +46,37 @@ export interface Category {
   children?: Category[];
 }
 
+/** Что за характеристика: от этого зависит и поле в форме, и вид фильтра. */
+export type AttributeKind = 'SELECT' | 'NUMBER' | 'BOOLEAN' | 'TEXT';
+
+/**
+ * Характеристика категории: «Память» у телефона, «Пробег» у машины.
+ *
+ * Приходит вместе с категорией и описывает, что спросить у продавца
+ * и по чему искать покупателю. Шаговые характеристики (isStep) идут
+ * продолжением дерева: марку и модель человек выбирает до выдачи.
+ */
+export interface CategoryAttribute {
+  id: string;
+  slug: string;
+  name: string;
+  kind: AttributeKind;
+  options: string[];
+  unit: string | null;
+  required: boolean;
+  isStep: boolean;
+  filterable: boolean;
+  /** Слаг характеристики, от которой зависят варианты: модель от марки. */
+  dependsOn: string | null;
+}
+
+/** Значение характеристики у объявления — как его показывать в карточке. */
+export interface ListingAttributeValue {
+  slug: string;
+  name: string;
+  value: string;
+}
+
 /** Урезанная карточка для списков и маркеров карты. */
 export interface SpecialistListItem {
   id: string;
@@ -190,6 +221,8 @@ export interface ListingDetail extends ListingListItem {
   };
   /** Объявление принадлежит текущему пользователю — писать себе не нужно. */
   isMine: boolean;
+  /** Характеристики: память телефона, пробег машины, размер одежды. */
+  attributes: ListingAttributeValue[];
 }
 
 /** Своё объявление в личном кабинете — со статусом и причиной отклонения. */

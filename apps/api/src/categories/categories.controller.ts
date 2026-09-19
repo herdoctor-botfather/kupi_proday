@@ -1,5 +1,5 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import type { Category, CategoryKind, ListingKind } from '@app/shared';
+import { Controller, Get, Param, Query } from '@nestjs/common';
+import type { Category, CategoryAttribute, CategoryKind, ListingKind } from '@app/shared';
 import { CategoriesService } from './categories.service';
 
 @Controller('categories')
@@ -12,5 +12,11 @@ export class CategoriesController {
     const value: CategoryKind = kind === 'PRODUCT' ? 'PRODUCT' : 'SERVICE';
     const listings: ListingKind = listingKind === 'BUY' ? 'BUY' : 'SELL';
     return this.categories.findAll(value, listings);
+  }
+
+  /** Что спрашивать у продавца и по чему искать в этой категории. */
+  @Get(':slug/attributes')
+  attributes(@Param('slug') slug: string): Promise<CategoryAttribute[]> {
+    return this.categories.attributes(slug);
   }
 }

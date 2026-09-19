@@ -1,5 +1,7 @@
 import type { Category, CategoryAttribute } from '@app/shared';
 import { haptic } from '../lib/telegram';
+import { optionsOf } from '../lib/attribute-options';
+import { carPhoto } from '../lib/car-photos';
 
 /**
  * Пошаговое заполнение при размещении: раздел, полка, марка, модель.
@@ -37,6 +39,9 @@ export function CategoryWizard({
   /** Шаги-характеристики: марка, модель, память — в порядке важности. */
   const steps = attributes.filter((attribute) => attribute.isStep);
   const nextStep = steps.find((attribute) => !values[attribute.slug]);
+
+  const stepOptions = nextStep ? optionsOf(nextStep, values) : [];
+  const stepHasPhotos = stepOptions.some((option) => carPhoto(option.image));
 
   const pickValue = (attribute: CategoryAttribute, option: string) => {
     haptic.tap();
@@ -167,21 +172,43 @@ export function CategoryWizard({
             {nextStep.name}
             {nextStep.required ? '' : ' — можно пропустить'}
           </p>
-          <div className="steps">
-            {optionsFor(nextStep, values).map((option) => (
-              <button
-                key={option}
-                type="button"
-                className="step"
-                onClick={() => pickValue(nextStep, option)}
-              >
-                <span className="step__name">{option}</span>
-                <span className="step__chevron" aria-hidden>
-                  ›
-                </span>
-              </button>
-            ))}
-          </div>
+          {stepHasPhotos ? (
+            <div className="body-grid">
+              {stepOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className="body-card"
+                  onClick={() => pickValue(nextStep, option.value)}
+                >
+                  {carPhoto(option.image) ? (
+                    <img className="body-card__photo" src={carPhoto(option.image) ?? ''} alt="" loading="lazy" />
+                  ) : (
+                    <span className="body-card__photo body-card__photo--empty" aria-hidden>
+                      🚗
+                    </span>
+                  )}
+                  <span className="body-card__label">{option.value}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="steps">
+              {stepOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className="step"
+                  onClick={() => pickValue(nextStep, option.value)}
+                >
+                  <span className="step__name">{option.value}</span>
+                  <span className="step__chevron" aria-hidden>
+                    ›
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
           {!nextStep.required && (
             <button
               type="button"
@@ -209,17 +236,4 @@ function find(
     if (child) return { section: root, current: child };
   }
   return { section: null, current: null };
-}
-
-/** Варианты с учётом зависимости: память показываем для выбранной модели. */
-function optionsFor(
-  attribute: CategoryAttribute,
-  values: Record<string, string | number | boolean | null>,
-): string[] {
-  if (!attribute.dependsOn) return attribute.options;
-  const parent = values[attribute.dependsOn];
-  if (typeof parent !== 'string' || !parent) return [];
-  return attribute.options
-    .filter((option) => option.startsWith(`${parent}::`))
-    .map((option) => option.slice(parent.length + 2));
 }

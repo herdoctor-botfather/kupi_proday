@@ -10,7 +10,14 @@ import { FeedMore } from '../components/Feed';
 import { EmptyState } from '../components/states';
 import { haptic } from '../lib/telegram';
 import { pluralize } from '../lib/format';
+import { optionsOf } from '../lib/attribute-options';
+import { carPhoto } from '../lib/car-photos';
 
+/*
+ * Снимки кузовов: подключаются сборкой, по имени из справочника.
+ * Нарисованы не для всех поколений — там, где снимка нет, шаг остаётся
+ * строкой списка и работает ровно так же.
+ */
 /** Сколько карточек показываем под выбором. */
 const FEED_PAGE_SIZE = 6;
 
@@ -66,6 +73,10 @@ export function CategoryStepPage({ mode }: { mode: 'sell' | 'buy' | 'service' })
   // Шаги-характеристики идут после подкатегорий: сначала «что», потом «какое».
   const steps = (attributes.data ?? []).filter((attribute) => attribute.isStep);
   const nextStep = steps.find((attribute) => !chosen[attribute.slug]);
+
+  /* Варианты текущего шага и есть ли к ним снимки. */
+  const options = nextStep ? optionsOf(nextStep, chosen) : [];
+  const hasPhotos = options.some((option) => carPhoto(option.image));
 
   const listings = usePagedFeed(
     (page) =>
@@ -188,21 +199,54 @@ export function CategoryStepPage({ mode }: { mode: 'sell' | 'buy' | 'service' })
         </div>
       )}
 
-      {/* Шаг второй и далее: марка, модель, память — в порядке важности. */}
+      {/* Шаг второй и далее: марка, модель, кузов — в порядке важности. */}
       {children.length === 0 && nextStep && (
-        <div className="steps">
-          {optionsFor(nextStep, chosen).map((option) => (
-            <button key={option} type="button" className="step" onClick={() => pickValue(nextStep, option)}>
-              <span className="step__name">{option}</span>
-              <span className="step__chevron" aria-hidden>
-                ›
-              </span>
-            </button>
-          ))}
-          {optionsFor(nextStep, chosen).length === 0 && (
-            <p className="form-hint">Для этой марки список пока не заведён — смотрите всё, что есть.</p>
+        <>
+          {hasPhotos ? (
+            /* Кузова выбирают глазами: «Гранта лифтбек» и «Гранта седан»
+               различаются видом, а не словами, и список названий заставил
+               бы вспоминать, как выглядит каждое. */
+            <div className="body-grid">
+              {options.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className="body-card"
+                  onClick={() => pickValue(nextStep, option.value)}
+                >
+                  {carPhoto(option.image) ? (
+                    <img className="body-card__photo" src={carPhoto(option.image) ?? ''} alt="" loading="lazy" />
+                  ) : (
+                    <span className="body-card__photo body-card__photo--empty" aria-hidden>
+                      🚗
+                    </span>
+                  )}
+                  <span className="body-card__label">{option.value}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="steps">
+              {options.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className="step"
+                  onClick={() => pickValue(nextStep, option.value)}
+                >
+                  <span className="step__name">{option.value}</span>
+                  <span className="step__chevron" aria-hidden>
+                    ›
+                  </span>
+                </button>
+              ))}
+            </div>
           )}
-        </div>
+
+          {options.length === 0 && (
+            <p className="form-hint">Для этого выбора список пока не заведён — смотрите всё, что есть.</p>
+          )}
+        </>
       )}
 
       {/* Выход в выдачу доступен на любом шаге: дошагивать до конца никто
@@ -284,19 +328,4 @@ function findCategory(
     if (child) return { section: root, current: child };
   }
   return { section: null, current: null };
-}
-
-/**
- * Варианты шага с учётом зависимости.
- *
- * Список моделей хранится с приставкой марки — «Apple::iPhone 15», —
- * поэтому показываем только те, что относятся к уже выбранному.
- */
-function optionsFor(attribute: CategoryAttribute, chosen: Record<string, string>): string[] {
-  if (!attribute.dependsOn) return attribute.options;
-  const parent = chosen[attribute.dependsOn];
-  if (!parent) return [];
-  return attribute.options
-    .filter((option) => option.startsWith(`${parent}::`))
-    .map((option) => option.slice(parent.length + 2));
 }

@@ -1449,6 +1449,19 @@ body::before {
   text-align: right;
 }
 
+/* Мастер заполнения: те же строки-шаги, что и в поиске, — человек уже
+   знает этот вид по витрине и не учится ему заново. */
+.wizard {
+  display: flex;
+  flex-direction: column;
+}
+
+.wizard .steps {
+  max-height: 320px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ─── Пошаговый выбор категории ─── */
 
 .crumbs {

@@ -9,7 +9,7 @@ import {
   type MyListing,
 } from '@app/shared';
 import { api } from '../lib/api';
-import { CategoryPicker } from '../components/CategoryPicker';
+import { CategoryWizard } from '../components/CategoryWizard';
 import { AttributeFields } from '../components/AttributeFields';
 import { useAsync } from '../lib/useAsync';
 import { ChipsRow } from '../components/ChipsRow';
@@ -432,22 +432,25 @@ export function SellPage() {
                 ))}
               </ChipsRow>
             </Field>
-
-            <Field
-              label="Категория"
-              error={errors.categoryIds}
-              required
-              hint="Выберите раздел, затем полку внутри. Не больше трёх"
-            >
-              <CategoryPicker
+            {/* Категория и характеристики — сразу под названием: пока
+                человек не сказал, что это, спрашивать про цену и состояние
+                рано, а половина полей просто не имеет смысла. */}
+            <Field label="Категория" error={errors.categoryIds} required>
+              <CategoryWizard
                 categories={allCategories}
-                selected={form.categoryIds}
-                onChange={(ids) => set('categoryIds', ids)}
+                attributes={attributes.data ?? []}
+                categoryId={form.categoryIds[0] ?? null}
+                values={form.attributes}
+                onPickCategory={(id) => set('categoryIds', id ? [id] : [])}
+                onChangeValues={(values) => set('attributes', values)}
               />
             </Field>
 
+            {/* Остальные характеристики — обычными полями: цвет и пробег
+                спрашивать отдельным экраном значило бы растянуть форму
+                на десяток шагов ради мелочей. */}
             <AttributeFields
-              attributes={attributes.data ?? []}
+              attributes={(attributes.data ?? []).filter((attribute) => !attribute.isStep)}
               values={form.attributes}
               onChange={(values) => set('attributes', values)}
             />

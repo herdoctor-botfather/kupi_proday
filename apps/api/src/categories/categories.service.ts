@@ -32,16 +32,38 @@ export class CategoriesService {
       },
     });
 
-    return rows.map((row) => ({
+    const own = (row: (typeof rows)[number]): number =>
+      kind === 'SERVICE'
+        ? ((row._count as { specialists?: number }).specialists ?? 0)
+        : ((row._count as { listings?: number }).listings ?? 0);
+
+    const toCategory = (row: (typeof rows)[number], parentSlug: string | null): Category => ({
       id: row.id,
       slug: row.slug,
       name: row.name,
       icon: row.icon,
       kind: row.kind,
-      itemCount:
-        kind === 'SERVICE'
-          ? ((row._count as { specialists?: number }).specialists ?? 0)
-          : ((row._count as { listings?: number }).listings ?? 0),
-    }));
+      itemCount: own(row),
+      parentSlug,
+    });
+
+    /*
+     * Наружу отдаём разделы с вложенными подкатегориями.
+     *
+     * Счётчик раздела складывается из своих объявлений и объявлений его
+     * подкатегорий: на плитке «Транспорт» человек ждёт увидеть всё, что
+     * внутри, а не только то, что кто-то положил прямо в корень.
+     */
+    const roots = rows.filter((row) => row.parentId === null);
+    return roots.map((root) => {
+      const children = rows.filter((row) => row.parentId === root.id).map((row) => toCategory(row, root.slug));
+      const category = toCategory(root, null);
+      return {
+        ...category,
+        itemCount: category.itemCount + children.reduce((sum, child) => sum + child.itemCount, 0),
+        children,
+      };
+    });
   }
+
 }

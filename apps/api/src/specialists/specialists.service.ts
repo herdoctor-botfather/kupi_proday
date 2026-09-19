@@ -176,7 +176,7 @@ export class SpecialistsService {
         ...this.visibleInCatalog(),
         lat: { gte: query.south, lte: query.north },
         ...this.buildLngBounds(query),
-        ...(query.categorySlug ? { categories: { some: { category: { slug: query.categorySlug } } } } : {}),
+        ...(query.categorySlug ? { categories: { some: { category: { OR: [{ slug: query.categorySlug }, { parent: { slug: query.categorySlug } }] } } } } : {}),
       },
       include: listInclude,
       // При переполнении кадра показываем сильнейшие карточки.
@@ -280,8 +280,9 @@ export class SpecialistsService {
   private buildWhere(query: SpecialistQuery): Prisma.SpecialistWhereInput {
     const where: Prisma.SpecialistWhereInput = this.visibleInCatalog();
 
+    // Раздел вместе с подкатегориями: «Красота» — это и маникюр, и брови.
     if (query.categorySlug) {
-      where.categories = { some: { category: { slug: query.categorySlug } } };
+      where.categories = { some: { category: { OR: [{ slug: query.categorySlug }, { parent: { slug: query.categorySlug } }] } } };
     }
     if (query.city) {
       where.city = { equals: query.city, mode: 'insensitive' };

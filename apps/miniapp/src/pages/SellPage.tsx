@@ -9,6 +9,7 @@ import {
   type MyListing,
 } from '@app/shared';
 import { api } from '../lib/api';
+import { CategoryPicker } from '../components/CategoryPicker';
 import { useAsync } from '../lib/useAsync';
 import { ChipsRow } from '../components/ChipsRow';
 import { AsyncContent } from '../components/states';
@@ -406,31 +407,13 @@ export function SellPage() {
               label="Категория"
               error={errors.categoryIds}
               required
-              hint="Не больше трёх. Не нашли подходящую — возьмите «Другое» и опишите словами"
+              hint="Выберите раздел, затем полку внутри. Не больше трёх"
             >
-              <div className="category-picker">
-                {allCategories.map((category) => {
-                  const active = form.categoryIds.includes(category.id);
-                  return (
-                    <button
-                      key={category.id}
-                      type="button"
-                      className={`chip${active ? ' chip--active' : ''}`}
-                      onClick={() => {
-                        haptic.tap();
-                        set(
-                          'categoryIds',
-                          active
-                            ? form.categoryIds.filter((id) => id !== category.id)
-                            : [...form.categoryIds, category.id],
-                        );
-                      }}
-                    >
-                      {category.icon} {category.name}
-                    </button>
-                  );
-                })}
-              </div>
+              <CategoryPicker
+                categories={allCategories}
+                selected={form.categoryIds}
+                onChange={(ids) => set('categoryIds', ids)}
+              />
             </Field>
 
             <Field label="Город" error={errors.city} required>

@@ -6,6 +6,7 @@ import {
   type SpecialistApplicationDto,
 } from '@app/shared';
 import { api } from '../lib/api';
+import { CategoryPicker } from '../components/CategoryPicker';
 import { useAsync } from '../lib/useAsync';
 import { AsyncContent } from '../components/states';
 import { useGeolocation } from '../lib/geolocation';
@@ -227,29 +228,12 @@ export function ApplicationPage() {
               Выберите до пяти — по ним вас будут искать
             </p>
             {errors.categoryIds && <div className="field__error">{errors.categoryIds}</div>}
-            <div className="category-picker">
-              {allCategories.map((category) => {
-                const active = form.categoryIds.includes(category.id);
-                return (
-                  <button
-                    key={category.id}
-                    type="button"
-                    className={`chip${active ? ' chip--active' : ''}`}
-                    onClick={() => {
-                      haptic.tap();
-                      set(
-                        'categoryIds',
-                        active
-                          ? form.categoryIds.filter((id) => id !== category.id)
-                          : [...form.categoryIds, category.id],
-                      );
-                    }}
-                  >
-                    {category.icon} {category.name}
-                  </button>
-                );
-              })}
-            </div>
+            <CategoryPicker
+              categories={allCategories}
+              selected={form.categoryIds}
+              onChange={(ids) => set('categoryIds', ids)}
+              max={5}
+            />
 
             <h2 className="form-section">Где принимаете</h2>
 

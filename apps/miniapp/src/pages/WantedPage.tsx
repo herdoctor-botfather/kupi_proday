@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
+import { CategoryChips } from '../components/CategoryChips';
 import { useDefaultCity } from '../lib/home-city';
 import { useAsync, useDebounced } from '../lib/useAsync';
 import { usePagedFeed } from '../lib/usePagedFeed';
@@ -82,30 +83,12 @@ export function WantedPage() {
 
       <SearchInput value={query} onChange={setQuery} placeholder="Что ищут" />
 
-      {categories.data && categories.data.length > 0 && (
-        <ChipsRow>
-          <button
-            type="button"
-            className={`chip${!categorySlug ? ' chip--active' : ''}`}
-            onClick={() => setParam('category', null)}
-          >
-            Все
-          </button>
-          {categories.data.map((category) => (
-            <button
-              key={category.id}
-              type="button"
-              className={`chip${categorySlug === category.slug ? ' chip--active' : ''}`}
-              onClick={() => {
-                haptic.tap();
-                setParam('category', category.slug);
-              }}
-            >
-              {category.icon} {category.name}
-            </button>
-          ))}
-        </ChipsRow>
-      )}
+      <CategoryChips
+        categories={categories.data ?? []}
+        current={categorySlug}
+        onChange={(slug) => setParam('category', slug)}
+        allLabel="Все"
+      />
 
       {(cities.data?.length ?? 0) > 1 && (
         <ChipsRow>

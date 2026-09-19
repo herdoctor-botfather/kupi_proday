@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { NEARBY_RADII_KM, type SpecialistListItem } from '@app/shared';
 import { api, type SpecialistFilters } from '../lib/api';
+import { CategoryChips } from '../components/CategoryChips';
 import { useDefaultCity } from '../lib/home-city';
 import { useAsync, useDebounced } from '../lib/useAsync';
 import { AsyncContent, EmptyState } from '../components/states';
@@ -39,6 +40,7 @@ export function SpecialistsPage() {
   // его значило бы отменить поиск по расстоянию, ради которого и пришли.
   useDefaultCity(searchParams, setSearchParams, !hasCoords);
 
+  const serviceCategories = useAsync(() => api.categories('SERVICE'), []);
   const [query, setQuery] = useState(searchParams.get('q') ?? '');
   const debouncedQuery = useDebounced(query);
 
@@ -176,12 +178,16 @@ export function SpecialistsPage() {
             ★ {value}+
           </button>
         ))}
-        {categorySlug && (
-          <button type="button" className="chip chip--active" onClick={() => setParam('category', null)}>
-            Категория ✕
-          </button>
-        )}
       </ChipsRow>
+
+      {/* Раздел и его подкатегории: из каталога человек приходит с разделом,
+          а сузить до «маникюра» может уже здесь, не возвращаясь назад. */}
+      <CategoryChips
+        categories={serviceCategories.data ?? []}
+        current={categorySlug}
+        onChange={(slug) => setParam('category', slug)}
+        allLabel="Все услуги"
+      />
 
       {hasCoords && !city && (
         <ChipsRow>

@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { LISTING_CONDITIONS, type ListingListItem } from '@app/shared';
 import { api } from '../lib/api';
+import { CategoryChips } from '../components/CategoryChips';
 import { useDefaultCity } from '../lib/home-city';
 import { useAsync, useDebounced } from '../lib/useAsync';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SearchInput } from '../components/SearchInput';
 import { ChipsRow } from '../components/ChipsRow';
 import { ListingCard } from '../components/ListingCard';
-import { haptic } from '../lib/telegram';
 
 const SORT_LABELS = { new: 'Новые', cheap: 'Сначала дешёвые', expensive: 'Сначала дорогие' } as const;
 type Sort = keyof typeof SORT_LABELS;
@@ -64,30 +64,11 @@ export function MarketBrowsePage() {
     <div className="page">
       <SearchInput value={query} onChange={setQuery} placeholder="Что ищете?" />
 
-      {categories.data && categories.data.length > 0 && (
-        <ChipsRow>
-          <button
-            type="button"
-            className={`chip${!categorySlug ? ' chip--active' : ''}`}
-            onClick={() => setParam('category', null)}
-          >
-            Все категории
-          </button>
-          {categories.data.map((category) => (
-            <button
-              key={category.id}
-              type="button"
-              className={`chip${categorySlug === category.slug ? ' chip--active' : ''}`}
-              onClick={() => {
-                haptic.tap();
-                setParam('category', category.slug);
-              }}
-            >
-              {category.icon} {category.name}
-            </button>
-          ))}
-        </ChipsRow>
-      )}
+      <CategoryChips
+        categories={categories.data ?? []}
+        current={categorySlug}
+        onChange={(slug) => setParam('category', slug)}
+      />
 
       {/* Город приходит из каталога и снимается только здесь — без этого
           фильтр остался бы включённым молча. */}

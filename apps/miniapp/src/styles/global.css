@@ -829,9 +829,24 @@ a {
 
 .category-picker {
   display: flex;
+  /* Колонка, а не обтекание: внутри теперь два ряда — разделы и полки
+     внутри раздела, — и они должны идти друг под другом. */
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.category-picker__chosen {
+  display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+}
+
+/* Подкатегория — тише раздела: она уточняет выбор, а не спорит с ним. */
+.chip--sub {
+  font-size: 12.5px;
+  opacity: 0.92;
 }
 
 .category-picker .chip {

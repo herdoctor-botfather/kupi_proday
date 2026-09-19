@@ -317,7 +317,9 @@ export class ListingsService {
     // мы показали бы покупателю чужие запросы вместо товаров.
     const where: Prisma.ListingWhereInput = { status: 'ACTIVE', kind: query.kind };
 
-    if (query.categorySlug) where.categories = { some: { category: { slug: query.categorySlug } } };
+    // Раздел показывает и то, что лежит в его подкатегориях: выбрав
+    // «Электронику», человек ждёт увидеть и телефоны, и ноутбуки.
+    if (query.categorySlug) where.categories = { some: { category: { OR: [{ slug: query.categorySlug }, { parent: { slug: query.categorySlug } }] } } };
     if (query.city) where.city = { equals: query.city, mode: 'insensitive' };
     // Страница продавца: все его объявления одной выдачей.
     if (query.sellerId) where.userId = query.sellerId;

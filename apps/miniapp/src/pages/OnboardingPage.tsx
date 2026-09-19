@@ -5,6 +5,8 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { haptic } from '../lib/telegram';
 import { markRoleChosen } from '../lib/session';
+import { CitySheet } from '../components/CitySheet';
+import { setHomeCity, useHomeCity } from '../lib/home-city';
 /*
  * Обложки дверей импортируются, а не лежат в public.
  *
@@ -30,6 +32,8 @@ export function OnboardingPage() {
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
   const [saving, setSaving] = useState<Onboarding | null>(null);
+  const homeCity = useHomeCity();
+  const [cityOpen, setCityOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const choose = async (role: Onboarding) => {
@@ -186,6 +190,34 @@ export function OnboardingPage() {
           </span>
         </button>
       </div>
+
+      {/*
+        Свой город внизу, под дверями.
+        Геолокацию человек мог и не разрешить, а искать по всей стране
+        бессмысленно: диван не повезут из другого региона. Выбранный
+        город становится первым фильтром в лентах — до тех пор, пока
+        человек сам его не снимет.
+      */}
+      <button type="button" className="home-city" onClick={() => setCityOpen(true)}>
+        <span className="home-city__pin" aria-hidden>
+          📍
+        </span>
+        <span className="home-city__body">
+          <span className="home-city__label">Мой город</span>
+          <span className="home-city__value">{homeCity ?? 'Выберите, чтобы видеть своё рядом'}</span>
+        </span>
+        <span className="home-city__chevron" aria-hidden>
+          ›
+        </span>
+      </button>
+
+      {cityOpen && (
+        <CitySheet
+          current={homeCity ?? undefined}
+          onPick={(value) => setHomeCity(value)}
+          onClose={() => setCityOpen(false)}
+        />
+      )}
 
       <p className="onboarding__note">
         Отдельная регистрация не нужна — вы уже вошли через Telegram. Выбор влияет только на то,

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
+import { useDefaultCity } from '../lib/home-city';
 import { useAsync, useDebounced } from '../lib/useAsync';
 import { usePagedFeed } from '../lib/usePagedFeed';
 import { EmptyState } from '../components/states';
@@ -30,6 +31,7 @@ const FEED_PAGE_SIZE = 6;
 export function WantedPage() {
   const isAuthenticated = useIsAuthenticated();
   const [searchParams, setSearchParams] = useSearchParams();
+  useDefaultCity(searchParams, setSearchParams);
   const categorySlug = searchParams.get('category') ?? undefined;
   const city = searchParams.get('city') ?? undefined;
 

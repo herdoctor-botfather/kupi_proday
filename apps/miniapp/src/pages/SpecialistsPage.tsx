@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { NEARBY_RADII_KM, type SpecialistListItem } from '@app/shared';
 import { api, type SpecialistFilters } from '../lib/api';
+import { useDefaultCity } from '../lib/home-city';
 import { useAsync, useDebounced } from '../lib/useAsync';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SearchInput } from '../components/SearchInput';
@@ -33,6 +34,10 @@ export function SpecialistsPage() {
   const lat = searchParams.get('lat');
   const lng = searchParams.get('lng');
   const hasCoords = lat !== null && lng !== null;
+
+  // Пришли с координатами — место известно точнее города, и подставлять
+  // его значило бы отменить поиск по расстоянию, ради которого и пришли.
+  useDefaultCity(searchParams, setSearchParams, !hasCoords);
 
   const [query, setQuery] = useState(searchParams.get('q') ?? '');
   const debouncedQuery = useDebounced(query);

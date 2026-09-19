@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { LISTING_CONDITIONS, type ListingListItem } from '@app/shared';
 import { api } from '../lib/api';
+import { useDefaultCity } from '../lib/home-city';
 import { useAsync, useDebounced } from '../lib/useAsync';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SearchInput } from '../components/SearchInput';
@@ -15,6 +16,7 @@ type Sort = keyof typeof SORT_LABELS;
 /** Витрина объявлений с поиском и фильтрами. Фильтры живут в адресной строке. */
 export function MarketBrowsePage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  useDefaultCity(searchParams, setSearchParams);
   const categorySlug = searchParams.get('category') ?? undefined;
   const city = searchParams.get('city') ?? undefined;
   const condition = searchParams.get('condition') ?? undefined;

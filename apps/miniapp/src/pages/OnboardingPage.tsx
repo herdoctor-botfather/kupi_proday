@@ -138,9 +138,10 @@ export function OnboardingPage() {
           <span className="role-card__photo">
             <img src="/doors/wanted.jpg" alt="Доска с записками: люди пишут, что ищут" loading="lazy" />
           </span>
-          <span className="role-card__title">Кому что надо сейчас</span>
+          <span className="role-card__title">Запросы на покупку или обмен</span>
           <span className="role-card__text">
-            Люди пишут, что ищут. Возможно, это лежит у вас без дела
+            Здесь люди ждут предложений — предложите, если у вас есть то, что им нужно.
+            А не нашли нужное сами — оставьте свой запрос
           </span>
           <span className="role-card__action">
             {saving === 'WANTED' ? 'Открываем...' : 'Смотреть спрос →'}

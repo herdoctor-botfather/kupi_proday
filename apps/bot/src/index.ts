@@ -163,6 +163,31 @@ bot.command('market', async (ctx) => {
   );
 });
 
+/*
+ * Короткие команды в те разделы, куда ходят чаще всего.
+ *
+ * Каждая — это одно сообщение с кнопкой, а не экран в боте: содержательная
+ * работа всё равно происходит в приложении, и второй интерфейс поверх него
+ * строить незачем. Ценность команды в том, что она короче трёх нажатий.
+ */
+const SHORTCUTS: [string, string, string, string][] = [
+  ['urgent', '⚡️ Надо срочно', 'Позовём всех подходящих мастеров вашего города сразу.', 'urgent'],
+  ['sell', '🏷 Разместить объявление', 'Название, цена, фотографии — и на витрину.', 'sell'],
+  ['wanted', '🔍 Запросы на покупку', 'Люди ждут предложений — возможно, это лежит у вас без дела.', 'wanted'],
+  [
+    'referrals',
+    '🎁 Пригласить друзей',
+    'За приглашённых дарим Telegram Premium. Ваша ссылка — внутри.',
+    'referrals',
+  ],
+];
+
+for (const [command, button, text, param] of SHORTCUTS) {
+  bot.command(command, async (ctx) => {
+    await ctx.reply(text, { reply_markup: singleButton(button, param) });
+  });
+}
+
 bot.command('help', async (ctx) => {
   await replyWithBanner(ctx, 'help', messages.HELP_CAPTION, mainKeyboard(), messages.HELP);
 });
@@ -189,6 +214,29 @@ bot.catch((error) => {
 async function main() {
   const me = await bot.api.getMe();
   console.log(`Бот @${me.username} запущен. Mini App: ${appUrl()}`);
+
+  /*
+   * Список команд для меню «/».
+   *
+   * Обработчики без этого списка работают, но человек о них не знает:
+   * поле ввода пустое, и догадаться набрать /cabinet неоткуда. Список
+   * и есть единственное место, где бот рассказывает, что умеет.
+   */
+  try {
+    await bot.api.setMyCommands([
+      { command: 'start', description: 'Начать и выбрать раздел' },
+      { command: 'urgent', description: '⚡️ Надо срочно — позвать мастера' },
+      { command: 'market', description: '🛍 Купи-продай: витрина и объявления' },
+      { command: 'sell', description: '🏷 Разместить объявление' },
+      { command: 'wanted', description: '🔍 Запросы на покупку и обмен' },
+      { command: 'draw', description: '🎨 Нарисовать картинку' },
+      { command: 'cabinet', description: '👤 Личный кабинет: баланс и анкета' },
+      { command: 'referrals', description: '🎁 Пригласить друзей' },
+      { command: 'help', description: 'Что умеет бот' },
+    ]);
+  } catch (error) {
+    console.error('Не удалось обновить список команд:', error);
+  }
 
   // Кнопка меню рядом с полем ввода ведёт на тот же адрес, что и кнопки
   // в сообщениях, — иначе через неё открывалась бы прошлая версия из кэша.

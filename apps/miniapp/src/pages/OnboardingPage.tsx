@@ -5,6 +5,19 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { haptic } from '../lib/telegram';
 import { markRoleChosen } from '../lib/session';
+/*
+ * Обложки дверей импортируются, а не лежат в public.
+ *
+ * Статика отдаётся с заголовком «это никогда не изменится», и подмена
+ * файла под тем же именем до людей не доходит: у одних новая картинка,
+ * у других годами старая. Импорт добавляет в имя отпечаток содержимого,
+ * и новая картинка получает новый адрес — обещание снова честное.
+ */
+import doorCatalog from '../assets/doors/catalog.jpg';
+import doorApply from '../assets/doors/apply.jpg';
+import doorMarket from '../assets/doors/market.jpg';
+import doorWanted from '../assets/doors/wanted.jpg';
+import doorUrgent from '../assets/doors/urgent.jpg';
 
 /**
  * Стартовый экран: кто пришёл — заказчик или исполнитель.
@@ -67,7 +80,7 @@ export function OnboardingPage() {
         >
           {user?.onboardedAs === 'CLIENT' && <span className="role-card__mark">Прошлый выбор</span>}
           <span className="role-card__photo">
-            <img src="/doors/catalog.jpg" alt="Телефон в руке у сломанной стиральной машины" loading="lazy" />
+            <img src={doorCatalog} alt="Телефон в руке у сломанной стиральной машины" loading="lazy" />
           </span>
           <span className="role-card__title">Надо мастера</span>
           <span className="role-card__text">
@@ -86,7 +99,7 @@ export function OnboardingPage() {
         >
           {user?.onboardedAs === 'SPECIALIST' && <span className="role-card__mark">Прошлый выбор</span>}
           <span className="role-card__photo">
-            <img src="/doors/apply.jpg" alt="Мастер за работой в мастерской" loading="lazy" />
+            <img src={doorApply} alt="Мастер за работой в мастерской" loading="lazy" />
           </span>
           <span className="role-card__title">Я и есть мастер</span>
           <span className="role-card__text">
@@ -111,7 +124,7 @@ export function OnboardingPage() {
         >
           {user?.onboardedAs === 'MARKET' && <span className="role-card__mark">Прошлый выбор</span>}
           <span className="role-card__photo">
-            <img src="/doors/market.jpg" alt="Фотоаппарат, одежда и гитара, готовые к продаже" loading="lazy" />
+            <img src={doorMarket} alt="Фотоаппарат, одежда и гитара, готовые к продаже" loading="lazy" />
           </span>
           <span className="role-card__title">Надо купить или продать</span>
           <span className="role-card__text">
@@ -136,7 +149,7 @@ export function OnboardingPage() {
         >
           {user?.onboardedAs === 'WANTED' && <span className="role-card__mark">Прошлый выбор</span>}
           <span className="role-card__photo">
-            <img src="/doors/wanted.jpg" alt="Доска с записками: люди пишут, что ищут" loading="lazy" />
+            <img src={doorWanted} alt="Доска с записками: люди пишут, что ищут" loading="lazy" />
           </span>
           <span className="role-card__title">Запросы на покупку или обмен</span>
           <span className="role-card__text">
@@ -162,7 +175,7 @@ export function OnboardingPage() {
         >
           {user?.onboardedAs === 'URGENT' && <span className="role-card__mark">Прошлый выбор</span>}
           <span className="role-card__photo">
-            <img src="/doors/urgent.jpg" alt="Коробку заклеивают скотчем рядом с будильником" loading="lazy" />
+            <img src={doorUrgent} alt="Коробку заклеивают скотчем рядом с будильником" loading="lazy" />
           </span>
           <span className="role-card__title">⚡️ Надо срочно продать или купить</span>
           <span className="role-card__text">

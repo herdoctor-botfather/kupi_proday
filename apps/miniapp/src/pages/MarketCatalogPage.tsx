@@ -56,8 +56,17 @@ export function MarketCatalogPage() {
     if (trimmed) navigate(`/market/listings?q=${encodeURIComponent(trimmed)}`);
   };
 
-  // Пустые категории показывать незачем — в услугах то же правило.
-  const filled = (categories.data ?? []).filter((category) => category.itemCount > 0);
+  /*
+   * Показываем все разделы, непустые первыми.
+   *
+   * Раньше пустые прятались, и человек с машиной или гаражом видел
+   * витрину без «Транспорта» и «Недвижимости» — и уходил, решив, что
+   * такое здесь не продают. Пустой раздел не обещает выбора, он
+   * очерчивает, что площадка вообще принимает, и зовёт быть первым.
+   */
+  const all = categories.data ?? [];
+  const filled = all.filter((category) => category.itemCount > 0);
+  const sections = [...filled, ...all.filter((category) => category.itemCount === 0)];
   const total = filled.reduce((sum, category) => sum + category.itemCount, 0);
 
   return (
@@ -82,15 +91,9 @@ export function MarketCatalogPage() {
         {(items) =>
           items.length === 0 ? (
             <EmptyState icon="📭" title="Категории ещё не заведены" hint="Добавьте их в админ-панели" />
-          ) : filled.length === 0 ? (
-            <EmptyState
-              icon="📦"
-              title="Объявлений пока нет"
-              hint="Разместите первое — оно появится здесь после проверки"
-            />
           ) : (
             <div className="categories">
-              {filled.map((category) => (
+              {sections.map((category) => (
                 <button
                   key={category.id}
                   type="button"
@@ -106,8 +109,9 @@ export function MarketCatalogPage() {
                 >
                   <span className="category__name">{category.name}</span>
                   <span className="category__count">
-                    {category.itemCount}{' '}
-                    {pluralize(category.itemCount, ['объявление', 'объявления', 'объявлений'])}
+                    {category.itemCount > 0
+                      ? `${category.itemCount} ${pluralize(category.itemCount, ['объявление', 'объявления', 'объявлений'])}`
+                      : 'Пока пусто'}
                   </span>
                 </button>
               ))}

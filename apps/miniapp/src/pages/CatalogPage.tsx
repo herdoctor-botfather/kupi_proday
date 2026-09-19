@@ -127,8 +127,9 @@ export function CatalogPage() {
                 >
                   <span className="category__name">{category.name}</span>
                   <span className="category__count">
-                    {category.itemCount}{' '}
-                    {pluralize(category.itemCount, ['мастер', 'мастера', 'мастеров'])}
+                    {category.itemCount > 0
+                      ? `${category.itemCount} ${pluralize(category.itemCount, ['мастер', 'мастера', 'мастеров'])}`
+                      : 'Пока пусто'}
                   </span>
                 </button>
               ))}

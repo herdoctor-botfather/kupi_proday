@@ -195,7 +195,9 @@ async function main() {
   // Не критично для работы бота, поэтому ошибка сюда его не роняет.
   try {
     await bot.api.setChatMenuButton({
-      menu_button: { type: 'web_app', text: 'Открыть', web_app: { url: appUrl() } },
+      // «Войти в NADO», а не «Открыть»: кнопка стоит рядом с полем ввода
+      // и работает вывеской — человек должен видеть, куда именно входит.
+      menu_button: { type: 'web_app', text: 'Войти в NADO', web_app: { url: appUrl() } },
     });
   } catch (error) {
     console.error('Не удалось обновить кнопку меню:', error);

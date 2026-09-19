@@ -15,6 +15,8 @@
 const ROUTES: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
   [/^specialist_([a-z0-9-]{1,64})$/i, (m) => `/specialist/${m[1]}`],
   [/^listing_([a-z0-9-]{1,64})$/i, (m) => `/listing/${m[1]}`],
+  // Заказчик глазами мастера: профиль плюс заявка, на которую надо ответить.
+  [/^client_([a-z0-9]{1,30})_([a-z0-9]{1,30})$/i, (m) => `/seller/${m[1]}?request=${m[2]}`],
   [/^catalog$/i, () => '/'],
   [/^market$/i, () => '/market'],
   [/^wanted$/i, () => '/wanted'],

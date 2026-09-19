@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { SpecialistDetail } from '@app/shared';
 import { api, type PublicProfile } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
@@ -8,6 +8,7 @@ import { Rating, RatingBreakdown } from '../components/Rating';
 import { ReviewForm, ReviewList } from '../components/Reviews';
 import { ServiceRequestAction } from '../components/ServiceRequestAction';
 import { PersonListings } from '../components/PersonListings';
+import { PendingRequestBanner } from '../components/PendingRequestBanner';
 import { FavoriteButton } from '../components/FavoriteButton';
 import { ReportButton } from '../components/ReportButton';
 import { ShareButton } from '../components/ShareButton';
@@ -37,6 +38,9 @@ export function PersonPage({ by }: { by: 'slug' | 'user' }) {
   const key = (by === 'slug' ? params.idOrSlug : params.id) ?? '';
   const navigate = useNavigate();
   const isAuthenticated = useIsAuthenticated();
+  // Мастер пришёл посмотреть на заказчика из заявки — её и показываем сверху.
+  const [searchParams] = useSearchParams();
+  const requestId = searchParams.get('request');
   const [reviewsVersion, setReviewsVersion] = useState(0);
 
   /*
@@ -93,6 +97,8 @@ export function PersonPage({ by }: { by: 'slug' | 'user' }) {
   return (
     <div className="page">
       <>
+              {requestId && isAuthenticated && <PendingRequestBanner requestId={requestId} />}
+
               <PersonHeader profile={profile.data} specialist={specialist} />
 
               {specialist && (

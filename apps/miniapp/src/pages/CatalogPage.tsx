@@ -12,6 +12,20 @@ import { haptic } from '../lib/telegram';
 import { pluralize } from '../lib/format';
 import { categoryStyle } from '../lib/category-colors';
 
+/*
+ * Обложки категорий — через сборку, а не из public/: сервер отдаёт
+ * картинки с кэшем на год, и новая обложка под старым именем у части
+ * людей так и не появлялась. Сборка даёт каждой версии своё имя.
+ */
+const COVERS: Record<string, string> = Object.fromEntries(
+  Object.entries(
+    import.meta.glob<string>('../assets/categories/*.jpg', { eager: true, import: 'default' }),
+  ).map(([path, url]) => [path.replace(/^.*\/|\.jpg$/g, ''), url]),
+);
+
+/** Категорию завели в админке, а обложку ещё не нарисовали — берём общую. */
+const coverOf = (slug: string): string => COVERS[slug] ?? COVERS['other-services'];
+
 /** Сколько карточек показывает лента за раз. */
 const FEED_PAGE_SIZE = 4;
 
@@ -104,7 +118,7 @@ export function CatalogPage() {
                     ...categoryStyle(category.slug),
                     // Снимок задаётся фоном, а не тегом img: плитке нужен
                     // именно фон, поверх которого лежит затемнение и текст.
-                    backgroundImage: `url(/categories/${category.slug}.jpg)`,
+                    backgroundImage: `url(${coverOf(category.slug)})`,
                   }}
                   onClick={() => {
                     haptic.tap();

@@ -42,7 +42,7 @@ export class NotificationsService {
    * чем мастер успеет согласиться. Нажатие обрабатывает бот и возвращает
    * решение сюда же, на сервер: правила остаются в одном месте.
    */
-  notifyWithActions(userId: string, text: string, actions: { text: string; data: string }[]): void {
+  notifyWithActions(userId: string, text: string, actions: NotifyAction[]): void {
     if (!config.notificationsEnabled) return;
     void this.send(userId, text, undefined, actions).catch((error: unknown) => {
       this.logger.warn(`Не удалось уведомить ${userId}: ${String(error)}`);
@@ -63,7 +63,7 @@ export class NotificationsService {
     userId: string,
     text: string,
     buttonUrl?: string,
-    actions?: { text: string; data: string }[],
+    actions?: NotifyAction[],
   ): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -86,10 +86,9 @@ export class NotificationsService {
         ...(actions?.length
           ? {
               // Кнопки действия в один ряд: их две, и выбор между ними
-              // должен читаться как выбор, а не как список.
-              reply_markup: {
-                inline_keyboard: [actions.map((action) => ({ text: action.text, callback_data: action.data }))],
-              },
+              // должен читаться как выбор, а не как список. Переходы в
+              // приложение — отдельными рядами ниже: это не ответ, а справка.
+              reply_markup: { inline_keyboard: keyboard(actions) },
             }
           : buttonUrl
             ? { reply_markup: { inline_keyboard: [[{ text: 'Открыть приложение', web_app: { url: buttonUrl } }]] } }
@@ -121,4 +120,23 @@ export class NotificationsService {
   get miniAppUrl(): string | undefined {
     return config.MINIAPP_URL || undefined;
   }
+
+  /** Адрес Mini App, открывающий конкретный экран через параметр запуска. */
+  appLink(startParam: string): string | undefined {
+    const base = this.miniAppUrl;
+    if (!base) return undefined;
+    return `${base}${base.includes('?') ? '&' : '?'}tgWebAppStartParam=${encodeURIComponent(startParam)}`;
+  }
+}
+
+/**
+ * Кнопка под уведомлением: либо ответ, который обработает бот, либо
+ * переход в приложение на конкретный экран.
+ */
+export type NotifyAction = { text: string; data: string } | { text: string; webApp: string };
+
+function keyboard(actions: NotifyAction[]): object[][] {
+  const answers = actions.flatMap((a) => ('data' in a ? [{ text: a.text, callback_data: a.data }] : []));
+  const links = actions.flatMap((a) => ('webApp' in a ? [[{ text: a.text, web_app: { url: a.webApp } }]] : []));
+  return [...(answers.length ? [answers] : []), ...links];
 }

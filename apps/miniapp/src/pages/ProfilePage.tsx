@@ -428,6 +428,18 @@ function IncomingRequests() {
             </button>
           </div>
 
+          <button
+            type="button"
+            className="button button--secondary button--sm"
+            style={{ marginTop: 8 }}
+            onClick={() => {
+              haptic.tap();
+              navigate(`/seller/${item.client.id}?request=${item.id}`);
+            }}
+          >
+            👤 Профиль заказчика
+          </button>
+
           <p className="form-hint">
             Переписка откроется сразу после согласия. Если промолчать, заявка сгорит.
           </p>

@@ -78,6 +78,11 @@ export class ServiceRequestsService {
       select: { firstName: true },
     });
 
+    // Прежде чем соглашаться, мастер вправе посмотреть, кто к нему идёт:
+    // отзывы о человеке, его объявления. Написать ему со страницы нельзя —
+    // переписка по-прежнему открывается только согласием.
+    const profileLink = this.notifications.appLink(`client_${clientId}_${request.id}`);
+
     this.notifications.notifyWithActions(
       specialist.userId,
       `🔔 <b>Заявка на услугу</b>\n\n${escapeHtml(client?.firstName ?? 'Заказчик')} хочет воспользоваться вашей услугой.` +
@@ -86,6 +91,7 @@ export class ServiceRequestsService {
       [
         { text: '✅ Принять запрос', data: `req:accept:${request.id}` },
         { text: '✖️ Отказать', data: `req:decline:${request.id}` },
+        ...(profileLink ? [{ text: '👤 Профиль заказчика', webApp: profileLink }] : []),
       ],
     );
 

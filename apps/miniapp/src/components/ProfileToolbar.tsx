@@ -78,7 +78,7 @@ const TIPS: { icon: string; title: string; text: string }[] = [
  * площадка маленькая, ответить лично быстрее и полезнее, чем заводить
  * очередь обращений, которую некому разбирать.
  */
-const SUPPORT = 'tatisun92';
+const SUPPORT = 'NADO_SUP';
 
 /** Верхняя строка кабинета: поддержка слева, помощь справа. */
 export function ProfileToolbar() {

@@ -187,15 +187,34 @@ export function MapPage() {
     renderMarkers();
   }, [renderMarkers]);
 
-  // ─── Центрирование на выбранном специалисте из карточки профиля ───
+  /*
+   * Центрирование на мастере из его карточки — ровно один раз.
+   *
+   * Раньше эффект зависел от списка меток и срабатывал при каждой их
+   * подгрузке: человек отдалял карту, подгружались новые метки, и зум
+   * снова прыгал на пятнадцатый. Отдалиться было невозможно.
+   *
+   * Координаты берём у самого мастера, а не из загруженных меток: карта
+   * открывается на Москве, и мастер из другого города в первую выборку
+   * не попадает — искать его среди меток значило не найти вовсе.
+   */
+  const focusedRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!focusId || !mapRef.current) return;
-    const target = specialists.find((s) => s.id === focusId);
-    if (target?.lat && target.lng) {
-      mapRef.current.setCenter([target.lat, target.lng], 15, { duration: 300 });
-      setSelected(target);
-    }
-  }, [focusId, specialists]);
+    if (!focusId || status !== 'ready' || !mapRef.current) return;
+    if (focusedRef.current === focusId) return;
+    focusedRef.current = focusId;
+
+    void api
+      .specialist(focusId)
+      .then((target) => {
+        if (target.lat === null || target.lng === null) return;
+        mapRef.current?.setCenter([target.lat, target.lng], 15, { duration: 300 });
+        setSelected(target);
+      })
+      .catch(() => {
+        // Мастера не нашли — просто оставляем карту как есть.
+      });
+  }, [focusId, status]);
 
   // ─── Центрирование по геолокации ───
   useEffect(() => {

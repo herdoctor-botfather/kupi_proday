@@ -169,7 +169,7 @@ export function OnboardingPage() {
         */}
         <button
           type="button"
-          className={`role-card role-card--banner${user?.onboardedAs === 'URGENT' ? ' role-card--previous' : ''}`}
+          className={`role-card role-card--banner role-card--wide${user?.onboardedAs === 'URGENT' ? ' role-card--previous' : ''}`}
           onClick={() => choose('URGENT')}
           disabled={saving !== null}
         >
@@ -188,8 +188,8 @@ export function OnboardingPage() {
       </div>
 
       <p className="onboarding__note">
-        Отдельная регистрация не нужна: вы уже вошли через Telegram. Пароли приложение не хранит.
-        Каталог и карта доступны в обоих случаях — выбор влияет только на то, что открыть первым.
+        Отдельная регистрация не нужна — вы уже вошли через Telegram. Выбор влияет только на то,
+        какой экран открыть первым, и меняется в любой момент.
       </p>
     </div>
   );

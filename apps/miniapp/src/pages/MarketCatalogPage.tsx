@@ -13,6 +13,17 @@ import { haptic } from '../lib/telegram';
 import { pluralize } from '../lib/format';
 import { categoryStyle } from '../lib/category-colors';
 
+/* Обложки категорий товаров — через сборку, как и у услуг: своё имя
+   у каждой версии файла, поэтому обновлённая картинка не застревает
+   в кэше на год. */
+const COVERS: Record<string, string> = Object.fromEntries(
+  Object.entries(
+    import.meta.glob<string>('../assets/goods/*.jpg', { eager: true, import: 'default' }),
+  ).map(([path, url]) => [path.replace(/^.*\/|\.jpg$/g, ''), url]),
+);
+
+const coverOf = (slug: string): string | undefined => COVERS[slug] ?? COVERS['other-goods'];
+
 /** Сколько городов показываем: длинный список превращается в стену чипов. */
 const CITIES_SHOWN = 8;
 
@@ -83,16 +94,16 @@ export function MarketCatalogPage() {
                 <button
                   key={category.id}
                   type="button"
-                  className="category"
-                  style={categoryStyle(category.slug)}
+                  className="category category--photo"
+                  style={{
+                    ...categoryStyle(category.slug),
+                    backgroundImage: `url(${coverOf(category.slug)})`,
+                  }}
                   onClick={() => {
                     haptic.tap();
                     navigate(`/market/listings?category=${category.slug}`);
                   }}
                 >
-                  <span className="category__icon" aria-hidden>
-                    {category.icon}
-                  </span>
                   <span className="category__name">{category.name}</span>
                   <span className="category__count">
                     {category.itemCount}{' '}

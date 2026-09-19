@@ -1280,6 +1280,49 @@ body::before {
   z-index: 1;
 }
 
+/*
+ * Двери плитками, а не колонкой.
+ *
+ * Пять баннеров в столбик не помещались на экран, и нижние двери жили
+ * за прокруткой — а это стартовый экран, где человек выбирает, зачем
+ * он пришёл: то, что ниже сгиба, он просто не рассматривает. В сетке
+ * видны все пять сразу, поэтому у каждой двери равные шансы.
+ */
+.onboarding .role-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.onboarding .role-card--wide {
+  grid-column: 1 / -1;
+}
+
+.onboarding .role-card__photo {
+  height: 86px;
+}
+
+.onboarding .role-card__title {
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+/* Описание остаётся в разметке для поиска и озвучивания, но на плитке
+   не показывается: абзац в колонку шириной с ладонь не читают. */
+.onboarding .role-card__text {
+  display: none;
+}
+
+.onboarding .role-card--banner .role-card__action {
+  font-size: 12px;
+  padding-bottom: 12px;
+}
+
+.onboarding__note {
+  margin-top: 16px;
+  font-size: 11.5px;
+}
+
 /* ─── Список городов ─── */
 
 .city-sheet__list {

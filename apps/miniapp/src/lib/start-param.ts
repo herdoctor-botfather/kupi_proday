@@ -23,6 +23,7 @@ const ROUTES: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
   [/^urgent$/i, () => '/market/urgent'],
   [/^apply$/i, () => '/profile/my-card'],
   [/^chats$/i, () => '/chats'],
+  [/^referrals$/i, () => '/profile/referrals'],
   // Приглашение — не адрес: код уже ушёл на сервер при входе, а человека
   // ведём на главную, а не на пустой экран «страница не найдена».
   [/^ref_[a-z0-9]{1,40}$/i, () => '/'],

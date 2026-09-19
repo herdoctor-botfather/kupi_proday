@@ -67,7 +67,7 @@ export function OnboardingPage() {
         >
           {user?.onboardedAs === 'CLIENT' && <span className="role-card__mark">Прошлый выбор</span>}
           <span className="role-card__photo">
-            <img src="/doors/catalog.jpg" alt="Мужчина у сломанной машины ищет помощь в телефоне" loading="lazy" />
+            <img src="/doors/catalog.jpg" alt="Телефон в руке у сломанной стиральной машины" loading="lazy" />
           </span>
           <span className="role-card__title">Надо мастера</span>
           <span className="role-card__text">
@@ -111,7 +111,7 @@ export function OnboardingPage() {
         >
           {user?.onboardedAs === 'MARKET' && <span className="role-card__mark">Прошлый выбор</span>}
           <span className="role-card__photo">
-            <img src="/doors/market.jpg" alt="Вещи, разложенные для продажи" loading="lazy" />
+            <img src="/doors/market.jpg" alt="Фотоаппарат, одежда и гитара, готовые к продаже" loading="lazy" />
           </span>
           <span className="role-card__title">Надо купить или продать</span>
           <span className="role-card__text">
@@ -136,7 +136,7 @@ export function OnboardingPage() {
         >
           {user?.onboardedAs === 'WANTED' && <span className="role-card__mark">Прошлый выбор</span>}
           <span className="role-card__photo">
-            <img src="/doors/wanted.jpg" alt="Человек ищет нужное в телефоне" loading="lazy" />
+            <img src="/doors/wanted.jpg" alt="Доска с записками: люди пишут, что ищут" loading="lazy" />
           </span>
           <span className="role-card__title">Кому что надо сейчас</span>
           <span className="role-card__text">
@@ -161,7 +161,7 @@ export function OnboardingPage() {
         >
           {user?.onboardedAs === 'URGENT' && <span className="role-card__mark">Прошлый выбор</span>}
           <span className="role-card__photo">
-            <img src="/doors/market.jpg" alt="Вещи, выставленные на срочную продажу" loading="lazy" />
+            <img src="/doors/urgent.jpg" alt="Коробку заклеивают скотчем рядом с будильником" loading="lazy" />
           </span>
           <span className="role-card__title">⚡️ Надо срочно продать или купить</span>
           <span className="role-card__text">

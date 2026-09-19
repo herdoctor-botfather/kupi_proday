@@ -1400,6 +1400,141 @@ body::before {
   font-size: 18px;
 }
 
+/* Варианты характеристики: переносятся по строкам, а не уезжают вбок —
+   в форме важно видеть все сразу, чтобы выбрать один раз и верно. */
+.attr-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.field__required {
+  color: var(--destructive);
+}
+
+/* Характеристики в карточке: двумя столбцами, как в паспорте товара. */
+.specs {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.specs__row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.specs__name {
+  color: var(--text-hint);
+  font-size: 13.5px;
+  white-space: nowrap;
+}
+
+/* Точечный поводок между названием и значением: без него взгляд
+   теряет строку на длинных списках. */
+.specs__row::after {
+  content: '';
+  order: 1;
+  flex: 1;
+  border-bottom: 1px dotted var(--hairline);
+  transform: translateY(-3px);
+}
+
+.specs__value {
+  order: 2;
+  margin: 0;
+  font-weight: 500;
+  text-align: right;
+}
+
+/* ─── Пошаговый выбор категории ─── */
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 10px;
+  font-size: 12.5px;
+  color: var(--text-hint);
+}
+
+.crumbs__item {
+  color: var(--text-hint);
+}
+
+.crumbs__item--current {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.crumbs__sep {
+  opacity: 0.5;
+}
+
+.crumbs__sep-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-secondary);
+  border: 1px solid var(--hairline);
+}
+
+/*
+ * Строки списка, а не плитки: выбор из двадцати вариантов читается
+ * сверху вниз одним движением глаз, а сетка заставляет их метаться.
+ */
+.step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 15px;
+  text-align: left;
+  color: var(--text);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.step:last-child {
+  border-bottom: none;
+}
+
+.step:active {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.step__name {
+  flex: 1;
+  min-width: 0;
+}
+
+.step__side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step__count {
+  font-size: 12.5px;
+  color: var(--text-hint);
+}
+
+.step__chevron {
+  color: var(--text-hint);
+  font-size: 17px;
+}
+
 /* ─── Список городов ─── */
 
 .city-sheet__list {

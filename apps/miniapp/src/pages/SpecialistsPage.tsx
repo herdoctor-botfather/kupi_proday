@@ -186,6 +186,7 @@ export function SpecialistsPage() {
         categories={serviceCategories.data ?? []}
         current={categorySlug}
         onChange={(slug) => setParam('category', slug)}
+        stepsPath="/services/c"
         allLabel="Все услуги"
       />
 

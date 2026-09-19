@@ -1,39 +1,40 @@
 import type {
-  ListingKind,
-  ApiError,
-  AuthResponse,
-  Category,
-  ChatMessage,
-  ConversationSummary,
-  ConversationThread,
-  CategoryKind,
-  CreateInvoiceDto,
-  CreateReportDto,
-  CreateReviewDto,
-  IncomingServiceRequest,
-  Involvement,
-  ListingDetail,
-  ServiceRequestState,
-  ServiceRequestStatus,
-  ListingDto,
-  ListingListItem,
-  MyListing,
-  CurrentUser,
-  MapBoundsQuery,
-  MySpecialistProfile,
-  Onboarding,
-  Paginated,
-  ProfileViewItem,
-  Review,
-  SpecialistApplicationDto,
-  SpecialistDetail,
-  DemandWatch,
-  UrgentRequest,
-  UrgentRequestDto,
-  DemandWatchDto,
-  ReferralSummary,
-  SpecialistListItem,
-  TextDraftDto,
+  CategoryAttribute,
+  ListingKind,
+  ApiError,
+  AuthResponse,
+  Category,
+  ChatMessage,
+  ConversationSummary,
+  ConversationThread,
+  CategoryKind,
+  CreateInvoiceDto,
+  CreateReportDto,
+  CreateReviewDto,
+  IncomingServiceRequest,
+  Involvement,
+  ListingDetail,
+  ServiceRequestState,
+  ServiceRequestStatus,
+  ListingDto,
+  ListingListItem,
+  MyListing,
+  CurrentUser,
+  MapBoundsQuery,
+  MySpecialistProfile,
+  Onboarding,
+  Paginated,
+  ProfileViewItem,
+  Review,
+  SpecialistApplicationDto,
+  SpecialistDetail,
+  DemandWatch,
+  UrgentRequest,
+  UrgentRequestDto,
+  DemandWatchDto,
+  ReferralSummary,
+  SpecialistListItem,
+  TextDraftDto,
 } from '@app/shared';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '';
@@ -171,6 +172,10 @@ export const api = {
   // у них разные витрины, а категории общие.
   categories: (kind: CategoryKind = 'SERVICE', listingKind?: ListingKind) =>
     request<Category[]>(`/categories${qs({ kind, listingKind })}`),
+
+  /** Что спрашивать и по чему искать в категории: марка, память, пробег. */
+  categoryAttributes: (slug: string) =>
+    request<CategoryAttribute[]>(`/categories/${encodeURIComponent(slug)}/attributes`),
 
   /** Города с опубликованными карточками — для подсказки в поле города. */
   cities: (q?: string) => request<{ name: string; count: number }[]>(`/specialists/cities${qs({ q })}`),

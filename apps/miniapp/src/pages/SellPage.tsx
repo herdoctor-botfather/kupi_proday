@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   LISTING_CONDITIONS,
@@ -10,6 +10,7 @@ import {
 } from '@app/shared';
 import { api } from '../lib/api';
 import { CategoryPicker } from '../components/CategoryPicker';
+import { AttributeFields } from '../components/AttributeFields';
 import { useAsync } from '../lib/useAsync';
 import { ChipsRow } from '../components/ChipsRow';
 import { AsyncContent } from '../components/states';
@@ -31,6 +32,8 @@ interface FormState {
   condition: ListingCondition;
   city: string;
   categoryIds: string[];
+  /** Характеристики: память телефона, пробег машины, размер одежды. */
+  attributes: Record<string, string | number | boolean | null>;
 }
 
 const EMPTY: FormState = {
@@ -43,6 +46,7 @@ const EMPTY: FormState = {
   condition: 'USED',
   city: '',
   categoryIds: [],
+  attributes: {},
 };
 
 /**
@@ -96,6 +100,28 @@ export function SellPage() {
   );
 
   const [form, setForm] = useState<FormState>(EMPTY);
+  /*
+   * Характеристики берём у самой подробной из выбранных категорий.
+   *
+   * Их набор зависит от категории, а выбрать человек может несколько:
+   * спрашиваем по последней выбранной — она и есть уточнение, ради
+   * которого он лез в подкатегории.
+   */
+  const detailedCategory = form.categoryIds[form.categoryIds.length - 1];
+  const categorySlug = useMemo(() => {
+    for (const root of categories.data ?? []) {
+      if (root.id === detailedCategory) return root.slug;
+      const child = (root.children ?? []).find((item) => item.id === detailedCategory);
+      if (child) return child.slug;
+    }
+    return null;
+  }, [categories.data, detailedCategory]);
+
+  const attributes = useAsync(
+    () => (categorySlug ? api.categoryAttributes(categorySlug) : Promise.resolve([])),
+    [categorySlug],
+  );
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -138,6 +164,9 @@ export function SellPage() {
         condition: listing.condition,
         city: listing.city,
         categoryIds: listing.categories.map((c) => c.id),
+        // Сохранённые значения приходят строками для показа — этого
+        // хватает: в форме те же варианты выбираются по названию.
+        attributes: Object.fromEntries(listing.attributes.map((item) => [item.slug, item.value])),
       });
       setPhotos(listing.photos);
       setKind(listing.kind);
@@ -163,6 +192,7 @@ export function SellPage() {
       condition: form.condition,
       city: form.city.trim(),
       categoryIds: form.categoryIds,
+      attributes: form.attributes,
     });
 
     if (!parsed.success) {
@@ -415,6 +445,12 @@ export function SellPage() {
                 onChange={(ids) => set('categoryIds', ids)}
               />
             </Field>
+
+            <AttributeFields
+              attributes={attributes.data ?? []}
+              values={form.attributes}
+              onChange={(values) => set('attributes', values)}
+            />
 
             <Field label="Город" error={errors.city} required>
               <CityInput value={form.city} onChange={(city) => set('city', city)} invalid={Boolean(errors.city)} />

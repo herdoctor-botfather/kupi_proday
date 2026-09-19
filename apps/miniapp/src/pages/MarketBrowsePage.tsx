@@ -68,6 +68,7 @@ export function MarketBrowsePage() {
         categories={categories.data ?? []}
         current={categorySlug}
         onChange={(slug) => setParam('category', slug)}
+        stepsPath="/market/c"
       />
 
       {/* Город приходит из каталога и снимается только здесь — без этого

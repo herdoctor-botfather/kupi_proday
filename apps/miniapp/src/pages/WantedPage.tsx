@@ -87,6 +87,7 @@ export function WantedPage() {
         categories={categories.data ?? []}
         current={categorySlug}
         onChange={(slug) => setParam('category', slug)}
+        stepsPath="/wanted/c"
         allLabel="Все"
       />
 

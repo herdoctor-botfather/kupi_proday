@@ -104,7 +104,7 @@ export function MarketCatalogPage() {
                   }}
                   onClick={() => {
                     haptic.tap();
-                    navigate(`/market/listings?category=${category.slug}`);
+                    navigate(`/market/c/${category.slug}`);
                   }}
                 >
                   <span className="category__name">{category.name}</span>

@@ -122,7 +122,7 @@ export function CatalogPage() {
                   }}
                   onClick={() => {
                     haptic.tap();
-                    navigate(`/specialists?category=${category.slug}`);
+                    navigate(`/services/c/${category.slug}`);
                   }}
                 >
                   <span className="category__name">{category.name}</span>

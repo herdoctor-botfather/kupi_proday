@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import type { Category } from '@app/shared';
 import { ChipsRow } from './ChipsRow';
 import { haptic } from '../lib/telegram';
@@ -20,6 +21,7 @@ export function CategoryChips({
   current,
   onChange,
   allLabel = 'Все категории',
+  stepsPath,
 }: {
   /** Дерево: разделы с вложенными подкатегориями. */
   categories: Category[];
@@ -27,7 +29,10 @@ export function CategoryChips({
   current?: string;
   onChange: (slug: string | null) => void;
   allLabel?: string;
+  /** Куда вести за подробным выбором: «/market/c» и его собратья. */
+  stepsPath?: string;
 }) {
+  const navigate = useNavigate();
   if (categories.length === 0) return null;
 
   const root =
@@ -61,6 +66,20 @@ export function CategoryChips({
 
       {children.length > 0 && (
         <ChipsRow>
+          {/* Полный выбор — отдельным экраном: в ряду чипов видно три
+              названия из двадцати, и остальные для человека не существуют. */}
+          {stepsPath && root && (
+            <button
+              type="button"
+              className="chip chip--sub"
+              onClick={() => {
+                haptic.tap();
+                navigate(`${stepsPath}/${root.slug}`);
+              }}
+            >
+              Все разделы ›
+            </button>
+          )}
           {/* «Весь раздел» — возврат с полки к шкафу целиком. Без него
               выбранную подкатегорию нельзя расширить обратно, не сбросив
               заодно и раздел. */}

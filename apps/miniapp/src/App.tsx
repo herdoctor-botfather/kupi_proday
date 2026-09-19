@@ -19,6 +19,7 @@ import { ListingPage } from './pages/ListingPage';
 import { MyListingsPage } from './pages/MyListingsPage';
 import { SellHubPage } from './pages/SellHubPage';
 import { PersonPage } from './pages/PersonPage';
+import { CategoryStepPage } from './pages/CategoryStepPage';
 import { SellPage } from './pages/SellPage';
 import { SpecialistsPage } from './pages/SpecialistsPage';
 import { MapPage } from './pages/MapPage';
@@ -151,9 +152,15 @@ function Shell() {
       <Route path="/map" element={<MapPage />} />
       <Route path="/market" element={<MarketPage />} />
       <Route path="/market/browse" element={<MarketCatalogPage />} />
+      {/* Пошаговый выбор: раздел → полка → марка → модель. */}
+      <Route path="/market/c/:slug" element={<CategoryStepPage mode="sell" />} />
+      <Route path="/wanted/c/:slug" element={<CategoryStepPage mode="buy" />} />
+      <Route path="/services/c/:slug" element={<CategoryStepPage mode="service" />} />
       <Route path="/market/listings" element={<MarketBrowsePage />} />
       <Route path="/wanted" element={<WantedHubPage />} />
       <Route path="/wanted/browse" element={<WantedPage />} />
+      {/* Выдача запросов с фильтрами — та же страница, что и витрина. */}
+      <Route path="/wanted/all" element={<WantedPage />} />
       <Route path="/wanted/new" element={<SellPage />} />
       <Route path="/market/selling" element={<SellHubPage />} />
       <Route path="/market/my" element={<MyListingsPage />} />

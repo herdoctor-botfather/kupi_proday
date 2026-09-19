@@ -97,6 +97,22 @@ export function ListingPage() {
 
               <SellerAction listing={listing} isAuthenticated={isAuthenticated} />
 
+              {/* Характеристики выше описания: память, пробег и размер
+                  решают дело раньше, чем рассказ продавца словами. */}
+              {listing.attributes.length > 0 && (
+                <>
+                  <h2 className="section-title">Характеристики</h2>
+                  <dl className="specs">
+                    {listing.attributes.map((item) => (
+                      <div className="specs__row" key={item.slug}>
+                        <dt className="specs__name">{item.name}</dt>
+                        <dd className="specs__value">{item.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </>
+              )}
+
               {listing.description && (
                 <>
                   <h2 className="section-title">

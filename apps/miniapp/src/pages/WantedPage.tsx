@@ -34,7 +34,7 @@ export function WantedPage() {
   const [query, setQuery] = useState(searchParams.get('q') ?? '');
   const debouncedQuery = useDebounced(query);
 
-  const categories = useAsync(() => api.categories('PRODUCT'), []);
+  const categories = useAsync(() => api.categories('PRODUCT', 'BUY'), []);
   const feed = usePagedFeed(
     (page) =>
       api.listings({

@@ -19,7 +19,20 @@ const CONDITION_LABELS: Record<ListingRow['condition'], string> = {
  * низкую цену, требование предоплаты в описании и чужие фотографии.
  */
 export function ListingsPage() {
+  /*
+   * Две вкладки: очередь и витрина.
+   *
+   * После проверки объявление исчезало из админки совсем, и посмотреть,
+   * что сейчас опубликовано, было негде — а именно это и спрашивают чаще
+   * всего: где живое объявление, почему его не видно, снимите с витрины.
+   */
+  const [tab, setTab] = useState<'pending' | 'active'>('pending');
+  const [query, setQuery] = useState('');
   const queue = useAsync(() => api.pendingListings(), []);
+  const published = useAsync(
+    () => (tab === 'active' ? api.listings({ q: query.trim() || undefined }) : Promise.resolve(null)),
+    [tab, query],
+  );
   const [rejecting, setRejecting] = useState<ListingRow | null>(null);
   /** Объявление, открытое целиком для просмотра и правки. */
   const [editing, setEditing] = useState<ListingRow | null>(null);
@@ -46,6 +59,7 @@ export function ListingsPage() {
       await api.moderateListing(row.id, { action: 'reject', reason });
       setRejecting(null);
       queue.reload();
+      published.reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось отклонить');
     } finally {
@@ -134,21 +148,25 @@ export function ListingsPage() {
             >
               Открыть
             </button>
-            <button
-              type="button"
-              className="button button--success"
-              onClick={() => approve(row)}
-              disabled={busyId === row.id}
-            >
-              {row.needsReview ? 'Подтвердить изменения' : 'Опубликовать'}
-            </button>
+            {/* Опубликованное публиковать второй раз незачем: у него
+                остаётся только снятие с витрины. */}
+            {row.status !== 'ACTIVE' || row.needsReview ? (
+              <button
+                type="button"
+                className="button button--success"
+                onClick={() => approve(row)}
+                disabled={busyId === row.id}
+              >
+                {row.needsReview ? 'Подтвердить изменения' : 'Опубликовать'}
+              </button>
+            ) : null}
             <button
               type="button"
               className="button button--secondary"
               onClick={() => setRejecting(row)}
               disabled={busyId === row.id}
             >
-              Отклонить
+              {row.status === 'ACTIVE' && !row.needsReview ? 'Снять с витрины' : 'Отклонить'}
             </button>
           </div>
         </div>
@@ -161,12 +179,56 @@ export function ListingsPage() {
       <div className="page-head">
         <div>
           <h1>Объявления</h1>
-          <p>Товары на проверке. До публикации они не видны на витрине</p>
+          <p>
+            {tab === 'pending'
+              ? 'Товары на проверке. До публикации они не видны на витрине'
+              : 'Опубликованные объявления — то, что сейчас видно людям на витрине'}
+          </p>
         </div>
+      </div>
+
+      <div className="toolbar">
+        <select
+          className="select"
+          value={tab}
+          onChange={(event) => setTab(event.target.value as 'pending' | 'active')}
+        >
+          <option value="pending">
+            На проверке{queue.data?.total ? ` (${queue.data.total})` : ''}
+          </option>
+          <option value="active">Опубликованные</option>
+        </select>
+        {tab === 'active' && (
+          <input
+            className="input"
+            type="search"
+            value={query}
+            placeholder="Название, город или описание"
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        )}
       </div>
 
       {error && <div className="alert alert--error">{error}</div>}
 
+      {tab === 'active' && (
+        <>
+          <AsyncContent state={published}>
+            {(data) =>
+              !data || data.items.length === 0 ? (
+                <EmptyState icon="🛍" title="Ничего не найдено" hint="На витрине нет объявлений по этому запросу" />
+              ) : (
+                <>
+                  <p style={{ opacity: 0.7 }}>Всего на витрине: {data.total}</p>
+                  {renderGroup(data.items, 'На витрине')}
+                </>
+              )
+            }
+          </AsyncContent>
+        </>
+      )}
+
+      {tab === 'pending' && (
       <AsyncContent state={queue}>
         {(data) =>
           data.total === 0 ? (
@@ -184,6 +246,7 @@ export function ListingsPage() {
           )
         }
       </AsyncContent>
+      )}
 
       {editing && (
         <ListingDialog

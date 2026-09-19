@@ -95,6 +95,12 @@ export class AdminController {
     return this.admin.pendingListings();
   }
 
+  /** Уже опубликованные: поиск, правка, снятие с витрины. */
+  @Get('listings')
+  listListings(@Query(new ZodValidationPipe(adminListQuerySchema)) query: AdminListQuery) {
+    return this.admin.listListings(query);
+  }
+
   /** Правка мелочей в объявлении: опечатка, цена, лишний телефон в тексте. */
   @Patch('listings/:id')
   editListing(

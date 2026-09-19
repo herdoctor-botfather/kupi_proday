@@ -1280,6 +1280,28 @@ body::before {
   z-index: 1;
 }
 
+/* ─── Полоса с именем площадки ─── */
+
+.brandbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 30px;
+  padding-bottom: 2px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.brandbar__name {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  /* Отступ справа гасит перекос: межбуквенный интервал добавляется
+     и после последней буквы, и без поправки слово стоит не по центру. */
+  padding-left: 0.18em;
+  color: color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
 /* ─── Шапка каталога ─── */
 
 .hero {

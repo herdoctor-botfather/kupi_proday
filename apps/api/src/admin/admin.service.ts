@@ -249,6 +249,44 @@ export class AdminService {
   }
 
   /**
+   * Опубликованные объявления.
+   *
+   * Очередь показывает только то, что ждёт решения, и после проверки
+   * объявление пропадало из админки совсем: найти уже выложенное,
+   * поправить в нём опечатку или снять его с витрины было неоткуда.
+   */
+  async listListings(params: { q?: string; status?: string; page: number; pageSize: number }) {
+    const where: Prisma.ListingWhereInput = {
+      status: (params.status as Prisma.ListingWhereInput['status']) ?? 'ACTIVE',
+    };
+    if (params.q) {
+      where.OR = [
+        { title: { contains: params.q, mode: 'insensitive' } },
+        { city: { contains: params.q, mode: 'insensitive' } },
+        { description: { contains: params.q, mode: 'insensitive' } },
+      ];
+    }
+    const skip = (params.page - 1) * params.pageSize;
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.listing.findMany({
+        where,
+        include: {
+          categories: { include: { category: true } },
+          photos: { orderBy: { sortOrder: 'asc' } },
+          user: { select: { firstName: true, lastName: true, username: true } },
+        },
+        orderBy: { publishedAt: 'desc' },
+        skip,
+        take: params.pageSize,
+      }),
+      this.prisma.listing.count({ where }),
+    ]);
+
+    return { items, total, page: params.page, pageSize: params.pageSize, hasMore: skip + items.length < total };
+  }
+
+  /**
    * Правка объявления модератором.
    *
    * Только текстовые поля и цена — то, что можно поправить, не меняя

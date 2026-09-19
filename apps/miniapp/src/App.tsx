@@ -98,8 +98,25 @@ function Root() {
 
   return (
     <div className="app">
+      <BrandBar />
       <Shell />
       <TabBar />
+    </div>
+  );
+}
+
+/**
+ * Полоса с именем площадки над прокручиваемой страницей.
+ *
+ * Прокрутку ведёт сама страница, поэтому полоса остаётся на месте без
+ * position: fixed. Имя набрано текстом, а не картинкой: у картинки видны
+ * края и её приходится подгонять под фон, а текст лежит прямо на фоне
+ * каркаса и совпадает с ним при любой теме.
+ */
+function BrandBar() {
+  return (
+    <div className="brandbar" aria-hidden>
+      <span className="brandbar__name">NADO</span>
     </div>
   );
 }

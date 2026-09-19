@@ -247,6 +247,10 @@ export const api = {
   applications: () => request<ApplicationsQueue>('/admin/applications'),
 
   pendingListings: () => request<ListingsQueue>('/admin/listings/pending'),
+
+  /** Опубликованные объявления: страницами, с поиском по названию и городу. */
+  listings: (params: { q?: string; status?: string; page?: number }) =>
+    request<Paginated<ListingRow>>(`/admin/listings${qs(params)}`),
   /** Правка мелочей: опечатка, цена, лишний телефон в описании. */
   editListing: (id: string, dto: AdminEditListingDto) =>
     request<ListingRow>(`/admin/listings/${id}`, { method: 'PATCH', body: JSON.stringify(dto) }),

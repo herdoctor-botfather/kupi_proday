@@ -15,6 +15,7 @@ async function main() {
   const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 
   await bot.api.setMyCommands(COMMANDS);
+  await bot.api.setMyCommands(COMMANDS, { scope: { type: 'all_private_chats' } });
 
   // Имя бота — то, что видно в списке чатов. Задаётся через API с Bot API 7.0,
   // и лучше здесь, чем руками: при переезде на другой токен не забудется.

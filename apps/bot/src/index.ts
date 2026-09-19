@@ -215,6 +215,10 @@ async function main() {
    */
   try {
     await bot.api.setMyCommands(COMMANDS);
+    // В личных чатах Telegram берёт список «для личных чатов», если он
+    // задан, и общий уже не смотрит. Однажды там оказалась одна случайная
+    // команда «s», и меню «/» опустело. Пишем тот же список и туда.
+    await bot.api.setMyCommands(COMMANDS, { scope: { type: 'all_private_chats' } });
   } catch (error) {
     console.error('Не удалось обновить список команд:', error);
   }

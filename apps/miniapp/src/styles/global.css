@@ -5183,3 +5183,62 @@ body {
 .app {
   padding-top: var(--tg-content-safe-area-inset-top, env(safe-area-inset-top, 0px));
 }
+
+/* ─── Подсказка о прокрутке ─── */
+
+/*
+ * Кружок со стрелкой у правого края, над нижней навигацией.
+ *
+ * Полупрозрачный и небольшой: он сообщает, а не требует. Нажатие
+ * пролистывает на экран вперёд — для тех, кому проще ткнуть, чем
+ * тянуть пальцем.
+ */
+.scroll-hint {
+  position: fixed;
+  right: 14px;
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 14px);
+  z-index: 30;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-raised));
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  animation: scroll-hint-bob 1.8s ease-in-out infinite;
+}
+
+.scroll-hint:active {
+  transform: scale(0.94);
+}
+
+/* Лёгкое покачивание: неподвижный значок в углу глаз не замечает. */
+@keyframes scroll-hint-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-hint {
+    animation: none;
+  }
+}
+
+/* Между поиском и городом стояли два отступа подряд — свой у поля и
+   свой у кнопки. Пустая полоса в полсантиметра ни о чём не говорила. */
+.onboarding__search {
+  margin-bottom: 0;
+}
+
+.onboarding .home-city {
+  margin-top: 10px;
+}

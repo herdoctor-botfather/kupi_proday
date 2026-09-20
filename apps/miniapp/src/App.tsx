@@ -22,6 +22,7 @@ import { PersonPage } from './pages/PersonPage';
 import { CategoryStepPage } from './pages/CategoryStepPage';
 import { CareerHubPage } from './pages/CareerHubPage';
 import { SearchPage } from './pages/SearchPage';
+import { ScrollHint } from './components/ScrollHint';
 import { CareerFeedPage } from './pages/CareerFeedPage';
 import { SellPage } from './pages/SellPage';
 import { SpecialistsPage } from './pages/SpecialistsPage';
@@ -104,6 +105,7 @@ function Root() {
     <div className="app">
       <BrandBar />
       <Shell />
+      <ScrollHint />
       <TabBar />
     </div>
   );

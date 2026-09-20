@@ -68,7 +68,7 @@ export function PhotoDraftButton({
         </span>
         <span className="photo-draft__body">
           <span className="photo-draft__title">
-            {busy ? 'Смотрим фотографию…' : 'Заполнить по фотографии'}
+            {busy ? 'Смотрим фотографию…' : 'Создать объявление по фотографии с NADO ИИ'}
           </span>
           <span className="photo-draft__text">
             {busy

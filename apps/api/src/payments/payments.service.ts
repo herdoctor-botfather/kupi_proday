@@ -131,7 +131,13 @@ export class PaymentsService {
     await this.prisma.$transaction(async (tx) => {
       await tx.payment.update({
         where: { id: payment.id },
-        data: { status: 'PAID', paidAt: new Date(), telegramChargeId: dto.telegramChargeId },
+        data: {
+          status: 'PAID',
+          paidAt: new Date(),
+          // Пустой номер списания пишем как отсутствие: в базе он
+          // уникален, и пустые строки столкнулись бы между собой.
+          telegramChargeId: dto.telegramChargeId || null,
+        },
       });
 
       if (payment.purpose === 'SPECIALIST_SUBSCRIPTION') {
@@ -245,6 +251,60 @@ export class PaymentsService {
    * два одновременных запроса иначе оба увидели бы достаточный остаток
    * и оба прошли бы, уведя баланс в минус.
    */
+  /**
+   * Счёт ровно на то, чего не хватает для покупки.
+   *
+   * Раньше платные возможности брались только с внутреннего счёта, а
+   * пополнить его можно было от пятидесяти звёзд. Человек, желавший
+   * картинку за десять, упирался в «сначала пополните кошелёк на
+   * полсотни» — и уходил. Теперь он платит ровно за то, что берёт, а
+   * кошелёк остаётся для тех, кому удобно держать запас.
+   *
+   * Деньги всё равно проходят через счёт: оплата зачисляется на него,
+   * и покупка тут же списывается. Так бухгалтерия остаётся одна на
+   * все случаи, а человек видит привычное «оплатил — получил».
+   */
+  async invoiceForPurchase(
+    userId: string,
+    dto: CreateInvoiceDto,
+  ): Promise<{ url: string; stars: number }> {
+    if (dto.purpose === 'WALLET_TOPUP') {
+      throw new BadRequestException('Для пополнения есть обычный счёт');
+    }
+
+    const order = await this.describeOrder(userId, dto);
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { starsBalance: true },
+    });
+
+    // Просим недостающее, а не полную цену: у кого на счету что-то
+    // есть, тот доплачивает разницу.
+    const missing = Math.max(1, order.stars - user.starsBalance);
+    const payload = `p_${randomUUID().replace(/-/g, '')}`;
+
+    await this.prisma.payment.create({
+      data: {
+        userId,
+        // Назначение — пополнение: покупка спишется отдельной записью
+        // сразу после зачисления, и в истории будет видно обе стороны.
+        purpose: 'WALLET_TOPUP',
+        stars: missing,
+        invoicePayload: payload,
+      },
+      select: { id: true },
+    });
+
+    const url = await this.stars.createInvoiceLink({
+      title: order.title,
+      description: order.description,
+      payload,
+      stars: missing,
+    });
+
+    return { url, stars: missing };
+  }
+
   async payFromBalance(userId: string, dto: CreateInvoiceDto): Promise<{ balance: number }> {
     const order = await this.describeOrder(userId, dto);
     if (dto.purpose === 'WALLET_TOPUP') {
@@ -256,7 +316,15 @@ export class PaymentsService {
         where: { id: userId, starsBalance: { gte: order.stars } },
         data: { starsBalance: { decrement: order.stars } },
       });
-      if (debited.count === 0) throw new BadRequestException('На балансе недостаточно звёзд');
+      if (debited.count === 0) {
+        // Код нужен приложению: по нему оно предлагает оплатить
+        // недостающее сразу, вместо того чтобы гнать человека
+        // пополнять кошелёк отдельным заходом.
+        throw new BadRequestException({
+          code: 'NO_FUNDS',
+          message: 'На балансе недостаточно звёзд',
+        });
+      }
 
       const user = await tx.user.findUniqueOrThrow({
         where: { id: userId },

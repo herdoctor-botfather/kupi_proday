@@ -47,6 +47,20 @@ export class PaymentsController {
   }
 
   /** Покупка за звёзды, уже лежащие на балансе. */
+  /**
+   * Счёт на недостающее для конкретной покупки.
+   * Человек платит ровно за то, что берёт, минуя пополнение кошелька.
+   */
+  @Post('invoice-for')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  invoiceForPurchase(
+    @CurrentUser() user: RequestUser,
+    @Body(new ZodValidationPipe(createInvoiceSchema)) dto: CreateInvoiceDto,
+  ): Promise<{ url: string; stars: number }> {
+    return this.payments.invoiceForPurchase(user.id, dto);
+  }
+
   @Post('pay-from-balance')
   @HttpCode(200)
   @UseGuards(JwtAuthGuard)

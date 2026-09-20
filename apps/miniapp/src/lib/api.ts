@@ -386,6 +386,13 @@ export const api = {
 
   wallet: () => request<Wallet>('/payments/wallet'),
 
+  /** Счёт ровно на недостающее для конкретной покупки. */
+  invoiceForPurchase: (dto: CreateInvoiceDto) =>
+    request<{ url: string; stars: number }>('/payments/invoice-for', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    }),
+
   payFromBalance: (dto: CreateInvoiceDto) =>
     request<{ balance: number }>('/payments/pay-from-balance', {
       method: 'POST',

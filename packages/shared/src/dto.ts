@@ -423,7 +423,15 @@ export type CreateInvoiceDto = z.infer<typeof createInvoiceSchema>;
  */
 export const confirmPaymentSchema = z.object({
   invoicePayload: z.string().trim().min(1).max(128),
-  telegramChargeId: z.string().trim().min(1).max(128),
+  /**
+   * Номер списания в Telegram.
+   *
+   * Необязателен: при оплате звёздами он приходит не всегда, а сервер
+   * требовал его строкой и отклонял подтверждение целиком — деньги
+   * списывались, а купленное не выдавалось. Идемпотентность держится
+   * на состоянии платежа, номер нужен только для возвратов и сверки.
+   */
+  telegramChargeId: z.string().trim().max(128).optional().default(''),
   stars: z.coerce.number().int().min(1).max(1_000_000),
   telegramUserId: z.string().trim().regex(/^\d+$/, 'Только цифры').max(20),
 });

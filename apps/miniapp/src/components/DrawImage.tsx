@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { IMAGE_GENERATION_STARS, IMAGE_PROMPT_MAX } from '@app/shared';
 import { api } from '../lib/api';
 import { haptic } from '../lib/telegram';
+import { withPayment } from '../lib/purchase';
 
 /**
  * Нарисовать картинку по описанию.
@@ -34,7 +35,9 @@ export function DrawImage({
     setError(null);
     try {
       haptic.tap();
-      const image = await api.drawImage(prompt.trim());
+      const image = await withPayment({ purpose: 'IMAGE_GENERATION' }, () =>
+        api.drawImage(prompt.trim()),
+      );
       haptic.success();
       setDrawn({ url: image.url });
     } catch (err) {

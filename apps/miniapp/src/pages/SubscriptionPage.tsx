@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { SPECIALIST_PLANS, SPECIALIST_PLAN_IDS, type MySpecialistProfile } from '@app/shared';
 import { api } from '../lib/api';
+import { withPayment } from '../lib/purchase';
 import { usePurchase } from '../lib/usePurchase';
 
 /**
@@ -58,7 +59,9 @@ export function SubscriptionPage() {
 
     setPaying(true);
     try {
-      const { balance: left } = await api.payFromBalance({ purpose: 'SPECIALIST_SUBSCRIPTION', plan });
+      const { balance: left } = await withPayment({ purpose: 'SPECIALIST_SUBSCRIPTION', plan }, () =>
+        api.payFromBalance({ purpose: 'SPECIALIST_SUBSCRIPTION', plan }),
+      );
       setBalance(left);
       await load();
     } catch (err) {

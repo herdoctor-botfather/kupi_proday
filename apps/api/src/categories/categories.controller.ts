@@ -9,8 +9,9 @@ export class CategoriesController {
   /** По умолчанию услуги: так каталог специалистов работает без параметра. */
   @Get()
   findAll(@Query('kind') kind?: string, @Query('listingKind') listingKind?: string): Promise<Category[]> {
-    const value: CategoryKind = kind === 'PRODUCT' ? 'PRODUCT' : 'SERVICE';
-    const listings: ListingKind = listingKind === 'BUY' ? 'BUY' : 'SELL';
+    const value: CategoryKind = kind === 'PRODUCT' ? 'PRODUCT' : kind === 'JOB' ? 'JOB' : 'SERVICE';
+    const listings: ListingKind =
+      listingKind === 'BUY' || listingKind === 'JOB' || listingKind === 'RESUME' ? listingKind : 'SELL';
     return this.categories.findAll(value, listings);
   }
 

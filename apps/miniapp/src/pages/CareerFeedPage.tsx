@@ -71,10 +71,10 @@ export function CareerFeedPage({ kind }: { kind: 'JOB' | 'RESUME' }) {
     <div className="page">
       <header className="hero">
         <div className="hero__greeting">Карьера</div>
-        <h1 className="hero__title">{isJobs ? 'Вакансии' : 'Кто ищет работу'}</h1>
+        <h1 className="hero__title">{isJobs ? 'Вакансии рядом' : 'Кто ищет работу'}</h1>
         <p className="hero__subtitle">
           {isJobs
-            ? 'Работа от людей и компаний рядом — пишите прямо в приложении'
+            ? 'Работа от людей и компаний поблизости — пишите прямо в приложении'
             : 'Люди в поиске работы: посмотрите, кто подойдёт, и напишите первым'}
         </p>
       </header>

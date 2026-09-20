@@ -47,21 +47,22 @@ export function CareerHubPage() {
       </header>
 
       {/*
-        Названия говорят, что откроется, а не с какой целью человек пришёл.
-        Сперва кнопки звались «Ищу работу» и «Найти сотрудника» — и это
-        читалось как размещение: искавший работу ждал формы резюме,
-        а попадал в список вакансий.
+        Кнопки названы от лица человека: он приходит сюда с одной из двух
+        мыслей — «мне нужна работа» или «мне нужны руки». Подпись под
+        названием говорит, что откроется, чтобы ожидание совпало с тем,
+        что человек увидит: ищущему работу показываем вакансии, ищущему
+        сотрудника — резюме.
       */}
       <Link to="/career/jobs" className="profile-cta" onClick={() => haptic.tap()}>
         <span className="profile-cta__icon" aria-hidden>
           🔎
         </span>
         <span className="profile-cta__body">
-          <span className="profile-cta__title">Вакансии</span>
+          <span className="profile-cta__title">Ищу работу</span>
           <span className="profile-cta__text">
             {jobCount > 0
-              ? `Кто нанимает прямо сейчас: ${jobCount}`
-              : 'Кто нанимает в вашем городе'}
+              ? `Открытые вакансии рядом: ${jobCount}`
+              : 'Посмотреть, кто нанимает в вашем городе'}
           </span>
         </span>
         <span className="profile-cta__chevron" aria-hidden>
@@ -74,11 +75,11 @@ export function CareerHubPage() {
           🧑‍🔧
         </span>
         <span className="profile-cta__body">
-          <span className="profile-cta__title">Резюме</span>
+          <span className="profile-cta__title">Ищу сотрудника</span>
           <span className="profile-cta__text">
             {resumeCount > 0
               ? `Людей в поиске работы: ${resumeCount}`
-              : 'Кто ищет работу поблизости'}
+              : 'Посмотреть, кто ищет работу поблизости'}
           </span>
         </span>
         <span className="profile-cta__chevron" aria-hidden>

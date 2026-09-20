@@ -12,6 +12,7 @@ import { AdminModule } from './admin/admin.module';
 import { ReportsModule } from './reports/reports.module';
 import { ChatModule } from './chat/chat.module';
 import { ListingsModule } from './listings/listings.module';
+import { SearchModule } from './search/search.module';
 import { PaymentsModule } from './payments/payments.module';
 import { InternalModule } from './internal/internal.module';
 import { DealsModule } from './deals/deals.module';
@@ -38,6 +39,7 @@ import { HealthController } from './common/health.controller';
     ReportsModule,
     ChatModule,
     ListingsModule,
+    SearchModule,
     PaymentsModule,
     InternalModule,
     DealsModule,

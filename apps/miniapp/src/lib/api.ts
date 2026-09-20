@@ -1,40 +1,40 @@
 import type {
-  CategoryAttribute,
-  ListingKind,
-  ApiError,
-  AuthResponse,
-  Category,
-  ChatMessage,
-  ConversationSummary,
-  ConversationThread,
-  CategoryKind,
-  CreateInvoiceDto,
-  CreateReportDto,
-  CreateReviewDto,
-  IncomingServiceRequest,
-  Involvement,
-  ListingDetail,
-  ServiceRequestState,
-  ServiceRequestStatus,
-  ListingDto,
-  ListingListItem,
-  MyListing,
-  CurrentUser,
-  MapBoundsQuery,
-  MySpecialistProfile,
-  Onboarding,
-  Paginated,
-  ProfileViewItem,
-  Review,
-  SpecialistApplicationDto,
-  SpecialistDetail,
-  DemandWatch,
-  UrgentRequest,
-  UrgentRequestDto,
-  DemandWatchDto,
-  ReferralSummary,
-  SpecialistListItem,
-  TextDraftDto,
+  CategoryAttribute,
+  ListingKind,
+  ApiError,
+  AuthResponse,
+  Category,
+  ChatMessage,
+  ConversationSummary,
+  ConversationThread,
+  CategoryKind,
+  CreateInvoiceDto,
+  CreateReportDto,
+  CreateReviewDto,
+  IncomingServiceRequest,
+  Involvement,
+  ListingDetail,
+  ServiceRequestState,
+  ServiceRequestStatus,
+  ListingDto,
+  ListingListItem,
+  MyListing,
+  CurrentUser,
+  MapBoundsQuery,
+  MySpecialistProfile,
+  Onboarding,
+  Paginated,
+  ProfileViewItem,
+  Review,
+  SpecialistApplicationDto,
+  SpecialistDetail,
+  DemandWatch,
+  UrgentRequest,
+  UrgentRequestDto,
+  DemandWatchDto,
+  ReferralSummary,
+  SpecialistListItem,
+  TextDraftDto,
 } from '@app/shared';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '';
@@ -128,6 +128,19 @@ const qs = (params: Record<string, unknown>): string => {
   const s = search.toString();
   return s ? `?${s}` : '';
 };
+
+/**
+ * Находки поиска по всей площадке — разложенные по дверям.
+ * Пустая группа означает, что там ничего не нашлось, и она не рисуется.
+ */
+export interface SearchResult {
+  specialists: SpecialistListItem[];
+  sell: ListingListItem[];
+  buy: ListingListItem[];
+  jobs: ListingListItem[];
+  resumes: ListingListItem[];
+  total: number;
+}
 
 export interface SpecialistFilters {
   q?: string;
@@ -229,6 +242,9 @@ export const api = {
 
   /** Публичный профиль продавца: кто это и что ещё выставил. */
   publicProfile: (id: string) => request<PublicProfile>(`/users/${id}`),
+  /** Поиск сразу по всем дверям: товары, запросы, мастера, работа. */
+  search: (q: string, city?: string) => request<SearchResult>(`/search${qs({ q, city })}`),
+
   listingCities: (kind?: string, q?: string) =>
     request<{ name: string; count: number }[]>(`/listings/cities${qs({ kind, q })}`),
 

@@ -4923,3 +4923,25 @@ body {
 .city-pick--active .city-pick__clear {
   color: var(--accent);
 }
+
+/* ─── Поиск по всей площадке ─── */
+
+/* На стартовом экране поиск стоит перед дверями и не должен выглядеть
+   их частью: небольшой отступ снизу отделяет его от плиток. */
+.onboarding__search {
+  margin-bottom: 10px;
+}
+
+/* Заголовок группы находок и ссылка на полную выдачу в своей двери. */
+.search-group {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 20px 0 10px;
+}
+
+.search-group__all {
+  font-size: 13px;
+  white-space: nowrap;
+}

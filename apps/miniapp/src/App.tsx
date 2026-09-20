@@ -21,6 +21,7 @@ import { SellHubPage } from './pages/SellHubPage';
 import { PersonPage } from './pages/PersonPage';
 import { CategoryStepPage } from './pages/CategoryStepPage';
 import { CareerHubPage } from './pages/CareerHubPage';
+import { SearchPage } from './pages/SearchPage';
 import { CareerFeedPage } from './pages/CareerFeedPage';
 import { SellPage } from './pages/SellPage';
 import { SpecialistsPage } from './pages/SpecialistsPage';
@@ -153,6 +154,8 @@ function Shell() {
       <Route path="/specialist/:idOrSlug" element={<PersonPage by="slug" />} />
       <Route path="/map" element={<MapPage />} />
       <Route path="/market" element={<MarketPage />} />
+      {/* Поиск по всем дверям сразу: человек знает слово, а не раздел. */}
+      <Route path="/search" element={<SearchPage />} />
       <Route path="/market/browse" element={<MarketCatalogPage />} />
       {/* Пошаговый выбор: раздел → полка → марка → модель. */}
       <Route path="/market/c/:slug" element={<CategoryStepPage mode="sell" />} />

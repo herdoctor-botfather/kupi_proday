@@ -48,7 +48,9 @@ export function OnboardingPage() {
       markRoleChosen();
       // У кого анкета уже есть — сразу к ней, а не к пустой форме.
       const target =
-        role === 'URGENT'
+        role === 'CAREER'
+          ? '/career'
+          : role === 'URGENT'
           ? '/market/urgent'
           : role === 'WANTED'
           ? '/wanted'

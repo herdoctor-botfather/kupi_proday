@@ -51,6 +51,28 @@ export const PERIPHERAL_ATTRIBUTES: AttributeSpec[] = [
   },
 ];
 
+/**
+ * Линейки ноутбуков по маркам.
+ *
+ * «Asus» покупателю не говорит ничего: под этим именем выпускают и
+ * игровой ROG за две зарплаты, и офисный VivoBook. Линейка — то, чем
+ * человек называет свой ноутбук вслух.
+ */
+const LAPTOP_LINES: Record<string, string[]> = {
+  Apple: ['MacBook Air', 'MacBook Pro', 'iMac', 'Mac mini', 'Mac Studio'],
+  Asus: ['VivoBook', 'ZenBook', 'ROG Strix', 'TUF Gaming', 'ProArt', 'ExpertBook', 'Chromebook'],
+  Acer: ['Aspire', 'Nitro', 'Predator', 'Swift', 'Extensa', 'TravelMate'],
+  Lenovo: ['IdeaPad', 'ThinkPad', 'Legion', 'Yoga', 'LOQ', 'ThinkBook', 'V-серия'],
+  HP: ['Pavilion', 'ProBook', 'EliteBook', 'Victus', 'Omen', 'Envy', 'Laptop 15'],
+  Dell: ['Inspiron', 'XPS', 'Latitude', 'Vostro', 'Precision', 'Alienware', 'G-серия'],
+  MSI: ['Modern', 'Katana', 'Thin', 'Cyborg', 'Prestige', 'Stealth', 'Raider'],
+  Huawei: ['MateBook D', 'MateBook X', 'MateBook 14', 'MateBook 16'],
+  Samsung: ['Galaxy Book', 'Notebook'],
+  Honor: ['MagicBook X', 'MagicBook Pro', 'MagicBook 14'],
+  'Своя сборка': ['Игровой', 'Офисный', 'Для работы с графикой'],
+  Другая: ['Другая линейка'],
+};
+
 /** Ноутбуки и системные блоки: экран списком, а не числом от руки. */
 export const COMPUTER_ATTRIBUTES: AttributeSpec[] = [
   {
@@ -63,7 +85,16 @@ export const COMPUTER_ATTRIBUTES: AttributeSpec[] = [
   {
     slug: 'brand',
     name: 'Марка',
-    options: ['Apple', 'Asus', 'Acer', 'Lenovo', 'HP', 'Dell', 'MSI', 'Huawei', 'Samsung', 'Honor', 'Своя сборка', 'Другая'],
+    options: Object.keys(LAPTOP_LINES),
+    isStep: true,
+  },
+  {
+    slug: 'line',
+    name: 'Линейка',
+    options: Object.entries(LAPTOP_LINES).flatMap(([brand, list]) =>
+      [...list, 'Другая линейка'].map((line) => `${brand}::${line}`),
+    ),
+    dependsOn: 'brand',
     isStep: true,
   },
   { slug: 'ram', name: 'Оперативная память', options: ['4 ГБ', '8 ГБ', '16 ГБ', '32 ГБ', '64 ГБ'] },
@@ -113,6 +144,25 @@ export const TV_ATTRIBUTES: AttributeSpec[] = [
     slug: 'brand',
     name: 'Марка',
     options: ['Samsung', 'LG', 'Sony', 'Xiaomi', 'Haier', 'TCL', 'Hisense', 'Philips', 'Yandex', 'Витязь', 'Другая'],
+    isStep: true,
+  },
+  {
+    slug: 'series',
+    name: 'Серия',
+    options: [
+      ...['QLED', 'Neo QLED', 'Crystal UHD', 'The Frame', 'OLED'].map((x) => `Samsung::${x}`),
+      ...['OLED', 'QNED', 'NanoCell', 'UHD'].map((x) => `LG::${x}`),
+      ...['BRAVIA OLED', 'BRAVIA XR', 'BRAVIA LED'].map((x) => `Sony::${x}`),
+      ...['TV A Pro', 'TV S Pro', 'TV Max', 'Mi TV'].map((x) => `Xiaomi::${x}`),
+      ...['Smart TV', 'Обычный'].map((x) => `Haier::${x}`),
+      ...['Smart TV', 'Обычный'].map((x) => `TCL::${x}`),
+      ...['Smart TV', 'Обычный'].map((x) => `Hisense::${x}`),
+      ...['Smart TV', 'Обычный'].map((x) => `Philips::${x}`),
+      ...['Смарт ТВ с Алисой'].map((x) => `Yandex::${x}`),
+      ...['Обычный'].map((x) => `Витязь::${x}`),
+      ...['Другая серия'].map((x) => `Другая::${x}`),
+    ],
+    dependsOn: 'brand',
     isStep: true,
   },
   {

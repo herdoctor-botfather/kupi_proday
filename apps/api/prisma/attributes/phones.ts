@@ -1,4 +1,5 @@
 import type { AttributeSpec } from '../category-attributes';
+import { COMMON_STORAGE, PHONE_MODELS_BY_BRAND } from './phone-models';
 
 /**
  * Телефоны: марка, модель, память.
@@ -79,7 +80,7 @@ const STORAGE_BY_MODEL: Record<string, string[]> = {
 };
 
 /** Для модели вне списка предлагаем ходовой ряд — тупика быть не должно. */
-const STORAGE_FALLBACK = ['32 ГБ', '64 ГБ', '128 ГБ', '256 ГБ', '512 ГБ', '1 ТБ'];
+const STORAGE_FALLBACK = COMMON_STORAGE;
 
 const BRANDS = [
   'Apple',
@@ -101,62 +102,7 @@ const BRANDS = [
   'Другая',
 ];
 
-/** Какие модели у какой марки. Порядок — от новых к старым. */
-const MODELS_BY_BRAND: Record<string, string[]> = {
-  Apple: [
-    'iPhone 17 Pro Max',
-    'iPhone 17 Pro',
-    'iPhone 17',
-    'iPhone Air',
-    'iPhone 16 Pro Max',
-    'iPhone 16 Pro',
-    'iPhone 16 Plus',
-    'iPhone 16',
-    'iPhone 15 Pro Max',
-    'iPhone 15 Pro',
-    'iPhone 15 Plus',
-    'iPhone 15',
-    'iPhone 14 Pro Max',
-    'iPhone 14 Pro',
-    'iPhone 14',
-    'iPhone 13 Pro Max',
-    'iPhone 13 Pro',
-    'iPhone 13',
-    'iPhone 13 mini',
-    'iPhone 12',
-    'iPhone 11',
-    'iPhone SE',
-  ],
-  Samsung: [
-    'Galaxy S25 Ultra',
-    'Galaxy S25',
-    'Galaxy S24 Ultra',
-    'Galaxy S24',
-    'Galaxy S23',
-    'Galaxy S22',
-    'Galaxy Z Fold',
-    'Galaxy Z Flip',
-    'Galaxy A55',
-    'Galaxy A35',
-    'Galaxy A15',
-    'Galaxy M',
-  ],
-  Xiaomi: [
-    'Xiaomi 15',
-    'Xiaomi 14',
-    'Redmi Note 14',
-    'Redmi Note 13',
-    'Redmi Note 12',
-    'Redmi 14C',
-    'POCO X7',
-    'POCO F6',
-    'POCO M6',
-  ],
-  Honor: ['Honor 200', 'Honor 90', 'Honor X9', 'Honor X8', 'Magic 6'],
-  Google: ['Pixel 9', 'Pixel 8', 'Pixel 7', 'Pixel 6'],
-};
-
-const models = Object.entries(MODELS_BY_BRAND).flatMap(([brand, list]) =>
+const models = Object.entries(PHONE_MODELS_BY_BRAND).flatMap(([brand, list]) =>
   [...list, 'Другая модель'].map((model) => `${brand}::${model}`),
 );
 
@@ -168,6 +114,18 @@ const storage = [
   ...Object.entries(STORAGE_BY_MODEL).flatMap(([model, sizes]) =>
     sizes.map((size) => `${model}::${size}`),
   ),
+  /*
+   * Для всех прочих моделей — обычный ряд.
+   *
+   * Расписывать память каждой из трёхсот моделей значит завести
+   * справочник, который устареет к следующей весне. Точный ряд нужен
+   * там, где ошибка заметна и обидна: у айфонов не бывает 32 ГБ.
+   * В остальных случаях продавец выберет из ходового ряда и не ошибётся.
+   */
+  ...Object.values(PHONE_MODELS_BY_BRAND)
+    .flat()
+    .filter((model) => !(model in STORAGE_BY_MODEL))
+    .flatMap((model) => STORAGE_FALLBACK.map((size) => `${model}::${size}`)),
   ...STORAGE_FALLBACK.map((size) => `Другая модель::${size}`),
 ];
 

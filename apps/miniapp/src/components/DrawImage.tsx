@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { IMAGE_GENERATION_STARS, IMAGE_PROMPT_MAX } from '@app/shared';
 import { api } from '../lib/api';
+import { useAsync } from '../lib/useAsync';
 import { haptic } from '../lib/telegram';
 import { withPayment } from '../lib/purchase';
 
@@ -29,6 +30,12 @@ export function DrawImage({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [drawn, setDrawn] = useState<{ url: string } | null>(null);
+
+  /* Баланс — чтобы кнопка не обещала одного, а делала другое:
+     заработанные звёзды тратятся первыми, и человек должен это видеть. */
+  const wallet = useAsync(() => api.wallet(), []);
+  const balance = wallet.data?.balance ?? 0;
+  const enough = balance >= IMAGE_GENERATION_STARS;
 
   const draw = async () => {
     setBusy(true);
@@ -131,8 +138,17 @@ export function DrawImage({
               disabled={busy || prompt.trim().length < 3}
               onClick={() => void draw()}
             >
-              {busy ? 'Рисуем, около минуты...' : `Нарисовать за ${IMAGE_GENERATION_STARS} ★`}
+              {busy
+                ? 'Рисуем, около минуты...'
+                : enough
+                  ? `Нарисовать за ${IMAGE_GENERATION_STARS} ★ с баланса`
+                  : `Нарисовать — оплатить ${IMAGE_GENERATION_STARS} ★`}
             </button>
+            <p className="form-hint">
+              {enough
+                ? `На балансе ${balance} ★ — спишем ${IMAGE_GENERATION_STARS} ★ оттуда.`
+                : `На балансе ${balance} ★. Откроется окно оплаты звёздами Telegram.`}
+            </p>
           </>
         )}
 

@@ -5242,3 +5242,46 @@ body {
 .onboarding .home-city {
   margin-top: 10px;
 }
+
+/* ─── Правила и политика ─── */
+
+.legal__updated {
+  margin: -8px 0 14px;
+  font-size: 12.5px;
+  color: var(--text-hint);
+}
+
+.legal__intro {
+  margin: 0 0 18px;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.legal__section {
+  margin-bottom: 18px;
+}
+
+.legal__heading {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+/* Читать длинный текст с телефона тяжело: строки чуть просторнее
+   обычного, иначе абзацы сливаются в стену. */
+.legal__text {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--text) 88%, transparent);
+}
+
+/* Ссылки на документы в справке: строкой, а не сноской. */
+.legal-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0 6px;
+  font-size: 13.5px;
+  text-align: center;
+}

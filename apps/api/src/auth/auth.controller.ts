@@ -64,9 +64,27 @@ export class AuthController {
     @Body(new ZodValidationPipe(onboardingSchema)) dto: OnboardingDto,
     @CurrentUser() current: RequestUser,
   ): Promise<CurrentUserDto> {
+    /*
+     * Заодно отмечаем принятие правил.
+     *
+     * Выбор двери — первое осознанное действие человека на площадке,
+     * и рядом с дверями написано, что продолжение означает согласие
+     * с правилами. Отметка нужна, чтобы в споре было видно: человек
+     * их принял тогда-то, а не «где-то там кто-то что-то подписывал».
+     *
+     * Ставится один раз: повторный выбор роли ничего не переписывает.
+     */
+    const accepted = await this.prisma.user.findUnique({
+      where: { id: current.id },
+      select: { termsAcceptedAt: true },
+    });
+
     const user = await this.prisma.user.update({
       where: { id: current.id },
-      data: { onboardedAs: dto.role },
+      data: {
+        onboardedAs: dto.role,
+        termsAcceptedAt: accepted?.termsAcceptedAt ?? new Date(),
+      },
     });
     const specialist = await this.prisma.specialist.findUnique({
       where: { userId: current.id },

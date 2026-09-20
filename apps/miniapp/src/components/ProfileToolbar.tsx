@@ -131,6 +131,17 @@ export function ProfileToolbar() {
               </div>
             ))}
 
+            {/* Правила и политика — не мелким шрифтом внизу, а отдельной
+                строкой там, где человек ищет ответы. */}
+            <div className="legal-links">
+              <a href="/terms" onClick={() => setOpen(false)}>
+                Правила площадки
+              </a>
+              <a href="/privacy" onClick={() => setOpen(false)}>
+                Политика конфиденциальности
+              </a>
+            </div>
+
             <button type="button" className="sheet__cancel" onClick={() => setOpen(false)}>
               Понятно
             </button>

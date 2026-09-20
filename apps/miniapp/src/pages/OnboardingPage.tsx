@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Onboarding } from '@app/shared';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
@@ -269,6 +269,14 @@ export function OnboardingPage() {
           </span>
         </button>
       </div>
+
+      {/* Согласие с правилами: человек принимает их, выбирая дверь, —
+          поэтому сказать об этом нужно рядом с дверями, а не прятать
+          в справке. Ссылки открываются внутри приложения. */}
+      <p className="onboarding__note">
+        Продолжая, вы принимаете <Link to="/terms">правила площадки</Link> и{' '}
+        <Link to="/privacy">политику конфиденциальности</Link>.
+      </p>
 
       <p className="onboarding__note">
         Отдельная регистрация не нужна — вы уже вошли через Telegram. Выбор влияет только на то,

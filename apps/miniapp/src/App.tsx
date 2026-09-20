@@ -23,6 +23,7 @@ import { CategoryStepPage } from './pages/CategoryStepPage';
 import { CareerHubPage } from './pages/CareerHubPage';
 import { SearchPage } from './pages/SearchPage';
 import { ScrollHint } from './components/ScrollHint';
+import { LegalPage } from './pages/LegalPage';
 import { CareerFeedPage } from './pages/CareerFeedPage';
 import { SellPage } from './pages/SellPage';
 import { SpecialistsPage } from './pages/SpecialistsPage';
@@ -158,6 +159,9 @@ function Shell() {
       <Route path="/market" element={<MarketPage />} />
       {/* Поиск по всем дверям сразу: человек знает слово, а не раздел. */}
       <Route path="/search" element={<SearchPage />} />
+      {/* Правила и политика — внутри приложения, а не ссылкой в браузер. */}
+      <Route path="/terms" element={<LegalPage kind="terms" />} />
+      <Route path="/privacy" element={<LegalPage kind="privacy" />} />
       <Route path="/market/browse" element={<MarketCatalogPage />} />
       {/* Пошаговый выбор: раздел → полка → марка → модель. */}
       <Route path="/market/c/:slug" element={<CategoryStepPage mode="sell" />} />

@@ -8,7 +8,7 @@ import { useAsync, useDebounced } from '../lib/useAsync';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SearchInput } from '../components/SearchInput';
 import { ChipsRow } from '../components/ChipsRow';
-import { CitySheet } from '../components/CitySheet';
+import { CityButton } from '../components/CityButton';
 import { SpecialistCard } from '../components/SpecialistCard';
 
 type Sort = NonNullable<SpecialistFilters['sort']>;
@@ -269,42 +269,5 @@ export function SpecialistsPage() {
  */
 function CityFilter({ current, onChange }: { current?: string; onChange: (city: string | null) => void }) {
   const cities = useAsync(() => api.cities(), []);
-  const [open, setOpen] = useState(false);
-  const list = cities.data ?? [];
-
-  if (list.length <= 1) return null;
-
-  return (
-    <ChipsRow>
-      <button
-        type="button"
-        className={`chip${!current ? ' chip--active' : ''}`}
-        onClick={() => onChange(null)}
-      >
-        Все города
-      </button>
-      {list.slice(0, 8).map((city) => (
-        <button
-          key={city.name}
-          type="button"
-          className={`chip${current === city.name ? ' chip--active' : ''}`}
-          onClick={() => onChange(city.name)}
-        >
-          {city.name} <span style={{ opacity: 0.6 }}>{city.count}</span>
-        </button>
-      ))}
-      <button type="button" className="chip" onClick={() => setOpen(true)}>
-        Все города ›
-      </button>
-
-      {open && (
-        <CitySheet
-          current={current}
-          withCounts={list}
-          onPick={onChange}
-          onClose={() => setOpen(false)}
-        />
-      )}
-    </ChipsRow>
-  );
+  return <CityButton value={current} counts={cities.data ?? []} onChange={onChange} />;
 }

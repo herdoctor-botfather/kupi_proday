@@ -654,6 +654,79 @@ export class AdminService {
     return { expired: result.count };
   }
 
+  // ─────────── Разбор спора ───────────
+
+  /**
+   * Переписки по объявлению — для разбора жалобы на него.
+   *
+   * Общего списка «все переписки площадки» здесь нет намеренно, как нет
+   * и поиска по имени человека: такой список превращает модерацию в
+   * наблюдение за людьми. Разбирают всегда конкретный спор, а у спора
+   * есть предмет — объявление, из-за которого он возник.
+   */
+  async listingConversations(listingId: string) {
+    return this.prisma.conversation.findMany({
+      where: { listingId },
+      select: {
+        id: true,
+        lastMessageAt: true,
+        client: { select: { id: true, firstName: true, username: true } },
+        _count: { select: { messages: true } },
+      },
+      orderBy: { lastMessageAt: 'desc' },
+      take: 50,
+    });
+  }
+
+  /**
+   * Сообщения одной переписки.
+   *
+   * Показываем и очищенный текст, и исходник: скрытый телефон как раз и
+   * есть доказательство того, что человека уводили с площадки, — ради
+   * таких случаев исходник и хранится.
+   *
+   * Сам просмотр пишется в журнал действий. Доступ к чужому разговору
+   * не должен быть бесследным: запись защищает и людей — видно, что
+   * читали не всех подряд, — и модератора, которому есть чем ответить
+   * на обвинение в произволе.
+   */
+  async conversationMessages(id: string, actorId: string) {
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        createdAt: true,
+        client: { select: { id: true, firstName: true, username: true } },
+        listing: { select: { id: true, title: true, slug: true, kind: true } },
+        specialist: { select: { id: true, displayName: true, slug: true } },
+      },
+    });
+    if (!conversation) {
+      throw new NotFoundException({ code: 'CONVERSATION_NOT_FOUND', message: 'Переписка не найдена' });
+    }
+
+    const messages = await this.prisma.message.findMany({
+      where: { conversationId: id },
+      select: {
+        id: true,
+        text: true,
+        originalText: true,
+        hasMaskedContacts: true,
+        createdAt: true,
+        senderId: true,
+        sender: { select: { firstName: true, username: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 500,
+    });
+
+    await this.log(this.prisma, actorId, 'conversation.view', 'Conversation', id, {
+      messages: messages.length,
+    });
+
+    return { conversation, messages };
+  }
+
   // ─────────── Журнал ───────────
 
   private async log(

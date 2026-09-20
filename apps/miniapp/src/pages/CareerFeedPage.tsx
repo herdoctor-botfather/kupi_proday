@@ -6,7 +6,7 @@ import { useAsync, useDebounced } from '../lib/useAsync';
 import { usePagedFeed } from '../lib/usePagedFeed';
 import { SearchInput } from '../components/SearchInput';
 import { ChipsRow } from '../components/ChipsRow';
-import { CitySheet } from '../components/CitySheet';
+import { CityButton } from '../components/CityButton';
 import { ListingCard } from '../components/ListingCard';
 import { FeedMore } from '../components/Feed';
 import { EmptyState } from '../components/states';
@@ -34,7 +34,6 @@ export function CareerFeedPage({ kind }: { kind: 'JOB' | 'RESUME' }) {
 
   const [query, setQuery] = useState(searchParams.get('q') ?? '');
   const debouncedQuery = useDebounced(query);
-  const [citiesOpen, setCitiesOpen] = useState(false);
 
   const categories = useAsync(() => api.categories('JOB'), []);
   const cities = useAsync(() => api.listingCities(kind), [kind]);
@@ -137,42 +136,11 @@ export function CareerFeedPage({ kind }: { kind: 'JOB' | 'RESUME' }) {
         </ChipsRow>
       )}
 
-      {(cities.data?.length ?? 0) > 1 && (
-        <ChipsRow>
-          <button
-            type="button"
-            className={`chip${!city ? ' chip--active' : ''}`}
-            onClick={() => setParam('city', null)}
-          >
-            Все города
-          </button>
-          {cities.data!.slice(0, 8).map((item) => (
-            <button
-              key={item.name}
-              type="button"
-              className={`chip${city === item.name ? ' chip--active' : ''}`}
-              onClick={() => {
-                haptic.tap();
-                setParam('city', item.name);
-              }}
-            >
-              {item.name} <span style={{ opacity: 0.6 }}>{item.count}</span>
-            </button>
-          ))}
-          <button type="button" className="chip" onClick={() => setCitiesOpen(true)}>
-            Все города ›
-          </button>
-        </ChipsRow>
-      )}
-
-      {citiesOpen && (
-        <CitySheet
-          current={city}
-          withCounts={cities.data ?? []}
-          onPick={(value) => setParam('city', value)}
-          onClose={() => setCitiesOpen(false)}
-        />
-      )}
+      <CityButton
+        value={city}
+        counts={cities.data ?? []}
+        onChange={(value) => setParam('city', value)}
+      />
 
       {isAuthenticated && (
         <Link

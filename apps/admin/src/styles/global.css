@@ -735,3 +735,66 @@ tbody tr:hover {
   border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
+
+/* ─── Переписка при разборе спора ─── */
+
+.conv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.conv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.conv-row:hover {
+  border-color: var(--accent);
+}
+
+/* Высота ограничена: переписка на сотню сообщений иначе растягивает
+   окно так, что кнопки закрытия не видно. */
+.conv-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.conv-message {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.conv-message__head {
+  font-size: 12.5px;
+  margin-bottom: 4px;
+}
+
+.conv-message__text {
+  white-space: pre-line;
+}
+
+/* Исходник со скрытыми контактами — им и доказывают увод с площадки. */
+.conv-message__original {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  font-size: 13px;
+  white-space: pre-line;
+  opacity: 0.85;
+}

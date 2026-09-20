@@ -95,6 +95,25 @@ export class AdminController {
     return this.admin.pendingListings();
   }
 
+  /**
+   * Переписки по объявлению и сами сообщения — для разбора жалобы.
+   *
+   * Только администратору: модератор проверяет объявления и отзывы,
+   * а чужой разговор — другой уровень доверия. Каждый просмотр
+   * записывается в журнал действий.
+   */
+  @Get('listings/:id/conversations')
+  @Roles('ADMIN')
+  listingConversations(@Param('id') id: string) {
+    return this.admin.listingConversations(id);
+  }
+
+  @Get('conversations/:id')
+  @Roles('ADMIN')
+  conversationMessages(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+    return this.admin.conversationMessages(id, user.id);
+  }
+
   /** Уже опубликованные: поиск, правка, снятие с витрины. */
   @Get('listings')
   listListings(@Query(new ZodValidationPipe(adminListQuerySchema)) query: AdminListQuery) {

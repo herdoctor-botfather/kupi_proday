@@ -212,6 +212,35 @@ export interface ListingRow {
   user: { firstName: string; lastName: string | null; username: string | null } | null;
 }
 
+/** Строка списка переписок по объявлению. */
+export interface ConversationRow {
+  id: string;
+  lastMessageAt: string | null;
+  client: { id: string; firstName: string; username: string | null };
+  _count: { messages: number };
+}
+
+/** Переписка целиком: о чём она и что в ней написано. */
+export interface ConversationView {
+  conversation: {
+    id: string;
+    createdAt: string;
+    client: { id: string; firstName: string; username: string | null };
+    listing: { id: string; title: string; slug: string; kind: string } | null;
+    specialist: { id: string; displayName: string; slug: string } | null;
+  };
+  messages: {
+    id: string;
+    text: string;
+    /** Исходник до вычистки контактов — им и доказывают увод с площадки. */
+    originalText: string | null;
+    hasMaskedContacts: boolean;
+    createdAt: string;
+    senderId: string;
+    sender: { firstName: string; username: string | null };
+  }[];
+}
+
 export interface ListingsQueue {
   pending: ListingRow[];
   changed: ListingRow[];
@@ -257,6 +286,14 @@ export const api = {
 
   moderateListing: (id: string, dto: ModerateListingDto) =>
     request<ListingRow>(`/admin/listings/${id}/moderate`, { method: 'PATCH', body: JSON.stringify(dto) }),
+
+  /**
+   * Переписки по объявлению и сообщения в них — для разбора жалобы.
+   * Просмотр записывается в журнал действий на сервере.
+   */
+  listingConversations: (listingId: string) =>
+    request<ConversationRow[]>(`/admin/listings/${listingId}/conversations`),
+  conversation: (id: string) => request<ConversationView>(`/admin/conversations/${id}`),
 
   reports: () => request<ReportRow[]>('/admin/reports'),
   resolveReport: (id: string, dto: ResolveReportDto) =>

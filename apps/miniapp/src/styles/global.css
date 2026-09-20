@@ -4849,3 +4849,77 @@ body {
   font-size: 13px;
   color: var(--text-hint);
 }
+
+/* ─── Кнопка выбора города ─── */
+
+/*
+ * Заметная строка вместо ряда чипов.
+ *
+ * Город — самый частый фильтр: человек ищет рядом с домом, а не по всей
+ * стране. Раньше города шли чипами с прокруткой вбок, и выбранный
+ * уезжал за край экрана. Кнопка всегда на виду и сама показывает,
+ * что выбрано.
+ */
+.city-pick {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  text-align: left;
+  background: var(--bg-secondary);
+  border: 1px solid var(--hairline);
+  color: var(--text);
+}
+
+/* Выбранный город подсвечен рамкой: фильтр включён — это должно быть
+   видно, не вчитываясь. */
+.city-pick--active {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-secondary));
+}
+
+.city-pick:active {
+  transform: scale(0.995);
+}
+
+.city-pick__pin {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.city-pick__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.city-pick__label {
+  font-size: 11px;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
+  color: var(--text-hint);
+}
+
+.city-pick__value {
+  font-weight: 600;
+  font-size: 14.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.city-pick__chevron,
+.city-pick__clear {
+  color: var(--text-hint);
+  font-size: 17px;
+  padding: 0 2px;
+}
+
+.city-pick--active .city-pick__clear {
+  color: var(--accent);
+}

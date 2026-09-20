@@ -3,6 +3,7 @@ import { api, type ListingRow } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { AsyncContent, EmptyState } from '../components/states';
 import { Modal } from '../components/Modal';
+import { ConversationDialog } from '../components/ConversationDialog';
 import { formatDateTime, formatPrice } from '../lib/format';
 
 const CONDITION_LABELS: Record<ListingRow['condition'], string> = {
@@ -34,6 +35,8 @@ export function ListingsPage() {
     [tab, query],
   );
   const [rejecting, setRejecting] = useState<ListingRow | null>(null);
+  /** Объявление, чьи переписки сейчас смотрит администратор. */
+  const [conversations, setConversations] = useState<ListingRow | null>(null);
   /** Объявление, открытое целиком для просмотра и правки. */
   const [editing, setEditing] = useState<ListingRow | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -168,6 +171,16 @@ export function ListingsPage() {
             >
               {row.status === 'ACTIVE' && !row.needsReview ? 'Снять с витрины' : 'Отклонить'}
             </button>
+            {/* Переписка — для разбора спора: кто что обещал и не увели ли
+                человека с площадки. Просмотр пишется в журнал действий. */}
+            <button
+              type="button"
+              className="button button--secondary"
+              onClick={() => setConversations(row)}
+              disabled={busyId === row.id}
+            >
+              💬 Переписки
+            </button>
           </div>
         </div>
       ))}
@@ -266,6 +279,10 @@ export function ListingsPage() {
           onCancel={() => setRejecting(null)}
           onConfirm={(reason) => reject(rejecting, reason)}
         />
+      )}
+
+      {conversations && (
+        <ConversationDialog row={conversations} onClose={() => setConversations(null)} />
       )}
     </>
   );

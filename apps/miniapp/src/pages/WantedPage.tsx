@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
-import { CategoryChips } from '../components/CategoryChips';
+import { CityButton } from '../components/CityButton';
 import { useDefaultCity } from '../lib/home-city';
 import { useAsync, useDebounced } from '../lib/useAsync';
 import { usePagedFeed } from '../lib/usePagedFeed';
@@ -12,7 +12,6 @@ import { ListingCard } from '../components/ListingCard';
 import { FeedMore } from '../components/Feed';
 import { haptic } from '../lib/telegram';
 import { useIsAuthenticated } from '../lib/auth';
-import { CitySheet } from '../components/CitySheet';
 
 /** Сколько запросов показываем за раз. */
 const FEED_PAGE_SIZE = 6;
@@ -37,10 +36,15 @@ export function WantedPage() {
   const city = searchParams.get('city') ?? undefined;
 
   const [query, setQuery] = useState(searchParams.get('q') ?? '');
-  const [citiesOpen, setCitiesOpen] = useState(false);
   const debouncedQuery = useDebounced(query);
 
+  const navigate = useNavigate();
   const categories = useAsync(() => api.categories('PRODUCT', 'BUY'), []);
+
+  /** Название выбранного раздела или полки — для строки сброса. */
+  const categoryName = (categories.data ?? [])
+    .flatMap((root) => [root, ...(root.children ?? [])])
+    .find((item) => item.slug === categorySlug)?.name;
   /*
    * Города запросов, а не всей барахолки: человек предлагает вещь, которую
    * держит в руках, и запрос из другого города для него бесполезен.
@@ -83,52 +87,56 @@ export function WantedPage() {
 
       <SearchInput value={query} onChange={setQuery} placeholder="Что ищут" />
 
-      <CategoryChips
-        categories={categories.data ?? []}
-        current={categorySlug}
-        onChange={(slug) => setParam('category', slug)}
-        stepsPath="/wanted/c"
-        allLabel="Все"
-      />
+      {/*
+        Разделы столбцом, а не рядом чипов: в строку с прокруткой
+        помещается три названия, и остальные существуют только для того,
+        кто догадается её листать. Столбец показывает все разом и ведёт
+        дальше — к полкам внутри раздела, как в остальных дверях.
+      */}
+      {!categorySlug && (categories.data?.length ?? 0) > 0 && (
+        <>
+          <h2 className="section-title">Разделы</h2>
+          <div className="steps">
+            {(categories.data ?? []).map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                className="step"
+                onClick={() => {
+                  haptic.tap();
+                  navigate(`/wanted/c/${category.slug}`);
+                }}
+              >
+                <span className="step__name">
+                  {category.icon} {category.name}
+                </span>
+                <span className="step__side">
+                  {category.itemCount > 0 && <span className="step__count">{category.itemCount}</span>}
+                  <span className="step__chevron" aria-hidden>
+                    ›
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
-      {(cities.data?.length ?? 0) > 1 && (
+      {/* Выбранный раздел — строкой со сбросом: иначе непонятно, почему
+          видна только часть запросов. */}
+      {categorySlug && (
         <ChipsRow>
-          <button
-            type="button"
-            className={`chip${!city ? ' chip--active' : ''}`}
-            onClick={() => setParam('city', null)}
-          >
-            Все города
-          </button>
-          {cities.data!.slice(0, 8).map((item) => (
-            <button
-              key={item.name}
-              type="button"
-              className={`chip${city === item.name ? ' chip--active' : ''}`}
-              onClick={() => {
-                haptic.tap();
-                setParam('city', item.name);
-              }}
-            >
-              {item.name} <span style={{ opacity: 0.6 }}>{item.count}</span>
-            </button>
-          ))}
-          {/* Свой город человек ищет сам: в ряду только те, где уже
-              что-то выложено, и остальных там не бывает по определению. */}
-          <button type="button" className="chip" onClick={() => setCitiesOpen(true)}>
-            Все города ›
+          <button type="button" className="chip chip--active" onClick={() => setParam('category', null)}>
+            {categoryName ?? 'Раздел'} ✕
           </button>
         </ChipsRow>
       )}
 
-      {citiesOpen && (
-        <CitySheet
-          current={city}
-          withCounts={cities.data ?? []}
-          onPick={(value) => setParam('city', value)}
-          onClose={() => setCitiesOpen(false)}
-        />
-      )}
+      <CityButton
+        value={city}
+        counts={cities.data ?? []}
+        onChange={(value) => setParam('city', value)}
+      />
 
       {isAuthenticated && (
         <Link to="/wanted/new" className="profile-cta" onClick={() => haptic.tap()}>

@@ -73,7 +73,7 @@ export function PhotoDraftButton({
           <span className="photo-draft__text">
             {busy
               ? 'Через несколько секунд форма заполнится сама'
-              : 'Снимите вещь — название, описание и категорию подскажет ИИ. Бесплатно'}
+              : 'Сфотографируйте вещь — название, описание и категорию подскажет ИИ. Бесплатно'}
           </span>
         </span>
         <span className="photo-draft__chevron" aria-hidden>

@@ -1578,7 +1578,9 @@ body::before {
   align-items: center;
   justify-content: center;
   padding: 14px 12px 8px;
-  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%);
+  /* Подложка нейтральная: цвет теперь у самой машины, и повторять его
+     фоном значит смазать силуэт. */
+  background: color-mix(in srgb, var(--text) 5%, transparent);
 }
 
 .car-body {
@@ -1588,16 +1590,23 @@ body::before {
 }
 
 .car-body__shell {
-  fill: color-mix(in srgb, var(--text) 82%, transparent);
+  fill: var(--car-paint, #4dabf7);
+}
+
+/* Остекление светлее кузова, но в его же тоне: белое стекло на цветной
+   машине выглядит наклейкой, а не окном. */
+.car-body__glass {
+  fill: color-mix(in srgb, var(--car-paint, #4dabf7) 28%, #ffffff);
+  opacity: 0.85;
 }
 
 .car-body__tyre {
-  fill: color-mix(in srgb, var(--text) 62%, transparent);
+  fill: #2b3036;
 }
 
 /* Диск светлее шины: без этого колесо читается сплошным пятном. */
 .car-body__hub {
-  fill: var(--bg-secondary);
+  fill: color-mix(in srgb, var(--car-paint, #4dabf7) 30%, #ffffff);
 }
 
 .body-card__label {

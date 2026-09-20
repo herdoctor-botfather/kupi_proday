@@ -185,7 +185,7 @@ export function CategoryWizard({
                   onClick={() => pickValue(nextStep, option.value)}
                 >
                   <span className="body-card__figure">
-                    <CarBody kind={bodyKind(option.image)} />
+                    <CarBody kind={bodyKind(option.image)} seed={option.value} />
                   </span>
                   <span className="body-card__label">{option.value}</span>
                 </button>

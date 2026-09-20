@@ -61,16 +61,78 @@ const SHAPES: Record<BodyKind, string> = {
   pickup: '6,38 6,27 16,25 28,25 36,14 54,14 58,25 58,28 86,28 86,38',
 };
 
-export function CarBody({ kind }: { kind: BodyKind }) {
+/*
+ * Остекление: светлая вставка внутри кабины.
+ *
+ * Без окон силуэт читается как сплошное пятно, и кузова отличаются
+ * только очертанием крыши. Стекло делит машину на капот, салон и корму —
+ * то есть показывает ровно то, по чему кузов и узнают.
+ */
+const GLASS: Record<BodyKind, string> = {
+  sedan: '41,21 60,21 68,29 34,29',
+  hatchback: '41,21 64,21 70,27 34,27',
+  liftback: '41,21 59,21 76,30 34,29',
+  wagon: '41,21 82,21 82,29 34,29',
+  crossover: '41,16 64,16 70,23 34,23',
+  suv: '39,15 72,15 76,23 32,23',
+  offroad: '37,14 64,14 68,22 31,22',
+  van: '24,13 44,13 44,23 14,23',
+  coupe: '47,23 60,23 72,31 37,31',
+  pickup: '37,16 52,16 55,24 30,24',
+};
+
+/**
+ * Цвет машины.
+ *
+ * Серые силуэты на тёмном экране сливались в одно мрачное поле.
+ * Цвет разводит соседние плитки и оживляет выбор — а заодно помогает
+ * глазу: два подряд одинаковых кузова различаются хотя бы окраской.
+ *
+ * Оттенок берётся от подписи, а не от порядка в списке: тогда при
+ * возврате на шаг машина остаётся того же цвета, каким человек её
+ * запомнил.
+ */
+const PAINT = [
+  '#ff6b6b',
+  '#4dabf7',
+  '#51cf66',
+  '#ffa94d',
+  '#b197fc',
+  '#22b8cf',
+  '#ffd43b',
+  '#f783ac',
+  '#94d82d',
+  '#74c0fc',
+];
+
+function paintOf(seed: string): string {
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) % 100000;
+  }
+  return PAINT[hash % PAINT.length];
+}
+
+export function CarBody({ kind, seed = '' }: { kind: BodyKind; seed?: string }) {
+  const paint = paintOf(seed || kind);
+
   return (
-    <svg className="car-body" viewBox="0 0 100 52" role="img" aria-hidden focusable="false">
+    <svg
+      className="car-body"
+      viewBox="0 0 100 52"
+      role="img"
+      aria-hidden
+      focusable="false"
+      style={{ ['--car-paint' as string]: paint }}
+    >
       <polygon points={SHAPES[kind] ?? SHAPES.sedan} className="car-body__shell" />
+      <polygon points={GLASS[kind] ?? GLASS.sedan} className="car-body__glass" />
       {/* Колёса общие для всех кузовов: разными их делает только посадка,
           а она уже заложена в контуре. */}
-      <circle cx="22" cy="42" r="8" className="car-body__tyre" />
-      <circle cx="22" cy="42" r="3.4" className="car-body__hub" />
-      <circle cx="66" cy="42" r="8" className="car-body__tyre" />
-      <circle cx="66" cy="42" r="3.4" className="car-body__hub" />
+      <circle cx="22" cy="40" r="7.5" className="car-body__tyre" />
+      <circle cx="22" cy="40" r="3.2" className="car-body__hub" />
+      <circle cx="66" cy="40" r="7.5" className="car-body__tyre" />
+      <circle cx="66" cy="40" r="3.2" className="car-body__hub" />
     </svg>
   );
 }

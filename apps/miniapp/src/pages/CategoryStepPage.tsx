@@ -11,7 +11,7 @@ import { EmptyState } from '../components/states';
 import { haptic } from '../lib/telegram';
 import { pluralize } from '../lib/format';
 import { optionsOf } from '../lib/attribute-options';
-import { carPhoto } from '../lib/car-photos';
+import { CarBody, bodyKind } from '../components/CarBody';
 
 /*
  * Снимки кузовов: подключаются сборкой, по имени из справочника.
@@ -72,11 +72,16 @@ export function CategoryStepPage({ mode }: { mode: 'sell' | 'buy' | 'service' })
 
   // Шаги-характеристики идут после подкатегорий: сначала «что», потом «какое».
   const steps = (attributes.data ?? []).filter((attribute) => attribute.isStep);
-  const nextStep = steps.find((attribute) => !chosen[attribute.slug]);
+  // Шаг без вариантов пропускаем: у части моделей поколения не расписаны,
+  // и пустой экран с заголовком читается как поломка.
+  const nextStep = steps.find(
+    (attribute) => !chosen[attribute.slug] && optionsOf(attribute, chosen).length > 0,
+  );
 
   /* Варианты текущего шага и есть ли к ним снимки. */
   const options = nextStep ? optionsOf(nextStep, chosen) : [];
-  const hasPhotos = options.some((option) => carPhoto(option.image));
+  // Силуэт кузова есть там, где справочник его назвал: у машин.
+  const hasBodies = options.some((option) => option.image);
 
   const listings = usePagedFeed(
     (page) =>
@@ -202,7 +207,7 @@ export function CategoryStepPage({ mode }: { mode: 'sell' | 'buy' | 'service' })
       {/* Шаг второй и далее: марка, модель, кузов — в порядке важности. */}
       {children.length === 0 && nextStep && (
         <>
-          {hasPhotos ? (
+          {hasBodies ? (
             /* Кузова выбирают глазами: «Гранта лифтбек» и «Гранта седан»
                различаются видом, а не словами, и список названий заставил
                бы вспоминать, как выглядит каждое. */
@@ -214,13 +219,9 @@ export function CategoryStepPage({ mode }: { mode: 'sell' | 'buy' | 'service' })
                   className="body-card"
                   onClick={() => pickValue(nextStep, option.value)}
                 >
-                  {carPhoto(option.image) ? (
-                    <img className="body-card__photo" src={carPhoto(option.image) ?? ''} alt="" loading="lazy" />
-                  ) : (
-                    <span className="body-card__photo body-card__photo--empty" aria-hidden>
-                      🚗
-                    </span>
-                  )}
+                  <span className="body-card__figure">
+                    <CarBody kind={bodyKind(option.image)} />
+                  </span>
                   <span className="body-card__label">{option.value}</span>
                 </button>
               ))}

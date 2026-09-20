@@ -131,12 +131,6 @@ export function ProfileToolbar() {
               </div>
             ))}
 
-            {/* Условие лицензий на снимки: авторов нужно назвать, и это
-                делается страницей, а не строкой мелким шрифтом. */}
-            <a className="credits-link" href="/credits" onClick={() => setOpen(false)}>
-              Источники фотографий →
-            </a>
-
             <button type="button" className="sheet__cancel" onClick={() => setOpen(false)}>
               Понятно
             </button>

@@ -1,7 +1,7 @@
 import type { Category, CategoryAttribute } from '@app/shared';
 import { haptic } from '../lib/telegram';
 import { optionsOf } from '../lib/attribute-options';
-import { carPhoto } from '../lib/car-photos';
+import { CarBody, bodyKind } from './CarBody';
 
 /**
  * Пошаговое заполнение при размещении: раздел, полка, марка, модель.
@@ -38,10 +38,13 @@ export function CategoryWizard({
 
   /** Шаги-характеристики: марка, модель, память — в порядке важности. */
   const steps = attributes.filter((attribute) => attribute.isStep);
-  const nextStep = steps.find((attribute) => !values[attribute.slug]);
+  // Шаг, у которого нет вариантов, пропускаем: спрашивать не о чем.
+  const nextStep = steps.find(
+    (attribute) => !values[attribute.slug] && optionsOf(attribute, values).length > 0,
+  );
 
   const stepOptions = nextStep ? optionsOf(nextStep, values) : [];
-  const stepHasPhotos = stepOptions.some((option) => carPhoto(option.image));
+  const stepHasBodies = stepOptions.some((option) => option.image);
 
   const pickValue = (attribute: CategoryAttribute, option: string) => {
     haptic.tap();
@@ -172,7 +175,7 @@ export function CategoryWizard({
             {nextStep.name}
             {nextStep.required ? '' : ' — можно пропустить'}
           </p>
-          {stepHasPhotos ? (
+          {stepHasBodies ? (
             <div className="body-grid">
               {stepOptions.map((option) => (
                 <button
@@ -181,13 +184,9 @@ export function CategoryWizard({
                   className="body-card"
                   onClick={() => pickValue(nextStep, option.value)}
                 >
-                  {carPhoto(option.image) ? (
-                    <img className="body-card__photo" src={carPhoto(option.image) ?? ''} alt="" loading="lazy" />
-                  ) : (
-                    <span className="body-card__photo body-card__photo--empty" aria-hidden>
-                      🚗
-                    </span>
-                  )}
+                  <span className="body-card__figure">
+                    <CarBody kind={bodyKind(option.image)} />
+                  </span>
                   <span className="body-card__label">{option.value}</span>
                 </button>
               ))}

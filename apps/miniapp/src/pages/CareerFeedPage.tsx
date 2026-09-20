@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useDefaultCity } from '../lib/home-city';
 import { useAsync, useDebounced } from '../lib/useAsync';
 import { usePagedFeed } from '../lib/usePagedFeed';
 import { SearchInput } from '../components/SearchInput';
-import { CategoryChips } from '../components/CategoryChips';
 import { ChipsRow } from '../components/ChipsRow';
 import { CitySheet } from '../components/CitySheet';
 import { ListingCard } from '../components/ListingCard';
@@ -27,6 +26,7 @@ const FEED_PAGE_SIZE = 6;
 export function CareerFeedPage({ kind }: { kind: 'JOB' | 'RESUME' }) {
   const isAuthenticated = useIsAuthenticated();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   useDefaultCity(searchParams, setSearchParams);
 
   const categorySlug = searchParams.get('category') ?? undefined;
@@ -62,6 +62,11 @@ export function CareerFeedPage({ kind }: { kind: 'JOB' | 'RESUME' }) {
 
   const isJobs = kind === 'JOB';
 
+  /** Название выбранной отрасли или должности — для строки сброса. */
+  const categoryName = (categories.data ?? [])
+    .flatMap((root) => [root, ...(root.children ?? [])])
+    .find((item) => item.slug === categorySlug)?.name;
+
   return (
     <div className="page">
       <header className="hero">
@@ -80,13 +85,57 @@ export function CareerFeedPage({ kind }: { kind: 'JOB' | 'RESUME' }) {
         placeholder={isJobs ? 'Кем хотите работать' : 'Кто вам нужен'}
       />
 
-      <CategoryChips
-        categories={categories.data ?? []}
-        current={categorySlug}
-        onChange={(slug) => setParam('category', slug)}
-        allLabel="Все отрасли"
-        stepsPath={isJobs ? '/career/jobs/c' : '/career/resumes/c'}
-      />
+      {/*
+        Отрасли столбцом, а не рядом чипов.
+
+        В строку с прокруткой помещается три названия из шестнадцати,
+        и остальные существуют только для того, кто догадается её
+        листать. «Транспорт и логистика» в чип не влезает вовсе.
+        Столбец показывает все отрасли разом и ведёт дальше — к
+        должностям, как в остальных разделах площадки.
+      */}
+      {!categorySlug && (categories.data?.length ?? 0) > 0 && (
+        <>
+          <h2 className="section-title">Отрасли</h2>
+          <div className="steps">
+            {(categories.data ?? []).map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                className="step"
+                onClick={() => {
+                  haptic.tap();
+                  navigate(`${isJobs ? '/career/jobs/c' : '/career/resumes/c'}/${category.slug}`);
+                }}
+              >
+                <span className="step__name">
+                  {category.icon} {category.name}
+                </span>
+                <span className="step__side">
+                  {category.itemCount > 0 && <span className="step__count">{category.itemCount}</span>}
+                  <span className="step__chevron" aria-hidden>
+                    ›
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Выбранная отрасль — строкой, которую можно снять: иначе человек
+          не поймёт, почему видит только часть вакансий. */}
+      {categorySlug && (
+        <ChipsRow>
+          <button
+            type="button"
+            className="chip chip--active"
+            onClick={() => setParam('category', null)}
+          >
+            {categoryName ?? 'Отрасль'} ✕
+          </button>
+        </ChipsRow>
+      )}
 
       {(cities.data?.length ?? 0) > 1 && (
         <ChipsRow>

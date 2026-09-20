@@ -89,11 +89,26 @@ export function SellPage() {
   // по адресу: /wanted/new — предложение в раздел спроса, /market/sell —
   // объявление на витрину. При правке вид берётся из самого объявления.
   const [kind, setKind] = useState<ListingKind>(
-    location.pathname.startsWith('/wanted') ? 'BUY' : 'SELL',
+    location.pathname.startsWith('/wanted')
+      ? 'BUY'
+      : location.pathname.startsWith('/career/new-job')
+        ? 'JOB'
+        : location.pathname.startsWith('/career/new-resume')
+          ? 'RESUME'
+          : 'SELL',
   );
   const wanted = kind === 'BUY';
+  /*
+   * Работа — тоже объявление, но с другими словами.
+   *
+   * «Что продаёте» у вакансии звучит дико, а «состояние» и «срочно» не
+   * значат ничего. Поэтому форма одна, а подписи и лишние поля зависят
+   * от того, с какой двери пришли.
+   */
+  const career = kind === 'JOB' || kind === 'RESUME';
+  const vacancy = kind === 'JOB';
 
-  const categories = useAsync(() => api.categories('PRODUCT'), []);
+  const categories = useAsync(() => api.categories(career ? 'JOB' : 'PRODUCT'), [career]);
   const existing = useAsync(
     () => (editingId ? api.myListing(editingId) : Promise.resolve(null)),
     [editingId],
@@ -322,19 +337,31 @@ export function SellPage() {
     <div className="page">
       <h1 className="page__title">
         {editingId
-          ? wanted
-            ? 'Запрос'
-            : 'Объявление'
-          : wanted
-            ? 'Что вы ищете'
-            : 'Новое объявление'}
+          ? career
+            ? vacancy
+              ? 'Вакансия'
+              : 'Резюме'
+            : wanted
+              ? 'Запрос'
+              : 'Объявление'
+          : vacancy
+            ? 'Нужен сотрудник'
+            : kind === 'RESUME'
+              ? 'Ищу работу'
+              : wanted
+                ? 'Что вы ищете'
+                : 'Новое объявление'}
       </h1>
       <p className="form-intro">
         {editingId
           ? 'После изменений объявление отправится на повторную проверку. С витрины оно не пропадёт.'
-          : wanted
-            ? 'Опишите, что нужно и сколько готовы заплатить. Продавцы увидят запрос и сами напишут вам.'
-            : 'Заполните описание — модератор проверит объявление и опубликует его на витрине.'}
+          : vacancy
+            ? 'Опишите работу, оплату и график. Отклики придут прямо в переписку.'
+            : kind === 'RESUME'
+              ? 'Расскажите, что умеете и какую работу ищете. Размещение бесплатное.'
+              : wanted
+                ? 'Опишите, что нужно и сколько готовы заплатить. Продавцы увидят запрос и сами напишут вам.'
+                : 'Заполните описание — модератор проверит объявление и опубликует его на витрине.'}
       </p>
 
       {saveError && <div className="alert alert--error">{saveError}</div>}
@@ -342,17 +369,33 @@ export function SellPage() {
       <AsyncContent state={categories}>
         {(allCategories) => (
           <form onSubmit={submit} noValidate>
-            <Field label={wanted ? 'Что ищете' : 'Что продаёте'} error={errors.title} required>
+            <Field
+              label={
+                vacancy ? 'Кто нужен' : kind === 'RESUME' ? 'Кем хотите работать' : wanted ? 'Что ищете' : 'Что продаёте'
+              }
+              error={errors.title}
+              required
+            >
               <input
                 className="form-input"
                 value={form.title}
                 onChange={(e) => set('title', e.target.value)}
-                placeholder="iPhone 13, 128 ГБ"
+                placeholder={
+                  vacancy
+                    ? 'Повар в кафе, сменный график'
+                    : kind === 'RESUME'
+                      ? 'Водитель категории B, стаж 5 лет'
+                      : 'iPhone 13, 128 ГБ'
+                }
               />
             </Field>
 
             <div className="form-row">
-              <Field label={wanted ? 'Готов заплатить, ₽' : 'Цена, ₽'} error={errors.price} required>
+              <Field
+                label={career ? 'Оплата от, ₽' : wanted ? 'Готов заплатить, ₽' : 'Цена, ₽'}
+                error={errors.price}
+                required
+              >
                 <input
                   className="form-input"
                   value={form.price}
@@ -367,7 +410,7 @@ export function SellPage() {
                   checked={form.isNegotiable}
                   onChange={(e) => set('isNegotiable', e.target.checked)}
                 />
-                торг
+                {career ? 'по договорённости' : 'торг'}
               </label>
             </div>
 
@@ -381,7 +424,7 @@ export function SellPage() {
               и истекает сам — раздел, где «срочное» месячной давности,
               перестаёт что-либо значить.
             */}
-            {!wanted && (
+            {!wanted && !career && (
               <label className="urgent-toggle">
                 <input
                   type="checkbox"
@@ -418,6 +461,7 @@ export function SellPage() {
               </Field>
             )}
 
+            {!career && (
             <Field label={wanted ? 'Какое состояние устроит' : 'Состояние'}>
               <ChipsRow>
                 {LISTING_CONDITIONS.map((option) => (
@@ -432,6 +476,7 @@ export function SellPage() {
                 ))}
               </ChipsRow>
             </Field>
+            )}
             {/* Категория и характеристики — сразу под названием: пока
                 человек не сказал, что это, спрашивать про цену и состояние
                 рано, а половина полей просто не имеет смысла. */}
@@ -463,9 +508,13 @@ export function SellPage() {
               label="Описание"
               error={errors.description}
               hint={
-                wanted
-                  ? 'Комплектация, допустимые изъяны, как быстро нужно'
-                  : 'Состояние, комплектация, причина продажи'
+                vacancy
+                  ? 'Обязанности, место работы, когда выходить, что предлагаете'
+                  : kind === 'RESUME'
+                    ? 'Опыт, навыки, когда готовы приступить'
+                    : wanted
+                      ? 'Комплектация, допустимые изъяны, как быстро нужно'
+                      : 'Состояние, комплектация, причина продажи'
               }
             >
               <textarea

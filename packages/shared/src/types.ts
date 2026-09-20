@@ -3,13 +3,13 @@
 export type Role = 'USER' | 'MODERATOR' | 'ADMIN';
 
 /** Что пользователь выбрал на стартовом экране. */
-export type Onboarding = 'CLIENT' | 'SPECIALIST' | 'MARKET' | 'WANTED' | 'URGENT';
+export type Onboarding = 'CLIENT' | 'SPECIALIST' | 'MARKET' | 'WANTED' | 'URGENT' | 'CAREER';
 
-export type CategoryKind = 'SERVICE' | 'PRODUCT';
+export type CategoryKind = 'SERVICE' | 'PRODUCT' | 'JOB';
 export type ListingStatus = 'DRAFT' | 'PENDING' | 'ACTIVE' | 'SOLD' | 'HIDDEN' | 'REJECTED';
 export type ListingCondition = 'NEW' | 'USED_PERFECT' | 'USED';
 /** SELL — продаю вещь, BUY — ищу вещь и жду предложений от продавцов. */
-export type ListingKind = 'SELL' | 'BUY';
+export type ListingKind = 'SELL' | 'BUY' | 'JOB' | 'RESUME';
 export type SpecialistStatus = 'DRAFT' | 'PENDING' | 'ACTIVE' | 'HIDDEN' | 'BLOCKED';
 export type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -352,7 +352,8 @@ export interface Involvement {
   /** Идентификатор переписки: по ней и открывается это участие. */
   id: string;
   /** Из какой двери пришло участие. */
-  kind: 'SERVICE' | 'SELL' | 'BUY';
+  /** Откуда сделка: услуга мастера, вещь, запрос, вакансия или резюме. */
+  kind: 'SERVICE' | ListingKind;
   title: string;
   subtitle: string | null;
   /** Куда ведёт карточка внутри приложения. */

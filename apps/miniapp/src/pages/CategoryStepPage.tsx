@@ -18,6 +18,9 @@ import { CarBody, bodyKind } from '../components/CarBody';
  * Нарисованы не для всех поколений — там, где снимка нет, шаг остаётся
  * строкой списка и работает ровно так же.
  */
+/** Откуда пришли: у каждой двери свои адреса и своя лента. */
+export type StepMode = 'sell' | 'buy' | 'service' | 'job' | 'resume';
+
 /** Сколько карточек показываем под выбором. */
 const FEED_PAGE_SIZE = 6;
 
@@ -44,14 +47,21 @@ const FEED_PAGE_SIZE = 6;
  * откладывает. Видно сразу, что найдётся, и можно остановиться в любой
  * момент, не доходя до последнего шага.
  */
-export function CategoryStepPage({ mode }: { mode: 'sell' | 'buy' | 'service' }) {
+export function CategoryStepPage({ mode }: { mode: StepMode }) {
   const { slug = '' } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const isService = mode === 'service';
+  const isCareer = mode === 'job' || mode === 'resume';
+  const listingKind = mode === 'buy' ? 'BUY' : mode === 'job' ? 'JOB' : mode === 'resume' ? 'RESUME' : 'SELL';
+
   const categories = useAsync(
-    () => api.categories(isService ? 'SERVICE' : 'PRODUCT', isService ? undefined : mode === 'buy' ? 'BUY' : 'SELL'),
+    () =>
+      api.categories(
+        isService ? 'SERVICE' : isCareer ? 'JOB' : 'PRODUCT',
+        isService ? undefined : listingKind,
+      ),
     [mode],
   );
   const attributes = useAsync(() => api.categoryAttributes(slug), [slug]);
@@ -88,7 +98,7 @@ export function CategoryStepPage({ mode }: { mode: 'sell' | 'buy' | 'service' })
       isService
         ? Promise.resolve({ items: [], total: 0, page, pageSize: FEED_PAGE_SIZE, hasMore: false })
         : api.listings({
-            kind: mode === 'buy' ? 'BUY' : 'SELL',
+            kind: listingKind,
             categorySlug: slug,
             attrs: attrs || undefined,
             pageSize: FEED_PAGE_SIZE,
@@ -159,7 +169,7 @@ export function CategoryStepPage({ mode }: { mode: 'sell' | 'buy' | 'service' })
       {/* Путь: где человек находится и что уже выбрал. Каждый шаг можно снять. */}
       <div className="crumbs">
         <button type="button" className="crumbs__item" onClick={() => navigate(rootPath(mode))}>
-          {isService ? 'Услуги' : mode === 'buy' ? 'Запросы' : 'Товары'}
+          {isService ? 'Услуги' : isCareer ? 'Карьера' : mode === 'buy' ? 'Запросы' : 'Товары'}
         </button>
         {section && section.slug !== current.slug && (
           <>
@@ -263,7 +273,9 @@ export function CategoryStepPage({ mode }: { mode: 'sell' | 'buy' | 'service' })
       </button>
 
       {/* Лента под выбором — она и показывает, ради чего эти шаги. */}
-      <h2 className="section-title">{isService ? 'Мастера' : 'Объявления'}</h2>
+      <h2 className="section-title">
+        {isService ? 'Мастера' : mode === 'job' ? 'Вакансии' : mode === 'resume' ? 'Резюме' : 'Объявления'}
+      </h2>
 
       {feed.items.length > 0 ? (
         <>
@@ -300,21 +312,26 @@ export function CategoryStepPage({ mode }: { mode: 'sell' | 'buy' | 'service' })
 }
 
 /** Куда ведут ссылки шагов и выдачи — у каждой двери свой адрес. */
-function basePath(mode: 'sell' | 'buy' | 'service'): string {
+function basePath(mode: StepMode): string {
   if (mode === 'service') return '/services/c';
   if (mode === 'buy') return '/wanted/c';
+  if (mode === 'job') return '/career/jobs/c';
+  if (mode === 'resume') return '/career/resumes/c';
   return '/market/c';
 }
 
-function rootPath(mode: 'sell' | 'buy' | 'service'): string {
+function rootPath(mode: StepMode): string {
   if (mode === 'service') return '/';
   if (mode === 'buy') return '/wanted';
+  if (mode === 'job' || mode === 'resume') return '/career';
   return '/market/browse';
 }
 
-function resultsPath(mode: 'sell' | 'buy' | 'service'): string {
+function resultsPath(mode: StepMode): string {
   if (mode === 'service') return '/specialists';
   if (mode === 'buy') return '/wanted/all';
+  if (mode === 'job') return '/career/jobs';
+  if (mode === 'resume') return '/career/resumes';
   return '/market/listings';
 }
 

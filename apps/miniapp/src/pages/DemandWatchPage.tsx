@@ -35,7 +35,8 @@ export function DemandWatchPage() {
     try {
       haptic.tap();
       await api.addDemandWatch({
-        kind,
+        // Караулят вещи и услуги: вакансии смотрят сами, когда нужна работа.
+        kind: kind === 'PRODUCT' ? 'PRODUCT' : 'SERVICE',
         categoryId: categoryId || null,
         city: city.trim() || null,
         keyword: keyword.trim() || null,

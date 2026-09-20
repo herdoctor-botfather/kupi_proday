@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { PRODUCT_TREE, SERVICE_TREE, type CategoryNode } from './category-tree';
+import { CAREER_TREE } from './career-tree';
 
 /**
  * Приводит категории в базе к дереву из category-tree.ts.
@@ -16,7 +17,7 @@ import { PRODUCT_TREE, SERVICE_TREE, type CategoryNode } from './category-tree';
  */
 const prisma = new PrismaClient();
 
-async function applyTree(tree: CategoryNode[], kind: 'PRODUCT' | 'SERVICE'): Promise<Set<string>> {
+async function applyTree(tree: CategoryNode[], kind: 'PRODUCT' | 'SERVICE' | 'JOB'): Promise<Set<string>> {
   const seen = new Set<string>();
 
   for (const [index, root] of tree.entries()) {
@@ -75,7 +76,8 @@ async function applyTree(tree: CategoryNode[], kind: 'PRODUCT' | 'SERVICE'): Pro
 async function main(): Promise<void> {
   const products = await applyTree(PRODUCT_TREE, 'PRODUCT');
   const services = await applyTree(SERVICE_TREE, 'SERVICE');
-  const seen = new Set([...products, ...services]);
+  const careers = await applyTree(CAREER_TREE, 'JOB');
+  const seen = new Set([...products, ...services, ...careers]);
 
   // Всё, чего в дереве нет, уходит из каталога, но остаётся в базе.
   const stale = await prisma.category.updateMany({

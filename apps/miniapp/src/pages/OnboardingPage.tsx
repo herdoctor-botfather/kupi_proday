@@ -189,6 +189,31 @@ export function OnboardingPage() {
             {saving === 'URGENT' ? 'Открываем...' : 'Смотреть срочное →'}
           </span>
         </button>
+
+        {/*
+          Карьера — шестая дверь.
+          Работа не вещь и не услуга: её не покупают и не продают, а ищут
+          с двух сторон сразу. Поэтому дверь своя, а внутри — две стороны
+          одного вопроса: нужен сотрудник или нужна работа.
+        */}
+        <button
+          type="button"
+          className={`role-card role-card--banner role-card--wide${user?.onboardedAs === 'CAREER' ? ' role-card--previous' : ''}`}
+          onClick={() => choose('CAREER')}
+          disabled={saving !== null}
+        >
+          {user?.onboardedAs === 'CAREER' && <span className="role-card__mark">Прошлый выбор</span>}
+          <span className="role-card__photo">
+            <img src={doorCareer} alt="Люди на рабочих местах" loading="lazy" />
+          </span>
+          <span className="role-card__title">💼 Карьера</span>
+          <span className="role-card__text">
+            Вакансии и резюме рядом с домом: смена, подработка или постоянное место
+          </span>
+          <span className="role-card__action">
+            {saving === 'CAREER' ? 'Открываем...' : 'Найти работу или сотрудника →'}
+          </span>
+        </button>
       </div>
 
       {/*

@@ -20,6 +20,8 @@ import { MyListingsPage } from './pages/MyListingsPage';
 import { SellHubPage } from './pages/SellHubPage';
 import { PersonPage } from './pages/PersonPage';
 import { CategoryStepPage } from './pages/CategoryStepPage';
+import { CareerHubPage } from './pages/CareerHubPage';
+import { CareerFeedPage } from './pages/CareerFeedPage';
 import { SellPage } from './pages/SellPage';
 import { SpecialistsPage } from './pages/SpecialistsPage';
 import { MapPage } from './pages/MapPage';
@@ -157,6 +159,15 @@ function Shell() {
       <Route path="/wanted/c/:slug" element={<CategoryStepPage mode="buy" />} />
       <Route path="/services/c/:slug" element={<CategoryStepPage mode="service" />} />
       <Route path="/market/listings" element={<MarketBrowsePage />} />
+      {/* Карьера: две стороны одной двери — ищу работу и ищу сотрудника. */}
+      <Route path="/career" element={<CareerHubPage />} />
+      <Route path="/career/jobs" element={<CareerFeedPage kind="JOB" />} />
+      <Route path="/career/resumes" element={<CareerFeedPage kind="RESUME" />} />
+      <Route path="/career/jobs/c/:slug" element={<CategoryStepPage mode="job" />} />
+      <Route path="/career/resumes/c/:slug" element={<CategoryStepPage mode="resume" />} />
+      <Route path="/career/new-job" element={<SellPage />} />
+      <Route path="/career/new-resume" element={<SellPage />} />
+
       <Route path="/wanted" element={<WantedHubPage />} />
       <Route path="/wanted/browse" element={<WantedPage />} />
       {/* Выдача запросов с фильтрами — та же страница, что и витрина. */}

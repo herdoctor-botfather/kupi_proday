@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { CATEGORY_ATTRIBUTES } from './category-attributes';
+import { CAREER_ATTRIBUTES, CAREER_TREE } from './career-tree';
 
 /**
  * Приводит характеристики категорий к описанному в category-attributes.ts.
@@ -17,7 +18,17 @@ async function main(): Promise<void> {
   let updated = 0;
   let missing = 0;
 
-  for (const [categorySlug, specs] of Object.entries(CATEGORY_ATTRIBUTES)) {
+  /*
+   * У карьеры характеристики одни на все отрасли: график, опыт и оплата
+   * спрашиваются и у повара, и у программиста. Перечислять их в каждой
+   * из пятнадцати отраслей значило бы держать один список в пятнадцати
+   * местах и однажды разойтись.
+   */
+  const careerAttributes = Object.fromEntries(
+    CAREER_TREE.map((root) => [root.slug, CAREER_ATTRIBUTES]),
+  );
+
+  for (const [categorySlug, specs] of Object.entries({ ...CATEGORY_ATTRIBUTES, ...careerAttributes })) {
     const category = await prisma.category.findUnique({
       where: { slug: categorySlug },
       select: { id: true },

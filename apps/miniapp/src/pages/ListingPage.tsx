@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { LISTING_CONDITIONS } from '@app/shared';
+import type { ListingKind } from '@app/shared';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { AsyncContent } from '../components/states';
@@ -185,7 +186,7 @@ function SellerAction({
   listing,
   isAuthenticated,
 }: {
-  listing: { id: string; isMine: boolean; kind: 'SELL' | 'BUY' };
+  listing: { id: string; isMine: boolean; kind: ListingKind };
   isAuthenticated: boolean;
 }) {
   const navigate = useNavigate();

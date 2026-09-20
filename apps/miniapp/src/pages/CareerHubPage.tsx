@@ -49,16 +49,26 @@ export function CareerHubPage() {
         </p>
       </header>
 
+      {/*
+        Сначала смотреть, потом размещать.
+
+        Сперва кнопки звались «Ищу работу» и «Найти сотрудника» — и это
+        читалось как размещение: человек, который ищет работу, ждал
+        формы резюме, а попадал в список вакансий. Теперь название
+        говорит, что откроется, а не с какой целью человек пришёл.
+      */}
+      <h2 className="section-title">Смотреть</h2>
+
       <Link to="/career/jobs" className="profile-cta" onClick={() => haptic.tap()}>
         <span className="profile-cta__icon" aria-hidden>
           🔎
         </span>
         <span className="profile-cta__body">
-          <span className="profile-cta__title">Ищу работу</span>
+          <span className="profile-cta__title">Вакансии</span>
           <span className="profile-cta__text">
             {jobCount > 0
-              ? `Открытые вакансии рядом: ${jobCount}`
-              : 'Смотреть вакансии в своём городе'}
+              ? `Кто нанимает прямо сейчас: ${jobCount}`
+              : 'Кто нанимает в вашем городе'}
           </span>
         </span>
         <span className="profile-cta__chevron" aria-hidden>
@@ -71,11 +81,11 @@ export function CareerHubPage() {
           🧑‍🔧
         </span>
         <span className="profile-cta__body">
-          <span className="profile-cta__title">Найти сотрудника</span>
+          <span className="profile-cta__title">Резюме</span>
           <span className="profile-cta__text">
             {resumeCount > 0
               ? `Людей в поиске работы: ${resumeCount}`
-              : 'Смотреть, кто ищет работу поблизости'}
+              : 'Кто ищет работу поблизости'}
           </span>
         </span>
         <span className="profile-cta__chevron" aria-hidden>
@@ -92,7 +102,7 @@ export function CareerHubPage() {
               💼
             </span>
             <span className="profile-cta__body">
-              <span className="profile-cta__title">Нужен сотрудник</span>
+              <span className="profile-cta__title">Разместить вакансию</span>
               <span className="profile-cta__text">Опишите работу и оплату — люди откликнутся сами</span>
             </span>
             <span className="profile-cta__chevron" aria-hidden>
@@ -106,7 +116,9 @@ export function CareerHubPage() {
             </span>
             <span className="profile-cta__body">
               <span className="profile-cta__title">Разместить резюме</span>
-              <span className="profile-cta__text">Бесплатно и без ограничений — расскажите, что умеете</span>
+              <span className="profile-cta__text">
+                Бесплатно и без ограничений — расскажите, что умеете и кем хотите работать
+              </span>
             </span>
             <span className="profile-cta__chevron" aria-hidden>
               ›

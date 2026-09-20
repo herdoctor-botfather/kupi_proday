@@ -7,7 +7,6 @@ import { FeedHeader, FeedMore } from '../components/Feed';
 import { EmptyState } from '../components/states';
 import { haptic } from '../lib/telegram';
 import { pluralize } from '../lib/format';
-import { useIsAuthenticated } from '../lib/auth';
 
 /** Сколько карточек показываем в ленте. */
 const FEED_PAGE_SIZE = 6;
@@ -24,8 +23,6 @@ const FEED_PAGE_SIZE = 6;
  * счёт объявлений, как и всё остальное на площадке.
  */
 export function CareerHubPage() {
-  const isAuthenticated = useIsAuthenticated();
-
   const jobs = useAsync(() => api.listings({ kind: 'JOB', pageSize: 1 }), []);
   const resumes = useAsync(() => api.listings({ kind: 'RESUME', pageSize: 1 }), []);
 
@@ -50,15 +47,11 @@ export function CareerHubPage() {
       </header>
 
       {/*
-        Сначала смотреть, потом размещать.
-
+        Названия говорят, что откроется, а не с какой целью человек пришёл.
         Сперва кнопки звались «Ищу работу» и «Найти сотрудника» — и это
-        читалось как размещение: человек, который ищет работу, ждал
-        формы резюме, а попадал в список вакансий. Теперь название
-        говорит, что откроется, а не с какой целью человек пришёл.
+        читалось как размещение: искавший работу ждал формы резюме,
+        а попадал в список вакансий.
       */}
-      <h2 className="section-title">Смотреть</h2>
-
       <Link to="/career/jobs" className="profile-cta" onClick={() => haptic.tap()}>
         <span className="profile-cta__icon" aria-hidden>
           🔎
@@ -93,39 +86,9 @@ export function CareerHubPage() {
         </span>
       </Link>
 
-      {isAuthenticated && (
-        <>
-          <h2 className="section-title">Разместить</h2>
-
-          <Link to="/career/new-job" className="profile-cta" onClick={() => haptic.tap()}>
-            <span className="profile-cta__icon" aria-hidden>
-              💼
-            </span>
-            <span className="profile-cta__body">
-              <span className="profile-cta__title">Разместить вакансию</span>
-              <span className="profile-cta__text">Опишите работу и оплату — люди откликнутся сами</span>
-            </span>
-            <span className="profile-cta__chevron" aria-hidden>
-              ›
-            </span>
-          </Link>
-
-          <Link to="/career/new-resume" className="profile-cta" onClick={() => haptic.tap()}>
-            <span className="profile-cta__icon" aria-hidden>
-              📄
-            </span>
-            <span className="profile-cta__body">
-              <span className="profile-cta__title">Разместить резюме</span>
-              <span className="profile-cta__text">
-                Бесплатно и без ограничений — расскажите, что умеете и кем хотите работать
-              </span>
-            </span>
-            <span className="profile-cta__chevron" aria-hidden>
-              ›
-            </span>
-          </Link>
-        </>
-      )}
+      {/* Кнопок размещения здесь нет: они стоят внутри витрин, где
+          человек уже увидел, что предлагают другие, и понимает, как
+          выглядит хорошее объявление. */}
 
       {/* Лента вакансий сразу под кнопками: тому, кто зашёл посмотреть,
           нужна работа перед глазами, а не ещё один экран выбора. */}

@@ -20,6 +20,7 @@ import { MyListingsPage } from './pages/MyListingsPage';
 import { SellHubPage } from './pages/SellHubPage';
 import { PersonPage } from './pages/PersonPage';
 import { CategoryStepPage } from './pages/CategoryStepPage';
+import { CreditsPage } from './pages/CreditsPage';
 import { SellPage } from './pages/SellPage';
 import { SpecialistsPage } from './pages/SpecialistsPage';
 import { MapPage } from './pages/MapPage';
@@ -152,6 +153,7 @@ function Shell() {
       <Route path="/map" element={<MapPage />} />
       <Route path="/market" element={<MarketPage />} />
       <Route path="/market/browse" element={<MarketCatalogPage />} />
+      <Route path="/credits" element={<CreditsPage />} />
       {/* Пошаговый выбор: раздел → полка → марка → модель. */}
       <Route path="/market/c/:slug" element={<CategoryStepPage mode="sell" />} />
       <Route path="/wanted/c/:slug" element={<CategoryStepPage mode="buy" />} />

@@ -4,10 +4,21 @@
 # отдельно намеренно — перезапуск одного не роняет другого, а падение бота
 # не должно уносить с собой приложение.
 
+# Журналы контейнеров растут без предела и однажды съели диск целиком:
+# Postgres не смог записать контрольную точку и ушёл в аварийное
+# восстановление. Ограничение общее для всех служб — три файла по
+# 20 МБ на каждую, дальше старое затирается.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '20m'
+    max-file: '3'
+
 services:
   db:
     image: postgres:17-alpine
     restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте пароль в .env}
@@ -30,6 +41,7 @@ services:
         VITE_TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME}
         VITE_YANDEX_MAPS_API_KEY: ${VITE_YANDEX_MAPS_API_KEY:-}
     restart: unless-stopped
+    logging: *logging
     env_file: .env
     environment:
       NODE_ENV: production
@@ -53,6 +65,7 @@ services:
       context: .
       target: app
     restart: unless-stopped
+    logging: *logging
     env_file: .env
     # Сеть хоста, а не мостовая.
     #
@@ -82,6 +95,7 @@ services:
         VITE_TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME}
         VITE_YANDEX_MAPS_API_KEY: ${VITE_YANDEX_MAPS_API_KEY:-}
     restart: unless-stopped
+    logging: *logging
     environment:
       APP_DOMAIN: ${APP_DOMAIN:?домен приложения обязателен}
       ADMIN_DOMAIN: ${ADMIN_DOMAIN:?домен админки обязателен}

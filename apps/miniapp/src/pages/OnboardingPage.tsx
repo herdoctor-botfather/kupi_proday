@@ -20,6 +20,7 @@ import doorApply from '../assets/doors/apply.jpg';
 import doorMarket from '../assets/doors/market.jpg';
 import doorWanted from '../assets/doors/wanted.jpg';
 import doorUrgent from '../assets/doors/urgent.jpg';
+import doorCareer from '../assets/doors/career.jpg';
 
 /**
  * Стартовый экран: кто пришёл — заказчик или исполнитель.

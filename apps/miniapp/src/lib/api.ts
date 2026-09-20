@@ -130,6 +130,19 @@ const qs = (params: Record<string, unknown>): string => {
 };
 
 /**
+ * Что модель разглядела на снимке.
+ * Любое поле может оказаться пустым: половина заполненной формы
+ * полезнее, чем отказ целиком.
+ */
+export interface PhotoDraft {
+  title: string;
+  description: string;
+  category: string | null;
+  condition: 'NEW' | 'USED_PERFECT' | 'USED' | null;
+  price: number | null;
+}
+
+/**
  * Находки поиска по всей площадке — разложенные по дверям.
  * Пустая группа означает, что там ничего не нашлось, и она не рисуется.
  */
@@ -242,6 +255,13 @@ export const api = {
 
   /** Публичный профиль продавца: кто это и что ещё выставил. */
   publicProfile: (id: string) => request<PublicProfile>(`/users/${id}`),
+  /** Заготовка объявления по фотографии: что за вещь и как её назвать. */
+  photoDraft: (image: string, categories: string[]) =>
+    request<PhotoDraft>('/text/from-photo', {
+      method: 'POST',
+      body: JSON.stringify({ image, categories }),
+    }),
+
   /** Поиск сразу по всем дверям: товары, запросы, мастера, работа. */
   search: (q: string, city?: string) => request<SearchResult>(`/search${qs({ q, city })}`),
 

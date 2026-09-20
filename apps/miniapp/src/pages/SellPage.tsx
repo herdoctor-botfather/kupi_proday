@@ -10,6 +10,8 @@ import {
 } from '@app/shared';
 import { api } from '../lib/api';
 import { CategoryWizard } from '../components/CategoryWizard';
+import { PhotoDraftButton } from '../components/PhotoDraftButton';
+import { WantedHint } from '../components/WantedHint';
 import { AttributeFields } from '../components/AttributeFields';
 import { useAsync } from '../lib/useAsync';
 import { ChipsRow } from '../components/ChipsRow';
@@ -369,6 +371,50 @@ export function SellPage() {
       <AsyncContent state={categories}>
         {(allCategories) => (
           <form onSubmit={submit} noValidate>
+            {/*
+              Путь для тех, кому некогда: снимок вместо семи полей.
+              Стоит первым и только при создании — заполнять по фотографии
+              уже готовое объявление значит стереть то, что человек
+              правил руками.
+            */}
+            {!editingId && !career && (
+              <PhotoDraftButton
+                categories={allCategories}
+                onDraft={(draft, file) => {
+                  if (draft.title) set('title', draft.title);
+                  if (draft.description) set('description', draft.description);
+                  if (draft.price) set('price', String(draft.price));
+                  if (draft.condition) set('condition', draft.condition);
+
+                  // Категорию модель называет слагом — в форме нужен её
+                  // идентификатор, и берём его из уже загруженного дерева.
+                  if (draft.category) {
+                    for (const root of allCategories) {
+                      const match =
+                        root.slug === draft.category
+                          ? root
+                          : (root.children ?? []).find((child) => child.slug === draft.category);
+                      if (match) {
+                        set('categoryIds', [match.id]);
+                        break;
+                      }
+                    }
+                  }
+
+                  // Снимок сразу уходит в объявление: выбирать его
+                  // второй раз человеку незачем.
+                  setPendingPhotos((prev) =>
+                    prev.length >= LISTING_PHOTOS_MAX
+                      ? prev
+                      : [
+                          ...prev,
+                          { id: `photo-${prev.length}`, blob: file, preview: URL.createObjectURL(file) },
+                        ],
+                  );
+                }}
+              />
+            )}
+
             <Field
               label={
                 vacancy ? 'Кто нужен' : kind === 'RESUME' ? 'Кем хотите работать' : wanted ? 'Что ищете' : 'Что продаёте'
@@ -389,6 +435,10 @@ export function SellPage() {
                 }
               />
             </Field>
+
+            {/* Встречный спрос: продавец видит, что вещь уже ждут, —
+                и выкладывает не в пустоту, а конкретным людям. */}
+            {kind === 'SELL' && <WantedHint title={form.title} city={form.city || undefined} />}
 
             <div className="form-row">
               <Field

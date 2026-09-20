@@ -7,6 +7,7 @@ import { haptic } from '../lib/telegram';
 import { markRoleChosen } from '../lib/session';
 import { CitySheet } from '../components/CitySheet';
 import { SearchInput } from '../components/SearchInput';
+import { WelcomeOffer } from '../components/WelcomeOffer';
 import { setHomeCity, useHomeCity } from '../lib/home-city';
 /*
  * Обложки дверей импортируются, а не лежат в public.
@@ -264,6 +265,10 @@ export function OnboardingPage() {
           </span>
         </button>
       </div>
+
+      {/* Чем встречаем: бонусы и Premium за друзей — на видном месте,
+          а не в справке, куда заходят единицы. */}
+      <WelcomeOffer />
 
       <p className="onboarding__note">
         Отдельная регистрация не нужна — вы уже вошли через Telegram. Выбор влияет только на то,

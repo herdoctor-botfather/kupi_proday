@@ -5000,3 +5000,141 @@ body {
 .onboarding__search .search__icon {
   color: var(--accent);
 }
+
+/* ─── Объявление по фотографии ─── */
+
+/*
+ * Заметная кнопка в начале формы.
+ *
+ * Она соперничает не с полями, а с решением «потом»: человек открыл
+ * форму, увидел семь полей и закрыл. Поэтому у неё акцентная рамка и
+ * подсветка — путь в двадцать секунд должен быть виден раньше, чем
+ * длинный.
+ */
+.photo-draft {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 14px 15px;
+  border-radius: 16px;
+  text-align: left;
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-raised));
+  border: 1.5px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.photo-draft:disabled {
+  opacity: 0.75;
+}
+
+.photo-draft:active:not(:disabled) {
+  transform: scale(0.995);
+}
+
+.photo-draft__icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.photo-draft__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.photo-draft__title {
+  font-weight: 650;
+  font-size: 15px;
+}
+
+.photo-draft__text {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--text-hint);
+}
+
+.photo-draft__chevron {
+  color: var(--accent);
+  font-size: 18px;
+}
+
+/* ─── Встречный спрос и встреча новичка ─── */
+
+/* Подсказка «это уже ищут»: горячая, но не кричащая — она сообщает
+   хорошую новость, а не требует действия. */
+.wanted-hint {
+  display: flex;
+  gap: 10px;
+  margin: -6px 0 14px;
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: color-mix(in srgb, #ff6b6b 10%, var(--surface-raised));
+  border: 1px solid color-mix(in srgb, #ff6b6b 35%, transparent);
+}
+
+.wanted-hint__icon {
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.wanted-hint__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wanted-hint__title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.wanted-hint__text {
+  font-size: 12.5px;
+  color: var(--text-hint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wanted-hint__link {
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* Обещания новичку: два коротких обещания и два действия рядом. */
+.welcome {
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface-raised));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.welcome__row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.welcome__icon {
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.welcome__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.welcome__actions .button {
+  flex: 1;
+}

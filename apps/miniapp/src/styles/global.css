@@ -4945,3 +4945,58 @@ body {
   font-size: 13px;
   white-space: nowrap;
 }
+
+/* ─── Имя площадки и главный поиск ─── */
+
+/*
+ * Надпись NADO — вывеска, а не подпись.
+ *
+ * Мелкая и полупрозрачная, она читалась как служебная пометка: глаз
+ * скользил мимо, и первое, что видел человек, были двери. Имя должно
+ * быть первым, что он замечает, — отсюда размер и полная яркость
+ * акцентного цвета со свечением, как у вывески в темноте.
+ */
+.brandbar {
+  height: 44px;
+  padding-bottom: 6px;
+}
+
+.brandbar__name {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/*
+ * Главный поиск заметнее обычного.
+ *
+ * На стартовом экране он соперничает за внимание с шестью картинками
+ * дверей и в сером исполнении проигрывал им вчистую. Акцентная рамка
+ * и подсветка делают его первым, что видно после имени, — а именно
+ * с него быстрее всего попасть туда, куда человек шёл.
+ */
+.onboarding__search .search__input {
+  padding-top: 14px;
+  padding-bottom: 14px;
+  font-size: 15.5px;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 10%, transparent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface-raised));
+}
+
+.onboarding__search .search__input::placeholder {
+  color: color-mix(in srgb, var(--text) 55%, transparent);
+}
+
+.onboarding__search .search__input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* Лупа в тон рамке: серый значок на подсвеченном поле выглядел
+   забытым от прежнего оформления. */
+.onboarding__search .search__icon {
+  color: var(--accent);
+}

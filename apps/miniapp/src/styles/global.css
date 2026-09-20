@@ -1314,23 +1314,40 @@ body::before {
 }
 
 .onboarding .role-card__photo {
-  height: 86px;
+  height: 74px;
 }
 
 .onboarding .role-card__title {
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 1.25;
 }
 
-/* Описание остаётся в разметке для поиска и озвучивания, но на плитке
-   не показывается: абзац в колонку шириной с ладонь не читают. */
+/*
+ * Описание под заголовком — обрезанное, а не скрытое.
+ *
+ * Прятать его целиком было неверно: «Я мастер» и «Надо мастера» без
+ * пояснения различаются одним словом, и человек выбирает наугад. Но и
+ * абзац целиком в колонку шириной с ладонь не влезает, поэтому видны
+ * две строки, а дальше многоточие — смысла первых двух строк хватает,
+ * чтобы понять дверь.
+ */
 .onboarding .role-card__text {
-  display: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 11.5px;
+  line-height: 1.32;
+}
+
+/* Широкая дверь занимает всю строку — там места хватает на три строки. */
+.onboarding .role-card--wide .role-card__text {
+  -webkit-line-clamp: 3;
 }
 
 .onboarding .role-card--banner .role-card__action {
-  font-size: 12px;
-  padding-bottom: 12px;
+  font-size: 11.5px;
+  padding-bottom: 11px;
 }
 
 .onboarding__note {

@@ -164,7 +164,7 @@ export class PaymentsService {
       // LISTING_SLOT выдавать нечего: оплаченное место — это сама запись,
       // и лимит считает её при следующей попытке разместить объявление.
 
-      await this.addCashback(tx, payment.userId, payment.purpose, payment.stars, payment.id);
+      await this.addCashback(tx, payment.userId, payment.purpose, payment.stars);
     });
 
     return { applied: true };
@@ -363,7 +363,7 @@ export class PaymentsService {
         await this.applyPromotion(tx, order.listingId ?? null, dto.plan ?? null);
       }
 
-      await this.addCashback(tx, userId, dto.purpose, order.stars, payment.id);
+      await this.addCashback(tx, userId, dto.purpose, order.stars);
 
       // Баланс перечитываем: кэшбек мог его поднять уже после списания,
       // и показать человеку число до начисления значило бы соврать.
@@ -418,7 +418,6 @@ export class PaymentsService {
     userId: string,
     purpose: string,
     stars: number,
-    paymentId: string,
   ): Promise<void> {
     if (purpose === 'WALLET_TOPUP') return;
 
@@ -440,7 +439,17 @@ export class PaymentsService {
         stars: bonus,
         balanceAfter: user.starsBalance,
         title: `Кэшбек ${CASHBACK_PERCENT}% с покупки`,
-        paymentId,
+        /*
+         * Ссылку на платёж здесь не ставим.
+         *
+         * Она уникальна и уже занята записью о самом списании: на один
+         * платёж приходится две строки — «потратил» и «вернулось». Попытка
+         * сослаться дважды роняла всю покупку, и человек с деньгами на
+         * счету видел «Internal server error» вместо картинки.
+         *
+         * Связь с покупкой читается по времени и названию, а уникальность
+         * оставлена пополнениям, где она и нужна.
+         */
       },
     });
   }

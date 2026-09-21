@@ -5369,3 +5369,12 @@ body {
   color: var(--destructive);
   font-weight: 600;
 }
+
+/* Кнопка оплаты показа: тот же отступ снизу, что у карточки состояния,
+   иначе она прилипает к строке «Показ в каталоге». */
+.subscription-cta {
+  margin-bottom: 16px;
+}
+.subscription-row {
+  margin-bottom: 16px;
+}

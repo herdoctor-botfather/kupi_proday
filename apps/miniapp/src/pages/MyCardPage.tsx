@@ -137,7 +137,7 @@ export function MyCardPage() {
               </div>
 
               {profile.status === 'ACTIVE' && !paid && (
-                <Link className="button" to="/profile/subscription">
+                <Link className="button subscription-cta" to="/profile/subscription">
                   Оплатить показ в каталоге
                 </Link>
               )}

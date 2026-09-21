@@ -53,19 +53,34 @@ export class TelegramStarsService {
   }
 
   private async call<T>(method: string, body: Record<string, unknown>): Promise<T> {
-    let response: Response;
-    try {
-      response = await fetch(`${this.apiUrl}/${method}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        // Без ограничения запрос может висеть минутами, а на том конце
-        // человек ждёт кнопку оплаты.
-        signal: AbortSignal.timeout(10_000),
-      });
-    } catch (error) {
-      this.logger.error(`${method}: сеть недоступна — ${String(error)}`);
-      throw new ServiceUnavailableException('Telegram сейчас недоступен, попробуйте позже');
+    /*
+     * Счёт выставляем со второй попытки, если первая утонула в сети.
+     *
+     * Связь с Telegram время от времени проседает на десяток секунд, и
+     * человек, согласившийся заплатить, получал «ничего не произошло».
+     * Повторять можно только выставление счёта: лишняя ссылка на оплату
+     * ничего не стоит и никуда не уходит. Возврат не повторяем — дважды
+     * отправленный, он может запутать учёт.
+     */
+    const attempts = method === 'createInvoiceLink' ? 2 : 1;
+
+    let response: Response | undefined;
+    for (let attempt = 1; attempt <= attempts && !response; attempt++) {
+      try {
+        response = await fetch(`${this.apiUrl}/${method}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          // Без ограничения запрос может висеть минутами, а на том конце
+          // человек ждёт кнопку оплаты.
+          signal: AbortSignal.timeout(10_000),
+        });
+      } catch (error) {
+        this.logger.error(`${method}: сеть недоступна (попытка ${attempt}) — ${String(error)}`);
+      }
+    }
+    if (!response) {
+      throw new ServiceUnavailableException('Telegram сейчас недоступен, попробуйте ещё раз через минуту');
     }
 
     const data = (await response.json()) as { ok: boolean; result?: T; description?: string };

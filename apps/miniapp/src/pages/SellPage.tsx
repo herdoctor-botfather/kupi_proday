@@ -406,8 +406,6 @@ export function SellPage() {
                 : 'Заполните описание — модератор проверит объявление и опубликует его на витрине.'}
       </p>
 
-      {saveError && <div className="alert alert--error">{saveError}</div>}
-
       <AsyncContent state={categories}>
         {(allCategories) => (
           <form onSubmit={submit} noValidate>
@@ -764,6 +762,10 @@ export function SellPage() {
               onChange={addPhotos}
               hidden
             />
+
+            {/* Ошибка — у самой кнопки: в начале длинной формы её
+                не видно, и нажатие выглядело так, будто ничего не случилось. */}
+            {saveError && <div className="alert alert--error">{saveError}</div>}
 
             <div className="form-actions">
               <button type="submit" className="button" disabled={saving || photoBusy}>

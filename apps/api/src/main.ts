@@ -4,6 +4,18 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { resolve } from 'node:path';
 import { mkdirSync } from 'node:fs';
+import { setDefaultResultOrder } from 'node:dns';
+
+/*
+ * Сначала IPv4.
+ *
+ * У контейнера нет IPv6, а api.telegram.org отдаёт оба адреса. Node
+ * пробовал сперва IPv6, ждал отказа и только потом шёл по IPv4: запрос,
+ * который с самого сервера занимает 0,15 секунды, из контейнера тянулся
+ * до трёх, а при просадке сети не укладывался в предел — и счёт на
+ * оплату не выставлялся.
+ */
+setDefaultResultOrder('ipv4first');
 import { AppModule } from './app.module';
 import { PrismaService } from './prisma/prisma.service';
 import { config } from './config';

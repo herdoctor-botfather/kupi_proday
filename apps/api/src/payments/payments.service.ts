@@ -594,19 +594,36 @@ export class PaymentsService {
       return;
     }
 
+    /*
+     * Срок показа живёт на самой анкете — по нему её пускает каталог.
+     *
+     * Раньше оплата только записывала подписку в историю, а срок на
+     * анкете не трогала: заплативший мастер в ленту не попадал. И
+     * отсчитывала неделю от сегодня, не видя показа, выданного
+     * администрацией, — купленное поверх подарка просто сгорало.
+     * Теперь оплаченное встаёт в хвост к уже действующему сроку, откуда
+     * бы тот ни взялся.
+     */
     const now = new Date();
-    const current = await tx.subscription.findFirst({
-      where: { specialistId, endsAt: { gt: now } },
-      orderBy: { endsAt: 'desc' },
-      select: { endsAt: true },
+    const specialist = await tx.specialist.findUnique({
+      where: { id: specialistId },
+      select: { subscriptionUntil: true },
+    });
+    const current = specialist?.subscriptionUntil;
+    const startsAt = current && current > now ? current : now;
+    const endsAt = extendFrom(current, SPECIALIST_PLANS[plan].days, now);
+
+    await tx.specialist.update({
+      where: { id: specialistId },
+      data: { subscriptionUntil: endsAt, isPromoted: true },
     });
 
     await tx.subscription.create({
       data: {
         specialistId,
         plan,
-        startsAt: now,
-        endsAt: extendFrom(current?.endsAt, SPECIALIST_PLANS[plan].days, now),
+        startsAt,
+        endsAt,
         amount: stars,
         currency: 'XTR',
         note: 'Оплачено звёздами Telegram',

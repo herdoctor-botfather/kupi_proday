@@ -40,14 +40,12 @@ export class MySpecialistService {
     });
     if (!row) return null;
 
-    // Действующая подписка — та, чей срок ещё не вышел. Их может быть
-    // несколько, если человек оплачивал вперёд: берём самую дальнюю,
-    // именно до неё анкета и показывается.
-    const subscription = await this.prisma.subscription.findFirst({
-      where: { specialistId: row.id, endsAt: { gt: new Date() } },
-      orderBy: { endsAt: 'desc' },
-      select: { endsAt: true },
-    });
+    // Срок показа — тот же, по которому анкету пускает каталог. Раньше
+    // здесь брали самую дальнюю оплаченную подписку, и показ, выданный
+    // администрацией, в анкете не отображался: мастер видел «не оплачен»,
+    // находясь при этом в ленте.
+    const showUntil =
+      row.subscriptionUntil && row.subscriptionUntil > new Date() ? row.subscriptionUntil : null;
 
     return {
       ...toDetail(row, { ratingBreakdown: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }, myReview: null }),
@@ -57,7 +55,7 @@ export class MySpecialistService {
       viewCount: row.viewCount,
       createdAt: row.createdAt.toISOString(),
       publishedAt: row.publishedAt?.toISOString() ?? null,
-      subscriptionEndsAt: subscription?.endsAt.toISOString() ?? null,
+      subscriptionEndsAt: showUntil?.toISOString() ?? null,
     };
   }
 

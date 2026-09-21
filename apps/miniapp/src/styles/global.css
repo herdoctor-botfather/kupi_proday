@@ -5141,14 +5141,32 @@ body {
   line-height: 1.1;
 }
 
+/*
+ * Две кнопки рядом — пока они помещаются.
+ *
+ * На телефоне «Разместить бесплатно» не влезало в половину ширины:
+ * текст переносился в две строки, прилипал к левому краю, и кнопки
+ * становились разной высоты. Теперь каждая кнопка держит свой текст
+ * в одну строку по центру, а когда вдвоём им тесно — встают друг
+ * под другом во всю ширину, вместо того чтобы сминаться.
+ */
 .welcome__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
 }
 
 .welcome__actions .button {
-  flex: 1;
+  flex: 1 1 150px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding-left: 12px;
+  padding-right: 12px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 /* ─── Верх экрана: имя и поиск как можно выше ─── */

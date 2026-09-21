@@ -148,12 +148,19 @@ export function MyCardPage() {
                 и человек должен узнать об этом здесь, а не гадать,
                 почему его не находят.
               */}
-              <Link className="subscription-row" to="/profile/subscription">
-                <span className="subscription-row__label">Показ в каталоге</span>
+              {/* Цвет рамки отвечает на главный вопрос без чтения:
+                  зелёная — клиенты вас видят, красная — нет. */}
+              <Link
+                className={`subscription-row ${paid ? 'subscription-row--paid' : 'subscription-row--unpaid'}`}
+                to="/profile/subscription"
+              >
+                <span className="subscription-row__label">
+                  {paid ? '✅' : '⛔'} Показ в каталоге
+                </span>
                 <span className="subscription-row__value">
                   {paid
-                    ? `оплачено до ${new Date(profile.subscriptionEndsAt ?? '').toLocaleDateString('ru-RU')}`
-                    : 'не оплачен'}
+                    ? `оплачен до ${new Date(profile.subscriptionEndsAt ?? '').toLocaleDateString('ru-RU')}`
+                    : 'не оплачен — вас не видно'}
                 </span>
               </Link>
 

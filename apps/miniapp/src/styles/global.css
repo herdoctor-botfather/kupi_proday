@@ -5351,3 +5351,21 @@ body {
   font-size: 12px;
   font-weight: 600;
 }
+
+/* Показ в каталоге: зелёная рамка — оплачен и виден, красная — нет. */
+.subscription-row--paid {
+  border-color: #22c55e;
+  background: color-mix(in srgb, #22c55e 8%, var(--surface-raised));
+}
+.subscription-row--paid .subscription-row__value {
+  color: #22c55e;
+  font-weight: 600;
+}
+.subscription-row--unpaid {
+  border-color: var(--destructive);
+  background: color-mix(in srgb, var(--destructive) 8%, var(--surface-raised));
+}
+.subscription-row--unpaid .subscription-row__value {
+  color: var(--destructive);
+  font-weight: 600;
+}

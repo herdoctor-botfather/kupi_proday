@@ -91,6 +91,25 @@ export const serviceInputSchema = z.object({
 export type ServiceInputDto = z.infer<typeof serviceInputSchema>;
 
 /**
+ * Ссылка на фотографию анкеты.
+ *
+ * Полный адрес — если фото лежит во внешнем хранилище, короткий
+ * `/uploads/…` — если на нашем же сервере. Раньше принимался только
+ * полный, и анкета с загруженным фото не сохранялась: сервер сам выдавал
+ * короткий адрес и сам же его отвергал. Прочие короткие пути не берём —
+ * ссылка должна вести либо в наше хранилище, либо на настоящий адрес.
+ */
+const photoRefSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .refine((value) => value === '' || value.startsWith('/uploads/') || /^https?:\/\/\S+$/.test(value), {
+    message: 'Нужна ссылка на изображение',
+  })
+  .nullable()
+  .optional();
+
+/**
  * Анкета специалиста, которую заполняет он сам.
  *
  * Отличается от админской upsertSpecialistSchema: здесь нет полей, которыми
@@ -102,7 +121,7 @@ export const specialistApplicationSchema = z.object({
   displayName: z.string().trim().min(2, 'Укажите имя').max(100),
   headline: z.string().trim().max(160).nullable().optional(),
   about: z.string().trim().max(5000).nullable().optional(),
-  photoUrl: z.string().trim().url('Нужна полная ссылка на изображение').max(500).nullable().optional().or(z.literal('')),
+  photoUrl: photoRefSchema,
   city: z.string().trim().min(2, 'Укажите город').max(100),
   address: z.string().trim().max(255).nullable().optional(),
   lat: z.coerce.number().min(-90).max(90).nullable().optional(),
@@ -336,7 +355,7 @@ export const upsertSpecialistSchema = z.object({
   slug: z.string().trim().regex(/^[a-z0-9-]+$/, 'Только латиница, цифры и дефис').min(2).max(80),
   headline: z.string().trim().max(160).nullable().optional(),
   about: z.string().trim().max(5000).nullable().optional(),
-  photoUrl: z.string().trim().url().max(500).nullable().optional().or(z.literal('')),
+  photoUrl: photoRefSchema,
   city: z.string().trim().min(2).max(100),
   address: z.string().trim().max(255).nullable().optional(),
   lat: z.coerce.number().min(-90).max(90).nullable().optional(),

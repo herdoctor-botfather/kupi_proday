@@ -5315,3 +5315,15 @@ body {
   font-size: 13.5px;
   text-align: center;
 }
+
+/* Совет перед полем рисования: заметный, но не тревожный — это
+   подсказка, как получить хороший результат, а не предупреждение. */
+.draw-tip {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-raised));
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+}

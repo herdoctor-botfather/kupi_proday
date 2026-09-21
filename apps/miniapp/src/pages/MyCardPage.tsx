@@ -46,6 +46,21 @@ const STATUS_VIEW: Record<SpecialistStatus, { icon: string; title: string; text:
   },
 };
 
+/*
+ * Одобрена, но не оплачена.
+ *
+ * Отдельного статуса в базе для этого нет: модерация и оплата — две
+ * независимые вещи. Но для мастера разница главная. Раньше такая анкета
+ * называлась «Опубликована — видна в каталоге», хотя в каталоге её не
+ * было, и человек искал себя в ленте, не понимая, что не так.
+ */
+const UNPAID_VIEW = {
+  icon: '💳',
+  title: 'Одобрена, но пока не видна в каталоге',
+  text: 'Модерация пройдена. Чтобы клиенты вас находили в каталоге, поиске и на карте, оплатите показ.',
+  tone: 'status--pending',
+};
+
 /** Личная карточка специалиста: состояние, статистика, управление публикацией. */
 export function MyCardPage() {
   const navigate = useNavigate();
@@ -105,18 +120,27 @@ export function MyCardPage() {
           </>
         }
       >
-        {(profile) =>
-          !profile ? null : (
+        {(profile) => {
+          if (!profile) return null;
+          const paid = Boolean(profile.subscriptionEndsAt && new Date(profile.subscriptionEndsAt) > new Date());
+          const view = profile.status === 'ACTIVE' && !paid ? UNPAID_VIEW : STATUS_VIEW[profile.status];
+          return (
             <>
-              <div className={`status-card ${STATUS_VIEW[profile.status].tone}`}>
+              <div className={`status-card ${view.tone}`}>
                 <div className="status-card__icon" aria-hidden>
-                  {STATUS_VIEW[profile.status].icon}
+                  {view.icon}
                 </div>
                 <div>
-                  <div className="status-card__title">{STATUS_VIEW[profile.status].title}</div>
-                  <div className="status-card__text">{STATUS_VIEW[profile.status].text}</div>
+                  <div className="status-card__title">{view.title}</div>
+                  <div className="status-card__text">{view.text}</div>
                 </div>
               </div>
+
+              {profile.status === 'ACTIVE' && !paid && (
+                <Link className="button" to="/profile/subscription">
+                  Оплатить показ в каталоге
+                </Link>
+              )}
 
               {/*
                 Подписка стоит сразу под состоянием анкеты: одобренная
@@ -127,13 +151,13 @@ export function MyCardPage() {
               <Link className="subscription-row" to="/profile/subscription">
                 <span className="subscription-row__label">Показ в каталоге</span>
                 <span className="subscription-row__value">
-                  {profile.subscriptionEndsAt && new Date(profile.subscriptionEndsAt) > new Date()
-                    ? `оплачено до ${new Date(profile.subscriptionEndsAt).toLocaleDateString('ru-RU')}`
+                  {paid
+                    ? `оплачено до ${new Date(profile.subscriptionEndsAt ?? '').toLocaleDateString('ru-RU')}`
                     : 'не оплачен'}
                 </span>
               </Link>
 
-              {profile.needsReview && profile.status === 'ACTIVE' && (
+              {profile.needsReview && profile.status === 'ACTIVE' && paid && (
                 <div className="alert alert--info">
                   Изменения отправлены на проверку. Анкета остаётся в каталоге — из выдачи она не пропадёт.
                 </div>
@@ -267,8 +291,8 @@ export function MyCardPage() {
                 )}
               </div>
             </>
-          )
-        }
+          );
+        }}
       </AsyncContent>
     </div>
   );

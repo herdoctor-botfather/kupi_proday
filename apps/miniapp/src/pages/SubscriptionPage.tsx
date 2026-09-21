@@ -120,16 +120,33 @@ export function SubscriptionPage() {
           // Цена за день показывает выгоду длинного тарифа честнее,
           // чем скидка в процентах: её не нужно ни с чем сравнивать.
           const perDay = Math.round(plan.stars / plan.days);
+          /*
+           * Уже купленный пакет подписан прямо на кнопке. Без этого человек
+           * видел ту же «Неделю» за те же 25 ★ и не понимал, куплена ли
+           * она. Кнопка остаётся рабочей: купить ещё — значит продлить.
+           */
+          const owned = (profile.activePlans ?? []).filter((item) => item.plan === id);
+          const running = owned.find((item) => new Date(item.startsAt) <= new Date());
+          const queued = owned.find((item) => new Date(item.startsAt) > new Date());
+          const day = (iso: string) => new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
           return (
             <button
               key={id}
               type="button"
-              className="plan"
+              className={`plan${running || queued ? ' plan--owned' : ''}`}
               disabled={busy || paying}
               onClick={() => void pay(id, plan.stars)}
             >
               <span className="plan__title">{plan.title}</span>
               <span className="plan__price">{plan.stars} ★</span>
+              {running && (
+                <span className="plan__owned">✅ Действует до {day(running.endsAt)} · нажмите, чтобы продлить</span>
+              )}
+              {!running && queued && (
+                <span className="plan__owned">
+                  ✅ Оплачен, начнётся {day(queued.startsAt)} · нажмите, чтобы продлить
+                </span>
+              )}
               <span className="plan__note">
                 примерно {perDay} ★ в день
                 {balance >= plan.stars ? ' · спишется с баланса' : ''}

@@ -176,6 +176,11 @@ export interface MySpecialistProfile extends SpecialistDetail {
    * не только факт, но и срок, иначе человек не знает, когда платить.
    */
   subscriptionEndsAt: string | null;
+  /**
+   * Купленные и ещё не истёкшие пакеты — чтобы на кнопке тарифа было
+   * видно, что он уже действует или ждёт своей очереди, а не только цена.
+   */
+  activePlans: { plan: string; startsAt: string; endsAt: string }[];
 }
 
 /** Объявление в списке — краткая карточка витрины. */

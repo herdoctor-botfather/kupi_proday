@@ -47,6 +47,12 @@ export class MySpecialistService {
     const showUntil =
       row.subscriptionUntil && row.subscriptionUntil > new Date() ? row.subscriptionUntil : null;
 
+    const activePlans = await this.prisma.subscription.findMany({
+      where: { specialistId: row.id, endsAt: { gt: new Date() } },
+      orderBy: { startsAt: 'asc' },
+      select: { plan: true, startsAt: true, endsAt: true },
+    });
+
     return {
       ...toDetail(row, { ratingBreakdown: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }, myReview: null }),
       status: row.status,
@@ -56,6 +62,11 @@ export class MySpecialistService {
       createdAt: row.createdAt.toISOString(),
       publishedAt: row.publishedAt?.toISOString() ?? null,
       subscriptionEndsAt: showUntil?.toISOString() ?? null,
+      activePlans: activePlans.map((item) => ({
+        plan: item.plan,
+        startsAt: item.startsAt.toISOString(),
+        endsAt: item.endsAt.toISOString(),
+      })),
     };
   }
 

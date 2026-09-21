@@ -5378,3 +5378,14 @@ body {
 .subscription-row {
   margin-bottom: 16px;
 }
+
+/* Уже купленный пакет: зелёная рамка и строка о сроке. */
+.plan--owned {
+  border-color: #22c55e;
+}
+.plan__owned {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #22c55e;
+}

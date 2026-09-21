@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { Category } from '@app/shared';
+import { PHOTO_DRAFT_MAX, type Category } from '@app/shared';
 import { api, type PhotoDraft } from '../lib/api';
 import { haptic } from '../lib/telegram';
 
@@ -15,7 +15,11 @@ import { haptic } from '../lib/telegram';
  * Заготовка, а не готовое объявление: всё заполненное человек видит
  * и правит. Отвечает за написанное он, значит и последнее слово за ним.
  *
- * Снимок заодно уходит в объявление — выбирать его второй раз незачем.
+ * Снимков можно выбрать несколько — одну вещь с разных сторон. С одного
+ * ракурса модель не видит ни бирки с маркой, ни потёртости на спине,
+ * а продавец и так снимает вещь со всех сторон для объявления.
+ *
+ * Снимки заодно уходят в объявление — выбирать их второй раз незачем.
  */
 export function PhotoDraftButton({
   categories,
@@ -23,7 +27,7 @@ export function PhotoDraftButton({
 }: {
   /** Дерево категорий: из него модель выбирает подходящую полку. */
   categories: Category[];
-  onDraft: (draft: PhotoDraft, file: File) => void;
+  onDraft: (draft: PhotoDraft, files: File[]) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -34,14 +38,21 @@ export function PhotoDraftButton({
     ...(root.children ?? []).map((child) => child.slug),
   ]);
 
-  const handle = async (file: File) => {
+  const handle = async (picked: File[]) => {
+    const files = picked.slice(0, PHOTO_DRAFT_MAX);
     setBusy(true);
     setError(null);
     try {
-      const image = await downscale(file);
-      const draft = await api.photoDraft(image, slugs);
+      // Чем больше снимков, тем мельче каждый: запрос остаётся лёгким,
+      // а деталей модели хватает и на 768 точках.
+      const size = files.length > 1 ? 768 : 1024;
+      const images = await Promise.all(files.map((file) => downscale(file, size)));
+      const draft = await api.photoDraft(images, slugs);
       haptic.success();
-      onDraft(draft, file);
+      onDraft(draft, files);
+      if (picked.length > files.length) {
+        setError(`ИИ посмотрел первые ${PHOTO_DRAFT_MAX} фотографий — остальные можно добавить ниже`);
+      }
     } catch (err) {
       haptic.error();
       setError(err instanceof Error ? err.message : 'Не получилось разобрать фотографию');
@@ -68,12 +79,12 @@ export function PhotoDraftButton({
         </span>
         <span className="photo-draft__body">
           <span className="photo-draft__title">
-            {busy ? 'Смотрим фотографию…' : 'Создать объявление по фотографии с NADO ИИ'}
+            {busy ? 'Смотрим фотографии…' : 'Создать объявление по фотографиям с NADO ИИ'}
           </span>
           <span className="photo-draft__text">
             {busy
               ? 'Через несколько секунд форма заполнится сама'
-              : 'Сфотографируйте вещь — название, описание и категорию подскажет ИИ. Бесплатно'}
+              : `Выберите до ${PHOTO_DRAFT_MAX} снимков вещи с разных сторон — название, описание и категорию подскажет ИИ. Бесплатно`}
           </span>
         </span>
         <span className="photo-draft__chevron" aria-hidden>
@@ -87,10 +98,11 @@ export function PhotoDraftButton({
         ref={inputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp"
+        multiple
         hidden
         onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) void handle(file);
+          const files = Array.from(event.target.files ?? []);
+          if (files.length > 0) void handle(files);
         }}
       />
     </>

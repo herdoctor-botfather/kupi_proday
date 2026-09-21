@@ -145,7 +145,7 @@ export class TextService {
    * ни состояния вещи вблизи, ни местного рынка, и ошибка здесь стоит
    * человеку денег. Поле в форме остаётся за ним.
    */
-  async fromPhoto(userId: string, imageDataUrl: string, categories: string[]): Promise<PhotoDraft> {
+  async fromPhoto(userId: string, images: string[], categories: string[]): Promise<PhotoDraft> {
     const { baseUrl, apiKey, textModel } = config.images;
     if (!apiKey) {
       throw new ServiceUnavailableException({
@@ -177,7 +177,7 @@ export class TextService {
      * а про снимок, фон и человека в кадре молчит.
      */
     const instruction = [
-      'На снимке — вещь, которую человек продаёт на доске объявлений.',
+      'На снимках — одна и та же вещь, которую человек продаёт на доске объявлений; снимков может быть несколько, с разных сторон и крупным планом. Собери сведения со всех: марку с бирки, детали, изъяны.',
       'Ты пишешь объявление от лица продавца. Пиши о самой вещи, а не о фотографии.',
       'Ответь ТОЛЬКО объектом JSON, без пояснений и без разметки, с полями:',
       '"title" — заголовок объявления, как пишут люди: что это, марка и модель, если видно; до 60 знаков;',
@@ -205,7 +205,7 @@ export class TextService {
             role: 'user',
             content: [
               { type: 'text', text: instruction },
-              { type: 'image_url', image_url: { url: imageDataUrl } },
+              ...images.map((url) => ({ type: 'image_url', image_url: { url } })),
             ],
           },
         ],

@@ -410,7 +410,7 @@ export function SellPage() {
             {!editingId && !career && (
               <PhotoDraftButton
                 categories={allCategories}
-                onDraft={(draft, file) => {
+                onDraft={(draft, files) => {
                   if (draft.title) set('title', draft.title);
                   if (draft.description) set('description', draft.description);
                   if (draft.price) set('price', String(draft.price));
@@ -431,16 +431,24 @@ export function SellPage() {
                     }
                   }
 
-                  // Снимок сразу уходит в объявление: выбирать его
-                  // второй раз человеку незачем.
-                  setPendingPhotos((prev) =>
-                    prev.length >= LISTING_PHOTOS_MAX
-                      ? prev
-                      : [
-                          ...prev,
-                          { id: `photo-${prev.length}`, blob: file, preview: URL.createObjectURL(file) },
-                        ],
-                  );
+                  // Снимки сразу уходят в объявление: выбирать их
+                  // второй раз человеку незачем. Сжимаем тем же путём,
+                  // что и обычную загрузку, — иначе снимок с телефона
+                  // на десяток мегабайт упёрся бы в предел сервера.
+                  void (async () => {
+                    for (const file of files) {
+                      const blob = await prepareImage(file).catch(() => null);
+                      if (!blob) continue;
+                      setPendingPhotos((prev) =>
+                        prev.length >= LISTING_PHOTOS_MAX
+                          ? prev
+                          : [
+                              ...prev,
+                              { id: `draft-${file.name}-${prev.length}`, blob, preview: URL.createObjectURL(blob) },
+                            ],
+                      );
+                    }
+                  })();
                 }}
               />
             )}

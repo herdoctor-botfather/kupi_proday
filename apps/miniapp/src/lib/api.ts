@@ -255,11 +255,11 @@ export const api = {
 
   /** Публичный профиль продавца: кто это и что ещё выставил. */
   publicProfile: (id: string) => request<PublicProfile>(`/users/${id}`),
-  /** Заготовка объявления по фотографии: что за вещь и как её назвать. */
-  photoDraft: (image: string, categories: string[]) =>
+  /** Заготовка объявления по фотографиям одной вещи: что это и как её назвать. */
+  photoDraft: (images: string[], categories: string[]) =>
     request<PhotoDraft>('/text/from-photo', {
       method: 'POST',
-      body: JSON.stringify({ image, categories }),
+      body: JSON.stringify({ images, categories }),
     }),
 
   /** Поиск сразу по всем дверям: товары, запросы, мастера, работа. */

@@ -176,3 +176,12 @@ export const PAYMENT_PURPOSES = [
 ] as const;
 
 export type PaymentPurpose = (typeof PAYMENT_PURPOSES)[number];
+
+/**
+ * Сколько снимков ИИ смотрит, составляя объявление по фотографиям.
+ *
+ * Пяти хватает, чтобы показать вещь со всех сторон и крупно — бирку или
+ * изъян. Больше модель не разглядывает внимательнее, а ответ дольше
+ * и дороже.
+ */
+export const PHOTO_DRAFT_MAX = 5;

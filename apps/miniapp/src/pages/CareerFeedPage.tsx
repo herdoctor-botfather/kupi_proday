@@ -191,6 +191,13 @@ export function CareerFeedPage({ kind }: { kind: 'JOB' | 'RESUME' }) {
                   ? 'Вакансий ещё нет — разместите первую'
                   : 'Резюме ещё нет. Разместите своё — его увидят работодатели'
             }
+            action={
+              debouncedQuery || categorySlug || city
+                ? undefined
+                : isJobs
+                  ? { label: 'Разместить вакансию', to: '/career/new-job' }
+                  : { label: 'Разместить резюме', to: '/career/new-resume' }
+            }
           />
         )
       )}

@@ -175,7 +175,10 @@ export function WantedPage() {
             hint={
               debouncedQuery || categorySlug || city
                 ? 'Попробуйте изменить запрос, выбрать другой город или снять фильтр'
-                : 'Создайте первый — продавцы увидят его и откликнутся'
+                : 'Напишите, что ищете, — продавцы увидят запрос и откликнутся. Это бесплатно.'
+            }
+            action={
+              debouncedQuery || categorySlug || city ? undefined : { label: 'Создать запрос', to: '/wanted/new' }
             }
           />
         )

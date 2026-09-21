@@ -150,7 +150,12 @@ export function CatalogPage() {
         </>
       ) : (
         !services.loading && (
-          <EmptyState icon="🛠" title="Мастеров пока нет" hint="Загляните позже — каталог пополняется" />
+          <EmptyState
+            icon="🛠"
+            title="Станьте первым мастером здесь"
+            hint="Все, кто зайдёт в этот раздел, увидят только вас. Первый месяц показа анкеты — в подарок."
+            action={{ label: 'Разместить анкету бесплатно', to: '/profile/application' }}
+          />
         )
       )}
     </div>

@@ -11,6 +11,7 @@ import type {
   UpsertSpecialistDto,
   UpsertSubscriptionDto,
 } from '@app/shared';
+import { SPECIALIST_WELCOME_DAYS } from '@app/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { DemandService } from '../demand/demand.service';
@@ -180,13 +181,25 @@ export class AdminService {
   async moderateSpecialist(id: string, dto: ModerateSpecialistDto, actorId: string) {
     const specialist = await this.prisma.specialist.findUnique({
       where: { id },
-      select: { id: true, publishedAt: true },
+      select: { id: true, publishedAt: true, subscriptionUntil: true, userId: true },
     });
     if (!specialist) {
       throw new NotFoundException({ code: 'SPECIALIST_NOT_FOUND', message: 'Анкета не найдена' });
     }
 
     const approved = dto.action === 'approve';
+
+    // Подарочный месяц — только при первом выходе в каталог и только тем,
+    // у кого показа ещё не было: повторная проверка после правки или
+    // анкета, заведённая администрацией, его не получают.
+    const welcomeUntil =
+      approved &&
+      SPECIALIST_WELCOME_DAYS > 0 &&
+      specialist.userId &&
+      !specialist.publishedAt &&
+      !specialist.subscriptionUntil
+        ? new Date(Date.now() + SPECIALIST_WELCOME_DAYS * 24 * 60 * 60 * 1000)
+        : null;
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const saved = await tx.specialist.update({
@@ -197,21 +210,49 @@ export class AdminService {
           rejectionReason: approved ? null : (dto.reason ?? null),
           // Дата публикации ставится один раз — при первом выходе в каталог.
           publishedAt: approved ? (specialist.publishedAt ?? new Date()) : specialist.publishedAt,
+          ...(welcomeUntil ? { subscriptionUntil: welcomeUntil, isPromoted: true } : {}),
         },
         include: { categories: { include: { category: true } } },
       });
+      if (welcomeUntil) {
+        await tx.subscription.create({
+          data: {
+            specialistId: id,
+            plan: 'welcome',
+            startsAt: new Date(),
+            endsAt: welcomeUntil,
+            amount: 0,
+            currency: 'XTR',
+            note: 'Первый месяц в подарок',
+            createdByUserId: actorId,
+          },
+        });
+      }
       await this.log(tx, actorId, `specialist.${dto.action}`, 'Specialist', id, { reason: dto.reason });
       return saved;
     });
 
     // Человек ждёт решения — без уведомления он узнает о нём, только если
     // сам догадается открыть приложение.
-    const owner = await this.prisma.specialist.findUnique({ where: { id }, select: { userId: true } });
+    //
+    // «Появилась в каталоге» — только если это правда: без оплаченного
+    // показа одобренная анкета в ленту не попадает, и мастер, поверивший
+    // уведомлению, искал бы себя там напрасно.
+    const owner = await this.prisma.specialist.findUnique({
+      where: { id },
+      select: { userId: true, subscriptionUntil: true },
+    });
+    const visible = Boolean(owner?.subscriptionUntil && owner.subscriptionUntil > new Date());
+    const until = owner?.subscriptionUntil?.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
     if (owner?.userId) {
       this.notifications.notify(
         owner.userId,
         approved
-          ? `✅ <b>Анкета опубликована</b>\n\nВаша карточка «${escapeHtml(updated.displayName)}» появилась в каталоге. Теперь вас могут найти клиенты.`
+          ? welcomeUntil
+            ? `✅ <b>Анкета опубликована</b>\n\nВаша карточка «${escapeHtml(updated.displayName)}» появилась в каталоге.\n\n🎁 Первый месяц показа — в подарок, до ${until}. Теперь вас могут найти клиенты.`
+            : visible
+              ? `✅ <b>Анкета опубликована</b>\n\nВаша карточка «${escapeHtml(updated.displayName)}» в каталоге до ${until}.`
+              : `✅ <b>Анкета одобрена</b>\n\nПроверка пройдена. Чтобы карточка «${escapeHtml(updated.displayName)}» появилась в каталоге, оплатите показ в разделе «Моя анкета».`
           : `📝 <b>Анкета не прошла проверку</b>\n\n${escapeHtml(dto.reason ?? 'Причина не указана')}\n\nИсправьте и отправьте снова — это займёт минуту.`,
         this.notifications.miniAppUrl,
       );

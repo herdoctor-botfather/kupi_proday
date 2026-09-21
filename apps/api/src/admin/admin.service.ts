@@ -223,7 +223,7 @@ export class AdminService {
             endsAt: welcomeUntil,
             amount: 0,
             currency: 'XTR',
-            note: 'Первый месяц в подарок',
+            note: 'Первая неделя в подарок',
             createdByUserId: actorId,
           },
         });
@@ -249,7 +249,7 @@ export class AdminService {
         owner.userId,
         approved
           ? welcomeUntil
-            ? `✅ <b>Анкета опубликована</b>\n\nВаша карточка «${escapeHtml(updated.displayName)}» появилась в каталоге.\n\n🎁 Первый месяц показа — в подарок, до ${until}. Теперь вас могут найти клиенты.`
+            ? `✅ <b>Анкета опубликована</b>\n\nВаша карточка «${escapeHtml(updated.displayName)}» появилась в каталоге.\n\n🎁 Первая неделя показа — в подарок, до ${until}. Теперь вас могут найти клиенты.`
             : visible
               ? `✅ <b>Анкета опубликована</b>\n\nВаша карточка «${escapeHtml(updated.displayName)}» в каталоге до ${until}.`
               : `✅ <b>Анкета одобрена</b>\n\nПроверка пройдена. Чтобы карточка «${escapeHtml(updated.displayName)}» появилась в каталоге, оплатите показ в разделе «Моя анкета».`

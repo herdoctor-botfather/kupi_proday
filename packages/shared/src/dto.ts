@@ -406,7 +406,7 @@ export const createInvoiceSchema = z
       'WALLET_TOPUP',
       'IMAGE_GENERATION',
     ]),
-    /** 'month' | 'quarter' | 'year' для подписки, 'week' | 'month' для продвижения. */
+    /** 'week' | 'twoWeeks' | 'month' для подписки, 'week' | 'month' для продвижения. */
     plan: z.string().trim().min(1).max(32).optional(),
     listingId: z.string().trim().min(1).max(40).optional(),
     /** Сумма пополнения в звёздах. Сервер принимает только из готовых наборов. */

@@ -147,9 +147,9 @@ const TOPUP = [199, 499, 1000, 2500];
 
 /** Тарифы подписки — те же, что в приложении. */
 const PLANS: [string, string, number][] = [
-  ['month', 'Месяц', 199],
-  ['quarter', 'Три месяца', 499],
-  ['year', 'Год', 1490],
+  ['week', 'Неделя', 25],
+  ['twoWeeks', 'Две недели', 40],
+  ['month', 'Месяц', 70],
 ];
 
 export function registerCabinet(bot: Bot): void {
@@ -231,7 +231,7 @@ export function registerCabinet(bot: Bot): void {
 
   // Оплата: сначала пробуем списать с баланса — если звёзд хватает,
   // счёт человеку показывать незачем, он уже заплатил однажды.
-  bot.callbackQuery(/^cab:sub:(month|quarter|year)$/, async (ctx) => {
+  bot.callbackQuery(/^cab:sub:(week|twoWeeks|month)$/, async (ctx) => {
     const plan = ctx.match[1];
     await buy(ctx, { purpose: 'SPECIALIST_SUBSCRIPTION', plan }, 'Подписка продлена');
   });

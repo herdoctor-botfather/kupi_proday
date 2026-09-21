@@ -25,11 +25,19 @@
 /** Валюта счетов Telegram Stars. Другой у них нет. */
 export const STARS_CURRENCY = 'XTR';
 
-/** Тарифы подписки специалиста. */
+/**
+ * Тарифы подписки специалиста.
+ *
+ * Короткие сроки и низкие цены — на запуск. Мастеру, который ещё не
+ * знает, придут ли к нему клиенты с новой площадки, проще отдать 25
+ * звёзд за неделю на пробу, чем 199 за месяц вслепую. Раньше здесь
+ * были месяц, три месяца и год за 199/499/1490 — для площадки без
+ * истории это дорого.
+ */
 export const SPECIALIST_PLANS = {
-  month: { days: 30, stars: 199, title: 'Месяц' },
-  quarter: { days: 90, stars: 499, title: 'Три месяца' },
-  year: { days: 365, stars: 1490, title: 'Год' },
+  week: { days: 7, stars: 25, title: 'Неделя' },
+  twoWeeks: { days: 14, stars: 40, title: 'Две недели' },
+  month: { days: 30, stars: 70, title: 'Месяц' },
 } as const;
 
 export type SpecialistPlan = keyof typeof SPECIALIST_PLANS;

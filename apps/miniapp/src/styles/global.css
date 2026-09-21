@@ -5327,3 +5327,27 @@ body {
   background: color-mix(in srgb, var(--accent) 8%, var(--surface-raised));
   border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
 }
+
+/* Оценка цены от ИИ под полем цены: ориентир, а не решение. */
+.price-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text-hint);
+}
+.price-hint b {
+  color: var(--text);
+}
+.price-hint__use {
+  flex: none;
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+}

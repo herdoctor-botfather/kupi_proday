@@ -150,6 +150,16 @@ export function SellPage() {
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  /*
+   * Оценка цены от ИИ — подсказкой, а не значением в поле.
+   *
+   * Модель называет цену по памяти: рынка она не видит, состояния вблизи
+   * тоже. Вписанная в поле, такая цифра выглядит решённой, и человек
+   * отправляет объявление, не задумавшись, — возможно, дешевле, чем мог бы.
+   * Подсказка оставляет решение за ним, но ориентир даёт, и никуда
+   * сверяться его не отправляет.
+   */
+  const [priceHint, setPriceHint] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Временные ссылки живут ровно столько, сколько экран: без этого браузер
@@ -413,7 +423,8 @@ export function SellPage() {
                 onDraft={(draft, files) => {
                   if (draft.title) set('title', draft.title);
                   if (draft.description) set('description', draft.description);
-                  if (draft.price) set('price', String(draft.price));
+                  // Цену не вписываем, а подсказываем — см. priceHint.
+                  setPriceHint(draft.price || null);
                   if (draft.condition) set('condition', draft.condition);
 
                   // Категорию модель называет слагом — в форме нужен её
@@ -491,6 +502,25 @@ export function SellPage() {
                   placeholder="45000"
                   inputMode="numeric"
                 />
+                {priceHint && !career && (
+                  <div className="price-hint">
+                    <span>
+                      🤖 ИИ оценивает примерно в <b>{priceHint.toLocaleString('ru-RU')} ₽</b>
+                    </span>
+                    {form.price !== String(priceHint) && (
+                      <button
+                        type="button"
+                        className="price-hint__use"
+                        onClick={() => {
+                          haptic.tap();
+                          set('price', String(priceHint));
+                        }}
+                      >
+                        Поставить
+                      </button>
+                    )}
+                  </div>
+                )}
               </Field>
               <label className="checkbox-inline" style={{ paddingTop: 26 }}>
                 <input

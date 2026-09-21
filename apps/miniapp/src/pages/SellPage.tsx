@@ -2,13 +2,15 @@ import { useMemo, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   LISTING_CONDITIONS,
+  LISTING_EXTRA_STARS,
   LISTING_PHOTOS_MAX,
   listingSchema,
   type ListingCondition,
   type ListingKind,
   type MyListing,
 } from '@app/shared';
-import { api } from '../lib/api';
+import { api, ApiRequestError } from '../lib/api';
+import { withPayment } from '../lib/purchase';
 import { CategoryWizard } from '../components/CategoryWizard';
 import { PhotoDraftButton } from '../components/PhotoDraftButton';
 import { WantedHint } from '../components/WantedHint';
@@ -194,6 +196,34 @@ export function SellPage() {
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
+  /**
+   * Создание с докупкой места.
+   *
+   * Три объявления в месяц бесплатны, четвёртое стоит 29 звёзд. Раньше
+   * сервер отвечал на него «следующее — 29 ★», а купить это место было
+   * негде: форма показывала ошибку, и человек упирался в тупик с уже
+   * заполненным объявлением на руках.
+   *
+   * Теперь форма сама спрашивает, готов ли он заплатить, берёт звёзды
+   * со счёта или открывает окно оплаты Telegram на недостающее и сразу
+   * публикует — заполненное не пропадает.
+   */
+  const createWithSlot = async (dto: Parameters<typeof api.createListing>[0]) => {
+    try {
+      return await api.createListing(dto);
+    } catch (error) {
+      if (!(error instanceof ApiRequestError) || error.code !== 'LISTING_QUOTA_EXCEEDED') throw error;
+
+      const agreed = await confirmDialog(
+        `Бесплатные объявления этого месяца закончились. Разместить это за ${LISTING_EXTRA_STARS} ★?`,
+      );
+      if (!agreed) throw new Error('Объявление не отправлено: бесплатные закончились');
+
+      await withPayment({ purpose: 'LISTING_SLOT' }, () => api.payFromBalance({ purpose: 'LISTING_SLOT' }));
+      return api.createListing(dto);
+    }
+  };
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSaveError(null);
@@ -229,7 +259,7 @@ export function SellPage() {
     try {
       const saved = editingId
         ? await api.updateListing(editingId, parsed.data)
-        : await api.createListing(parsed.data);
+        : await createWithSlot(parsed.data);
 
       // Объявление создано — можно отдать снимки, которые ждали в памяти.
       // Если какой-то не уйдёт, объявление всё равно сохранено: остаёмся
@@ -763,4 +793,11 @@ function Field({
       {error ? <span className="field__error">{error}</span> : hint && <span className="field__hint">{hint}</span>}
     </div>
   );
+}
+
+/** Вопрос «да/нет» родным окном Telegram; вне Telegram — окном браузера. */
+function confirmDialog(message: string): Promise<boolean> {
+  const webApp = tg();
+  if (!webApp) return Promise.resolve(window.confirm(message));
+  return new Promise((resolve) => webApp.showConfirm(message, (ok) => resolve(ok)));
 }

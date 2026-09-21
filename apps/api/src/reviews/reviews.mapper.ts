@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import type { Review } from '@app/shared';
+import { publicName } from '../common/public-name';
 
 type ReviewWithUser = Prisma.ReviewGetPayload<{ include: { user: true } }>;
 
@@ -15,7 +16,7 @@ export function toReviewDto(
     createdAt: row.createdAt.toISOString(),
     reply: row.replyText ? { text: row.replyText, createdAt: (row.repliedAt ?? row.updatedAt).toISOString() } : null,
     author: {
-      firstName: row.user.firstName,
+      firstName: publicName(row.user.firstName),
       /*
        * Только имя, без фамилии.
        *

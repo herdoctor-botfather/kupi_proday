@@ -5,6 +5,7 @@ import { hasMeaningfulText, maskContacts } from '@app/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ContactPolicyService } from '../notifications/contact-policy.service';
+import { publicName } from '../common/public-name';
 
 /** Сколько сообщений отдаём за один раз. Остальное подгружается по требованию. */
 const PAGE_SIZE = 50;
@@ -269,8 +270,8 @@ export class ChatService {
     // В уведомлении — то же имя, что и в списке диалогов: человек должен
     // узнать отправителя, не открывая приложение.
     const senderName = isClient
-      ? conversation.client.firstName
-      : (conversation.specialist?.displayName ?? conversation.listing?.user.firstName ?? 'Продавец');
+      ? publicName(conversation.client.firstName)
+      : (conversation.specialist?.displayName ?? (conversation.listing ? publicName(conversation.listing.user.firstName) : 'Продавец'));
 
     this.notifications.notify(
       recipientId,
@@ -318,7 +319,7 @@ export class ChatService {
       ? { id: row.specialist.id, name: row.specialist.displayName, photoUrl: row.specialist.photoUrl }
       : {
           id: row.listing!.id,
-          name: row.listing!.user.firstName,
+          name: publicName(row.listing!.user.firstName),
           photoUrl: row.listing!.photos[0]?.url ?? row.listing!.user.photoUrl,
         };
 
@@ -328,7 +329,7 @@ export class ChatService {
         ? owner
         : {
             id: row.client.id,
-            name: row.client.firstName,
+            name: publicName(row.client.firstName),
             photoUrl: row.client.photoUrl,
           },
       specialist: row.specialist

@@ -3,6 +3,7 @@ import type { ProfileViewItem, SpecialistListItem } from '@app/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { listInclude, toListItem } from '../specialists/specialists.mapper';
+import { publicName } from '../common/public-name';
 
 @Injectable()
 export class UsersService {
@@ -135,7 +136,9 @@ export class UsersService {
 
     return {
       id: user.id,
-      name: user.firstName,
+      // У мастера на его странице — имя из анкеты: его он выбирал сам
+      // для клиентов, а имя из Telegram — нет.
+      name: card?.displayName ?? publicName(user.firstName),
       photoUrl: user.avatarUrl ?? user.photoUrl,
       joinedAt: user.createdAt.toISOString(),
       listings,

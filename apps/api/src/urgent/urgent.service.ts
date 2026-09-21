@@ -8,6 +8,7 @@ import {
 import type { UrgentRequestDto } from '@app/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { publicName } from '../common/public-name';
 
 /** Сколько открытых вызовов можно держать одновременно. */
 const MAX_OPEN = 3;
@@ -115,7 +116,7 @@ export class UrgentService {
       takenBy: row.takenBy
         ? {
             id: row.takenBy.id,
-            name: row.takenBy.firstName,
+            name: publicName(row.takenBy.firstName),
             photoUrl: row.takenBy.avatarUrl ?? row.takenBy.photoUrl,
           }
         : null,

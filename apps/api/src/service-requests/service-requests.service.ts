@@ -3,6 +3,7 @@ import type { IncomingServiceRequest, ServiceRequestState, ServiceRequestStatus 
 import { SERVICE_REQUEST_MINUTES } from '@app/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { publicName } from '../common/public-name';
 
 /**
  * Заявки на услугу.
@@ -85,7 +86,7 @@ export class ServiceRequestsService {
 
     this.notifications.notifyWithActions(
       specialist.userId,
-      `🔔 <b>Заявка на услугу</b>\n\n${escapeHtml(client?.firstName ?? 'Заказчик')} хочет воспользоваться вашей услугой.` +
+      `🔔 <b>Заявка на услугу</b>\n\n${escapeHtml(client ? publicName(client.firstName) : 'Заказчик')} хочет воспользоваться вашей услугой.` +
         (note ? `\n\n«${escapeHtml(note)}»` : '') +
         `\n\nОтветьте в течение ${SERVICE_REQUEST_MINUTES} минут — потом заявка сгорит, и человек уйдёт к другому мастеру.`,
       [
@@ -161,7 +162,7 @@ export class ServiceRequestsService {
       ...this.toState(row, null),
       client: {
         id: row.client.id,
-        name: row.client.firstName,
+        name: publicName(row.client.firstName),
         photoUrl: row.client.avatarUrl ?? row.client.photoUrl,
       },
       specialist: { id: row.specialist.id, displayName: row.specialist.displayName },

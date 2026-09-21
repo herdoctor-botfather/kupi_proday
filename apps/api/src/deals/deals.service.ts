@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import type { Involvement } from '@app/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { publicName } from '../common/public-name';
 
 /**
  * Через сколько отзыв открывается сам, даже если вторая сторона молчит.
@@ -57,7 +58,7 @@ export class DealsService {
 
     return conversations.map(({ client }) => ({
       id: client.id,
-      name: client.firstName,
+      name: publicName(client.firstName),
       photoUrl: client.avatarUrl ?? client.photoUrl,
     }));
   }
@@ -190,7 +191,7 @@ export class DealsService {
         id: row.id,
         owner: {
           id: owner.id,
-          name: owner.firstName,
+          name: publicName(owner.firstName),
           photoUrl: owner.avatarUrl ?? owner.photoUrl,
         },
         lastMessageAt: row.lastMessageAt?.toISOString() ?? null,
@@ -265,7 +266,7 @@ export class DealsService {
         role: deal.sellerId === userId ? ('SELLER' as const) : ('BUYER' as const),
         counterpart: {
           id: counterpart.id,
-          name: counterpart.firstName,
+          name: publicName(counterpart.firstName),
           photoUrl: counterpart.avatarUrl ?? counterpart.photoUrl,
         },
       };
@@ -376,7 +377,7 @@ export class DealsService {
         /** Кем был автор отзыва: продавцом или покупателем в той сделке. */
         authorRole: row.deal.sellerId === userId ? ('BUYER' as const) : ('SELLER' as const),
         author: {
-          name: row.author.firstName,
+          name: publicName(row.author.firstName),
           photoUrl: row.author.avatarUrl ?? row.author.photoUrl,
         },
       })),

@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import type { ListingDetail, ListingListItem, MyListing } from '@app/shared';
+import { publicName } from '../common/public-name';
 
 /** Связи для карточки в списке: категории и обложка. */
 export const listInclude = {
@@ -73,7 +74,7 @@ export function toDetail(row: DetailRow, viewerId: string | null): ListingDetail
       id: row.userId,
       // Только имя, без фамилии: покупателю важно, к кому он обращается,
       // а полное имя продавца к сделке ничего не добавляет.
-      name: row.user.firstName,
+      name: publicName(row.user.firstName),
       photoUrl: row.user.avatarUrl ?? row.user.photoUrl,
       // Адрес анкеты — только у опубликованной: вести покупателя
       // на скрытую или отклонённую карточку значит показать ему пустоту.

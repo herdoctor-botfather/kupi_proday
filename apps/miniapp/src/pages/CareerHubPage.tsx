@@ -92,7 +92,7 @@ export function CareerHubPage() {
           выглядит хорошее объявление. А вот путь к своему — нужен:
           отправив резюме, человек возвращается сюда узнать, прошло ли оно
           проверку, и раньше не находил его нигде. */}
-      <Link to="/market/my" className="career-mine" onClick={() => haptic.tap()}>
+      <Link to="/career/my" className="career-mine" onClick={() => haptic.tap()}>
         📋 Мои вакансии и резюме — статус проверки
       </Link>
 

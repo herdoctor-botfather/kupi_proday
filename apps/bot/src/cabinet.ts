@@ -87,6 +87,7 @@ function formatDate(iso: string): string {
 }
 
 function render(cabinet: Cabinet): { text: string; keyboard: InlineKeyboard } {
+  const free = isLaunchFree();
   const lines: string[] = [`<b>Личный кабинет</b>`, ''];
 
   lines.push(`💫 Баланс: <b>${cabinet.balance} ★</b>`);
@@ -95,9 +96,11 @@ function render(cabinet: Cabinet): { text: string; keyboard: InlineKeyboard } {
     const s = cabinet.specialist;
     lines.push('', `🔧 <b>Анкета:</b> ${STATUS_TEXT[s.status] ?? s.status}`);
     lines.push(
-      s.subscriptionEndsAt
-        ? `Показ оплачен до ${formatDate(s.subscriptionEndsAt)}`
-        : 'Показ не оплачен',
+      free
+        ? `🎁 Показ бесплатный до ${LAUNCH_FREE_LABEL}`
+        : s.subscriptionEndsAt
+          ? `Показ оплачен до ${formatDate(s.subscriptionEndsAt)}`
+          : 'Показ не оплачен',
     );
     if (s.viewCount > 0) lines.push(`Просмотров: ${s.viewCount}`);
   } else {
@@ -111,10 +114,16 @@ function render(cabinet: Cabinet): { text: string; keyboard: InlineKeyboard } {
       ? 'Пока ни одного'
       : `На витрине ${l.active} · на проверке ${l.pending} · скрыто ${l.hidden} · продано ${l.sold}`,
   );
+  /*
+   * В бесплатный период остатка нет: сервер отдаёт заведомо большое
+   * число, и «осталось 9007199254740991 из 3» выглядело поломкой.
+   */
   lines.push(
-    cabinet.quota.left > 0
-      ? `Бесплатных в этом месяце осталось: ${cabinet.quota.left} из ${cabinet.quota.freePerMonth}`
-      : `Бесплатные кончились, следующее — ${cabinet.quota.extraStars} ★`,
+    free
+      ? `Размещайте сколько нужно — бесплатно до ${LAUNCH_FREE_LABEL}`
+      : cabinet.quota.left > 0
+        ? `Бесплатных в этом месяце осталось: ${cabinet.quota.left} из ${cabinet.quota.freePerMonth}`
+        : `Бесплатные кончились, следующее — ${cabinet.quota.extraStars} ★`,
   );
 
   if (cabinet.wanted > 0) lines.push('', `🔍 Ваших запросов: ${cabinet.wanted}`);
@@ -126,12 +135,13 @@ function render(cabinet: Cabinet): { text: string; keyboard: InlineKeyboard } {
 
   // Рисование — рядом с кошельком: это такая же трата звёзд,
   // и путь к ней человек ищет там же, где смотрит баланс.
-  keyboard.text('🎨 Нарисовать картинку', 'draw:start').row();
+  keyboard.text(free ? '🎨 Нарисовать картинку — бесплатно' : '🎨 Нарисовать картинку', 'draw:start').row();
 
   if (cabinet.specialist) {
     const active = cabinet.specialist.status === 'ACTIVE';
     const hidden = cabinet.specialist.status === 'HIDDEN';
-    keyboard.text('Продлить показ анкеты', 'cab:sub').row();
+    // Пока показ бесплатный, продлевать нечего — кнопка только запутала бы.
+    if (!free) keyboard.text('Продлить показ анкеты', 'cab:sub').row();
     // Кнопку показываем только там, где действие вообще возможно:
     // анкету на проверке или заблокированную скрывать нечего.
     if (active) keyboard.text('Скрыть анкету из каталога', 'cab:hide').row();

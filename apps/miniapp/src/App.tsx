@@ -21,6 +21,7 @@ import { SellHubPage } from './pages/SellHubPage';
 import { PersonPage } from './pages/PersonPage';
 import { CategoryStepPage } from './pages/CategoryStepPage';
 import { CareerHubPage } from './pages/CareerHubPage';
+import { CareerMyPage } from './pages/CareerMyPage';
 import { SearchPage } from './pages/SearchPage';
 import { ScrollHint } from './components/ScrollHint';
 import { LegalPage } from './pages/LegalPage';
@@ -175,6 +176,7 @@ function Shell() {
       <Route path="/career/resumes" element={<CareerFeedPage kind="RESUME" />} />
       <Route path="/career/jobs/c/:slug" element={<CategoryStepPage mode="job" />} />
       <Route path="/career/resumes/c/:slug" element={<CategoryStepPage mode="resume" />} />
+      <Route path="/career/my" element={<CareerMyPage />} />
       <Route path="/career/new-job" element={<SellPage />} />
       <Route path="/career/new-resume" element={<SellPage />} />
 

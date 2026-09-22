@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api } from '../lib/api';
 import { useAsync, useDebounced } from '../lib/useAsync';
 import { RUSSIAN_CITIES } from '../lib/russian-cities';
+import { CitySheet } from './CitySheet';
 
 /** Сколько подсказок показывать: меньше шести выглядело как «городов нет». */
 const SUGGESTIONS = 6;
@@ -26,6 +27,8 @@ export function CityInput({
   placeholder?: string;
 }) {
   const [focused, setFocused] = useState(false);
+  /** Полный выбор — список всех городов и карта — в отдельном окне. */
+  const [sheetOpen, setSheetOpen] = useState(false);
   const debounced = useDebounced(value, 250);
   const cities = useAsync(() => api.cities(debounced.trim() || undefined), [debounced]);
 
@@ -64,7 +67,7 @@ export function CityInput({
         autoComplete="off"
       />
 
-      {focused && suggestions.length > 0 && (
+      {focused && (
         <div className="city-input__list">
           {suggestions.slice(0, SUGGESTIONS).map((city) => (
             <button
@@ -80,7 +83,31 @@ export function CityInput({
               {city.count > 0 && <span className="city-input__count">{city.count}</span>}
             </button>
           ))}
+          {/* Шесть подсказок — не весь выбор: своего города в них может не
+              оказаться. Отсюда — полный список и выбор на карте. */}
+          <button
+            type="button"
+            className="city-input__option city-input__option--all"
+            onClick={() => {
+              setFocused(false);
+              setSheetOpen(true);
+            }}
+          >
+            <span>Все города</span>
+            <span aria-hidden>›</span>
+          </button>
         </div>
+      )}
+
+      {sheetOpen && (
+        <CitySheet
+          current={value || undefined}
+          withCounts={cities.data ?? []}
+          // «Вся Россия» полю формы не подходит: объявлению нужен конкретный город.
+          onPick={(city) => city && onChange(city)}
+          onClose={() => setSheetOpen(false)}
+          allowAll={false}
+        />
       )}
     </div>
   );

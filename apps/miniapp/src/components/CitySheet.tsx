@@ -21,12 +21,15 @@ export function CitySheet({
   withCounts,
   onPick,
   onClose,
+  allowAll = true,
 }: {
   current?: string;
   /** Города, где уже есть объявления, — показываются наверху с числом. */
   withCounts?: { name: string; count: number }[];
   onPick: (city: string | null) => void;
   onClose: () => void;
+  /** Пункт «Вся Россия» — для фильтров; полю формы нужен конкретный город. */
+  allowAll?: boolean;
 }) {
   const [query, setQuery] = useState('');
   /** Выбор на карте вместо списка — для тех, кто не нашёл свой посёлок по названию. */
@@ -74,7 +77,7 @@ export function CitySheet({
         <SearchInput value={query} onChange={setQuery} placeholder="Начните вводить название" />
 
         <div className="city-sheet__list">
-          {!query && (
+          {!query && allowAll && (
             <button
               type="button"
               className={`city-sheet__row${!current ? ' city-sheet__row--active' : ''}`}

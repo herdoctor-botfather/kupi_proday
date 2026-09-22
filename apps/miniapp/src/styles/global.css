@@ -5677,3 +5677,9 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Последняя строка подсказок города — ведёт к полному выбору. */
+.city-input__option--all {
+  color: var(--accent);
+  font-weight: 600;
+}

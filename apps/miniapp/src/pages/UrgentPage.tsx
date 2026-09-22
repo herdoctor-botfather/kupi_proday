@@ -96,6 +96,8 @@ export function UrgentPage() {
   const navigate = useNavigate();
 
   const [categoryId, setCategoryId] = useState('');
+  /** Список разделов свёрнут: раскрывается по нажатию, после выбора сворачивается. */
+  const [whoOpen, setWhoOpen] = useState(false);
   const [city, setCity] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -165,24 +167,62 @@ export function UrgentPage() {
 
       <h2 className="section-title">Кто нужен</h2>
 
+      {/*
+        Раздел — раскрывающимся списком, а не строкой чипов: в строку
+        помещалось три раздела из двенадцати, остальные прятались за
+        прокруткой вбок, и человек с потёкшей трубой их не находил.
+        После выбора список сворачивается и показывает выбранное.
+      */}
       <AsyncContent state={categories}>
-        {(items) => (
-          <ChipsRow>
-            {items.map((category) => (
+        {(items) => {
+          const chosen = items.find((category) => category.id === categoryId);
+          return (
+            <>
               <button
-                key={category.id}
                 type="button"
-                className={`chip${categoryId === category.id ? ' chip--active' : ''}`}
+                className={`industry-toggle${whoOpen ? ' industry-toggle--open' : ''}`}
+                aria-expanded={whoOpen}
                 onClick={() => {
                   haptic.tap();
-                  setCategoryId(category.id);
+                  setWhoOpen((open) => !open);
                 }}
               >
-                {category.icon} {category.name}
+                <span>{chosen ? `${chosen.icon} ${chosen.name}` : 'Выберите, кто нужен'}</span>
+                <span className="industry-toggle__side">
+                  {whoOpen ? 'Свернуть' : chosen ? 'Изменить' : `${items.length} разделов`}
+                  <span className="industry-toggle__arrow" aria-hidden>
+                    ▾
+                  </span>
+                </span>
               </button>
-            ))}
-          </ChipsRow>
-        )}
+              {whoOpen && (
+                <div className="steps">
+                  {items.map((category) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      className={`step${categoryId === category.id ? ' step--active' : ''}`}
+                      onClick={() => {
+                        haptic.tap();
+                        setCategoryId(category.id);
+                        setWhoOpen(false);
+                      }}
+                    >
+                      <span className="step__name">
+                        {category.icon} {category.name}
+                      </span>
+                      <span className="step__side">
+                        <span className="step__chevron" aria-hidden>
+                          {categoryId === category.id ? '✓' : '›'}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          );
+        }}
       </AsyncContent>
 
       <div className="field">

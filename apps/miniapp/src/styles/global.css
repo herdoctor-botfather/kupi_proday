@@ -5632,3 +5632,12 @@ body {
   font: inherit;
   color: var(--text);
 }
+
+/* Выбранный пункт в раскрывающемся списке. */
+.step--active {
+  border-color: var(--accent);
+}
+.step--active .step__chevron {
+  color: var(--accent);
+  opacity: 1;
+}

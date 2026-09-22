@@ -152,7 +152,10 @@ export function DemandWatchPage() {
                     <button
                       type="button"
                       className="button button--secondary button--sm"
-                      style={{ color: 'var(--destructive)' }}
+                      // Своего размера, а не во всю ширину: иначе кнопка
+                      // выдавливала название подписки в ноль, и карточка
+                      // выглядела пустой — «Убрать» неизвестно что.
+                      style={{ color: 'var(--destructive)', width: 'auto', flex: 'none', padding: '8px 14px' }}
                       onClick={() => void remove(watch.id)}
                     >
                       Убрать

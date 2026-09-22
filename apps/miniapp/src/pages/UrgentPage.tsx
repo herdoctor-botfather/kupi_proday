@@ -261,6 +261,8 @@ export function UrgentPage() {
                         <button
                           type="button"
                           className="button button--secondary button--sm"
+                          // Своего размера: во всю ширину она выдавила бы текст вызова.
+                          style={{ width: 'auto', flex: 'none', padding: '8px 14px' }}
                           onClick={() => void cancel(request.id)}
                         >
                           Отменить

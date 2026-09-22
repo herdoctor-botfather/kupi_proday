@@ -143,7 +143,7 @@ function render(cabinet: Cabinet): { text: string; keyboard: InlineKeyboard } {
 }
 
 /** Наборы пополнения — те же, что в приложении. */
-const TOPUP = [199, 499, 1000, 2500];
+const TOPUP = [25, 40, 70, 300];
 
 /** Тарифы подписки — те же, что в приложении. */
 const PLANS: [string, string, number][] = [

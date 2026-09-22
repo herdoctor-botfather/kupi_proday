@@ -79,10 +79,10 @@ export const isListingPromotion = (value: string): value is ListingPromotion =>
  * за него, и каждый привязан к тому, что на него можно купить.
  */
 export const TOPUP_PACKS = [
-  { stars: 199, hint: 'Месяц показа анкеты' },
-  { stars: 499, hint: 'Три месяца показа' },
-  { stars: 1000, hint: 'С запасом на продвижение' },
-  { stars: 2500, hint: 'Год показа и объявления' },
+  { stars: 25, hint: 'Неделя показа анкеты' },
+  { stars: 40, hint: 'Две недели показа' },
+  { stars: 70, hint: 'Месяц показа' },
+  { stars: 300, hint: 'С запасом на продвижение' },
 ] as const;
 
 export const TOPUP_STARS = TOPUP_PACKS.map((pack) => pack.stars);
@@ -96,7 +96,9 @@ export const TOPUP_STARS = TOPUP_PACKS.map((pack) => pack.stars);
  * не пропустить: за его ограничениями мы не следим, а своё держим
  * заведомо ниже.
  */
-export const TOPUP_MIN_STARS = 50;
+// Нижняя граница — цена самой дешёвой покупки (картинка за 10 ★):
+// при прежних 50 не проходили даже готовые наборы на неделю и две.
+export const TOPUP_MIN_STARS = 10;
 export const TOPUP_MAX_STARS = 10_000;
 
 /**

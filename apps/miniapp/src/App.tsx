@@ -185,6 +185,8 @@ function Shell() {
       <Route path="/market/selling" element={<SellHubPage />} />
       <Route path="/market/my" element={<MyListingsPage />} />
       <Route path="/market/sell" element={<SellPage />} />
+      {/* Срочная продажа — отдельный вход в ту же форму: свой заголовок и правила. */}
+      <Route path="/market/sell-urgent" element={<SellPage />} />
       <Route path="/listing/:idOrSlug" element={<ListingPage />} />
       <Route path="/seller/:id" element={<PersonPage by="user" />} />
       <Route path="/profile/referrals" element={<ReferralsPage />} />

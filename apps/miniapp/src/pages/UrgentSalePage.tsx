@@ -50,7 +50,7 @@ export function UrgentSalePage() {
             className="button"
             onClick={() => {
               haptic.tap();
-              navigate('/market/sell');
+              navigate('/market/sell-urgent');
             }}
           >
             Продать своё срочно
@@ -58,6 +58,19 @@ export function UrgentSalePage() {
         </>
       ) : (
         <>
+          {/* Выставить своё — и когда витрина уже не пуста: сюда приходят
+              и покупать, и продавать. */}
+          <button
+            type="button"
+            className="urgent-cta"
+            onClick={() => {
+              haptic.tap();
+              navigate('/market/sell-urgent');
+            }}
+          >
+            <span className="urgent-cta__title">⚡️ Продать своё срочно</span>
+            <span className="urgent-cta__text">Неделя в этой витрине — для тех, кто готов уступить в цене</span>
+          </button>
           <div className="listing-grid">
             {feed.items.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />

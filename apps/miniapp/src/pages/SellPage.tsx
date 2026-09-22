@@ -118,7 +118,25 @@ export function SellPage() {
     [editingId],
   );
 
-  const [form, setForm] = useState<FormState>(EMPTY);
+  /*
+   * Срочная продажа — отдельный вход и отдельный экран.
+   *
+   * Раньше «Продать своё срочно» открывало обычную форму с галочкой
+   * внизу, и кнопка теряла смысл: человек пришёл торопиться, а видел
+   * ту же форму, что и все. Теперь у срочного свой адрес, заголовок
+   * и правила сверху. Поля те же — вещь описывается так же, — но галочки
+   * нет: срочность задана входом. Из обычной формы сюда ведёт кнопка,
+   * и всё заполненное, включая фотографии, переезжает вместе с ней.
+   */
+  const urgentRoute = location.pathname.startsWith('/market/sell-urgent');
+  const carried = (location.state as { draft?: Partial<FormState>; photos?: PendingPhoto[] } | null) ?? null;
+  const [form, setForm] = useState<FormState>(() => ({
+    ...EMPTY,
+    ...(carried?.draft ?? {}),
+    ...(urgentRoute ? { isUrgent: true } : {}),
+  }));
+  /** Срочная форма: вход по своему адресу или правка уже срочного объявления. */
+  const urgentMode = kind === 'SELL' && form.isUrgent;
   /*
    * Характеристики берём у самой подробной из выбранных категорий.
    *
@@ -147,7 +165,10 @@ export function SellPage() {
   const [loaded, setLoaded] = useState(false);
   const [photos, setPhotos] = useState<MyListing['photos']>([]);
   /** Снимки нового объявления — ждут в памяти до его создания. */
-  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>(() =>
+    // Прежний экран, уходя, отозвал ссылки на превью — делаем новые из тех же файлов.
+    (carried?.photos ?? []).map((photo) => ({ ...photo, preview: URL.createObjectURL(photo.blob) })),
+  );
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   /*
@@ -378,7 +399,11 @@ export function SellPage() {
   return (
     <div className="page">
       <h1 className="page__title">
-        {editingId
+        {urgentMode
+          ? editingId
+            ? '⚡️ Срочное объявление'
+            : '⚡️ Срочная продажа'
+          : editingId
           ? career
             ? vacancy
               ? 'Вакансия'
@@ -395,7 +420,9 @@ export function SellPage() {
                 : 'Новое объявление'}
       </h1>
       <p className="form-intro">
-        {editingId
+        {urgentMode && !editingId
+          ? 'Отдельная витрина для тех, кто торопится. На неделю вещь попадает туда, где ищут выгодное и покупают быстро.'
+          : editingId
           ? 'После изменений объявление отправится на повторную проверку. С витрины оно не пропадёт.'
           : vacancy
             ? 'Опишите работу, оплату и график. Отклики придут прямо в переписку.'
@@ -540,23 +567,55 @@ export function SellPage() {
               и истекает сам — раздел, где «срочное» месячной давности,
               перестаёт что-либо значить.
             */}
-            {!wanted && !career && (
-              <label className="urgent-toggle">
-                <input
-                  type="checkbox"
-                  checked={form.isUrgent}
-                  onChange={(e) => set('isUrgent', e.target.checked)}
-                />
-                <span>
-                  <span className="urgent-toggle__title">⚡️ Продать срочно</span>
-                  <span className="urgent-toggle__text">
-                    На неделю попадёт в отдельную витрину срочного. Условие одно:
-                    цену нужно поставить ниже обычной. Туда приходят за скидкой —
-                    без уступки срочное объявление быстрее не продаётся.
+            {!wanted && !career &&
+              (urgentMode ? (
+                <div className="urgent-toggle urgent-toggle--on">
+                  <span>
+                    <span className="urgent-toggle__title">⚡️ Срочная продажа</span>
+                    <span className="urgent-toggle__text">
+                      На неделю попадёт в отдельную витрину срочного. Условие одно:
+                      цену нужно поставить ниже обычной. Туда приходят за скидкой —
+                      без уступки срочное объявление быстрее не продаётся.
+                    </span>
+                    <button
+                      type="button"
+                      className="urgent-toggle__off"
+                      onClick={() => {
+                        haptic.tap();
+                        if (editingId) set('isUrgent', false);
+                        else
+                          navigate('/market/sell', {
+                            replace: true,
+                            state: { draft: { ...form, isUrgent: false }, photos: pendingPhotos },
+                          });
+                      }}
+                    >
+                      Сделать обычным объявлением
+                    </button>
                   </span>
-                </span>
-              </label>
-            )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="urgent-cta"
+                  onClick={() => {
+                    haptic.tap();
+                    // У существующего объявления меняем признак на месте:
+                    // переход перезагрузил бы его из базы и стёр правки.
+                    if (editingId) set('isUrgent', true);
+                    else
+                      navigate('/market/sell-urgent', {
+                        replace: true,
+                        state: { draft: { ...form, isUrgent: true }, photos: pendingPhotos },
+                      });
+                  }}
+                >
+                  <span className="urgent-cta__title">⚡️ Продать срочно</span>
+                  <span className="urgent-cta__text">
+                    Отдельная витрина на неделю — для тех, кто готов уступить в цене
+                  </span>
+                </button>
+              ))}
 
             {/*
               Обмен предлагает тот, кто ищет, — у продавца этого поля нет:

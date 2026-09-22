@@ -135,7 +135,7 @@ function render(cabinet: Cabinet): { text: string; keyboard: InlineKeyboard } {
 
   // Рисование — рядом с кошельком: это такая же трата звёзд,
   // и путь к ней человек ищет там же, где смотрит баланс.
-  keyboard.text(free ? '🎨 Нарисовать картинку — бесплатно' : '🎨 Нарисовать картинку', 'draw:start').row();
+  keyboard.text('🎨 Нарисовать картинку', 'draw:start').row();
 
   if (cabinet.specialist) {
     const active = cabinet.specialist.status === 'ACTIVE';

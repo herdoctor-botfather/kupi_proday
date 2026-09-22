@@ -1,4 +1,3 @@
-import { LAUNCH_FREE_LABEL, isLaunchFree } from '@app/shared';
 import { Bot, InlineKeyboard } from 'grammy';
 import { config } from './config';
 
@@ -59,9 +58,7 @@ export function registerDraw(bot: Bot, appUrl: (startParam?: string) => string):
     `🎨 <b>Нарисовать картинку</b>\n\n` +
     `Напишите, что нарисовать — своими словами, по-русски. Например: ` +
     `«вывеска мастерской по ремонту обуви, тёплый свет, вечер».\n\n` +
-    (isLaunchFree()
-      ? `Бесплатно до ${LAUNCH_FREE_LABEL} — до трёх картинок в сутки.`
-      : `Одна картинка — ${STARS} ★ с баланса.`);
+    `Одна картинка — ${STARS} ★ с баланса.`;
 
   const inviteExtra = {
     parse_mode: 'HTML' as const,
@@ -117,9 +114,7 @@ export function registerDraw(bot: Bot, appUrl: (startParam?: string) => string):
     // Картинку отдаём файлом, а не ссылкой: ссылку надо открывать,
     // а картинку видно сразу — ради этого её и рисовали.
     await ctx.replyWithPhoto(drawn.url, {
-      caption: isLaunchFree()
-        ? `Готово, бесплатно\n\n«${prompt}»`
-        : `Готово. Списано ${STARS} ★\n\n«${prompt}»`,
+      caption: `Готово. Списано ${STARS} ★\n\n«${prompt}»`,
       reply_markup: new InlineKeyboard()
         .text('Нарисовать ещё', 'draw:start')
         .row()

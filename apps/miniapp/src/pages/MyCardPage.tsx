@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import type { MySpecialistProfile, SpecialistStatus } from '@app/shared';
+import { LAUNCH_FREE_LABEL, isLaunchFree, type MySpecialistProfile, type SpecialistStatus } from '@app/shared';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { AsyncContent, EmptyState } from '../components/states';
@@ -122,7 +122,10 @@ export function MyCardPage() {
       >
         {(profile) => {
           if (!profile) return null;
-          const paid = Boolean(profile.subscriptionEndsAt && new Date(profile.subscriptionEndsAt) > new Date());
+          // В бесплатный период анкета в каталоге и без оплаты.
+          const free = isLaunchFree();
+          const paid =
+            free || Boolean(profile.subscriptionEndsAt && new Date(profile.subscriptionEndsAt) > new Date());
           const view = profile.status === 'ACTIVE' && !paid ? UNPAID_VIEW : STATUS_VIEW[profile.status];
           return (
             <>
@@ -158,9 +161,11 @@ export function MyCardPage() {
                   {paid ? '✅' : '⛔'} Показ в каталоге
                 </span>
                 <span className="subscription-row__value">
-                  {paid
-                    ? `оплачен до ${new Date(profile.subscriptionEndsAt ?? '').toLocaleDateString('ru-RU')}`
-                    : 'не оплачен — вас не видно'}
+                  {free
+                    ? `бесплатно до ${LAUNCH_FREE_LABEL}`
+                    : paid
+                      ? `оплачен до ${new Date(profile.subscriptionEndsAt ?? '').toLocaleDateString('ru-RU')}`
+                      : 'не оплачен — вас не видно'}
                 </span>
               </Link>
 

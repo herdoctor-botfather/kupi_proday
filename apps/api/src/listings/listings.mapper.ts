@@ -91,6 +91,7 @@ export function toMyListing(row: DetailRow): MyListing {
     needsReview: row.needsReview,
     rejectionReason: row.rejectionReason,
     soldAt: row.soldAt?.toISOString() ?? null,
+    promotedUntil: row.promotedUntil?.toISOString() ?? null,
   };
 }
 

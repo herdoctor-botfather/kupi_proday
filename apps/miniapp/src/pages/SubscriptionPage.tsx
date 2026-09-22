@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { SPECIALIST_PLANS, SPECIALIST_PLAN_IDS, type MySpecialistProfile } from '@app/shared';
+import {
+  LAUNCH_FREE_LABEL,
+  SPECIALIST_PLANS,
+  SPECIALIST_PLAN_IDS,
+  isLaunchFree,
+  type MySpecialistProfile,
+} from '@app/shared';
 import { api } from '../lib/api';
 import { withPayment } from '../lib/purchase';
 import { usePurchase } from '../lib/usePurchase';
@@ -87,13 +93,26 @@ export function SubscriptionPage() {
 
   const activeUntil = profile.subscriptionEndsAt ? new Date(profile.subscriptionEndsAt) : null;
   const isActive = activeUntil !== null && activeUntil > new Date();
+  /* На время запуска показ бесплатный — брать деньги за место в пустом
+     каталоге не за что. Тарифы в это время не показываем вовсе: платить
+     не за что, а видеть цену рядом со словом «бесплатно» сбивает с толку. */
+  const free = isLaunchFree();
 
   return (
     <div className="page">
       <h1 className="page__title">Подписка</h1>
 
       <div className="subscription-state">
-        {isActive ? (
+        {free ? (
+          <>
+            <div className="subscription-state__title">🎁 Показ бесплатный до {LAUNCH_FREE_LABEL}</div>
+            <div className="subscription-state__hint">
+              Пока площадка набирает людей, анкета показывается в каталоге, поиске и на карте
+              бесплатно — платить ничего не нужно. После {LAUNCH_FREE_LABEL} показ будет стоить
+              от {SPECIALIST_PLANS.week.stars} ★ в неделю.
+            </div>
+          </>
+        ) : isActive ? (
           <>
             <div className="subscription-state__title">Анкета показывается</div>
             <div className="subscription-state__hint">
@@ -112,9 +131,9 @@ export function SubscriptionPage() {
         )}
       </div>
 
-      <div className="section-title">{isActive ? 'Продлить' : 'Выбрать срок'}</div>
+      {!free && <div className="section-title">{isActive ? 'Продлить' : 'Выбрать срок'}</div>}
 
-      <div className="plan-list">
+      <div className="plan-list" hidden={free}>
         {SPECIALIST_PLAN_IDS.map((id) => {
           const plan = SPECIALIST_PLANS[id];
           // Цена за день показывает выгоду длинного тарифа честнее,

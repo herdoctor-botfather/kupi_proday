@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { IMAGE_GENERATION_STARS, IMAGE_PROMPT_MAX } from '@app/shared';
+import { IMAGE_GENERATION_STARS, IMAGE_PROMPT_MAX, LAUNCH_FREE_LABEL, isLaunchFree } from '@app/shared';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { haptic } from '../lib/telegram';
@@ -36,6 +36,8 @@ export function DrawImage({
   const wallet = useAsync(() => api.wallet(), []);
   const balance = wallet.data?.balance ?? 0;
   const enough = balance >= IMAGE_GENERATION_STARS;
+  /** Пока идёт бесплатный период, рисование ничего не стоит — но не больше трёх в сутки. */
+  const free = isLaunchFree();
 
   const draw = async () => {
     setBusy(true);
@@ -155,14 +157,18 @@ export function DrawImage({
             >
               {busy
                 ? 'Рисуем, около минуты...'
-                : enough
-                  ? `Нарисовать за ${IMAGE_GENERATION_STARS} ★ с баланса`
-                  : `Нарисовать — оплатить ${IMAGE_GENERATION_STARS} ★`}
+                : free
+                  ? 'Нарисовать бесплатно'
+                  : enough
+                    ? `Нарисовать за ${IMAGE_GENERATION_STARS} ★ с баланса`
+                    : `Нарисовать — оплатить ${IMAGE_GENERATION_STARS} ★`}
             </button>
             <p className="form-hint">
-              {enough
-                ? `На балансе ${balance} ★ — спишем ${IMAGE_GENERATION_STARS} ★ оттуда.`
-                : `На балансе ${balance} ★. Откроется окно оплаты звёздами Telegram.`}
+              {free
+                ? `Бесплатно до ${LAUNCH_FREE_LABEL} — до трёх картинок в сутки. Дальше ${IMAGE_GENERATION_STARS} ★ за картинку.`
+                : enough
+                  ? `На балансе ${balance} ★ — спишем ${IMAGE_GENERATION_STARS} ★ оттуда.`
+                  : `На балансе ${balance} ★. Откроется окно оплаты звёздами Telegram.`}
             </p>
           </>
         )}

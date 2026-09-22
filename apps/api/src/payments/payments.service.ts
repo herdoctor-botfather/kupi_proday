@@ -19,6 +19,7 @@ import {
   CASHBACK_PERCENT,
   WELCOME_BONUS_STARS,
   isTopupAmount,
+  isLaunchFree,
   type CreateInvoiceDto,
   type ConfirmPaymentDto,
 } from '@app/shared';
@@ -177,6 +178,7 @@ export class PaymentsService {
     paidSlots: number;
     left: number;
     extraStars: number;
+    launchFree: boolean;
   }> {
     const since = monthStart();
 
@@ -189,12 +191,20 @@ export class PaymentsService {
       }),
     ]);
 
+    // В бесплатный период лимита нет вовсе — но счётчик размещённого
+    // продолжаем вести: по нему будет видно, что происходит, когда
+    // цены вернутся.
+    const launchFree = isLaunchFree();
+
     return {
       freePerMonth: LISTING_FREE_PER_MONTH,
       usedThisMonth,
       paidSlots,
-      left: Math.max(0, LISTING_FREE_PER_MONTH + paidSlots - usedThisMonth),
+      left: launchFree
+        ? Number.MAX_SAFE_INTEGER
+        : Math.max(0, LISTING_FREE_PER_MONTH + paidSlots - usedThisMonth),
       extraStars: LISTING_EXTRA_STARS,
+      launchFree,
     };
   }
 

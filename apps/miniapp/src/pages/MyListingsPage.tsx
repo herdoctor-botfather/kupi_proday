@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import type { ListingStatus, MyListing } from '@app/shared';
+import { LISTING_PROMOTIONS, type ListingStatus, type MyListing } from '@app/shared';
 import { api } from '../lib/api';
+import { withPayment } from '../lib/purchase';
 import { useAsync } from '../lib/useAsync';
 import { AsyncContent, EmptyState } from '../components/states';
 import { formatPrice, pluralize } from '../lib/format';
@@ -50,6 +51,37 @@ export function MyListingsPage() {
   const navigate = useNavigate();
   const state = useAsync(() => api.myListings(), []);
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  /*
+   * Продвижение — единственное платное на площадке.
+   *
+   * Раньше купить его было негде вовсе: цена существовала, а кнопки не
+   * было. Неделя в начале списка — то, за что продавец платит охотно:
+   * результат виден сразу, а деньги небольшие.
+   */
+  const promote = async (listing: MyListing) => {
+    const plan = LISTING_PROMOTIONS.week;
+    const question = `Поднять «${listing.title}» в начало списка на неделю за ${plan.stars} ★?`;
+    const run = async () => {
+      setBusyId(listing.id);
+      setError(null);
+      try {
+        await withPayment({ purpose: 'LISTING_PROMOTION', plan: 'week', listingId: listing.id }, () =>
+          api.payFromBalance({ purpose: 'LISTING_PROMOTION', plan: 'week', listingId: listing.id }),
+        );
+        haptic.success();
+        state.reload();
+      } catch (err) {
+        haptic.error();
+        setError(err instanceof Error ? err.message : 'Не удалось продвинуть');
+      } finally {
+        setBusyId(null);
+      }
+    };
+    const app = tg();
+    if (app) app.showConfirm(question, (ok) => ok && void run());
+    else if (window.confirm(question)) void run();
+  };
   const [error, setError] = useState<string | null>(null);
   /** Объявление, для которого спрашиваем причину снятия. */
   const [removing, setRemoving] = useState<MyListing | null>(null);
@@ -199,6 +231,22 @@ export function MyListingsPage() {
                             уже принятое решение, а не предлагает выбрать одно
                             из двух похожих.
                           */}
+                          {listing.status === 'ACTIVE' &&
+                            (listing.promotedUntil && new Date(listing.promotedUntil) > new Date() ? (
+                              <span className="listing-status status--active">
+                                🚀 В начале списка до{' '}
+                                {new Date(listing.promotedUntil).toLocaleDateString('ru-RU')}
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="button button--secondary button--sm"
+                                onClick={() => void promote(listing)}
+                                disabled={busyId === listing.id}
+                              >
+                                🚀 Продвинуть — {LISTING_PROMOTIONS.week.stars} ★
+                              </button>
+                            ))}
                           {listing.status === 'ACTIVE' && (
                             <button
                               type="button"

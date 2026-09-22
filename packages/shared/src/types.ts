@@ -236,6 +236,8 @@ export interface MyListing extends ListingDetail {
   needsReview: boolean;
   rejectionReason: string | null;
   soldAt: string | null;
+  /** До какого момента объявление держится в начале списка. null — не продвигается. */
+  promotedUntil: string | null;
 }
 
 /** Собеседник в списке диалогов. */

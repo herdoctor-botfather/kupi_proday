@@ -1,3 +1,4 @@
+import { LAUNCH_FREE_LABEL, isLaunchFree } from '@app/shared';
 import { Bot, InlineKeyboard, Keyboard } from 'grammy';
 import type { CallbackQueryContext, Context } from 'grammy';
 import { config } from './config';
@@ -223,6 +224,21 @@ export function registerCabinet(bot: Bot): void {
 
   bot.callbackQuery('cab:sub', async (ctx) => {
     const keyboard = new InlineKeyboard();
+    // Пока показ бесплатный, платить не за что — предлагать тарифы значит
+    // брать деньги за то, что и так работает.
+    if (isLaunchFree()) {
+      keyboard.text('Назад', 'cab:refresh');
+      await ctx
+        .editMessageText(
+          `🎁 Показ анкеты в каталоге бесплатный до ${LAUNCH_FREE_LABEL}. Платить ничего не нужно — ` +
+            'анкета показывается, как только пройдёт проверку.',
+          { reply_markup: keyboard },
+        )
+        .catch(() => {});
+      await ctx.answerCallbackQuery();
+      return;
+    }
+
     for (const [id, title, stars] of PLANS) keyboard.text(`${title} — ${stars} ★`, `cab:sub:${id}`).row();
     keyboard.text('Назад', 'cab:refresh');
     await ctx.editMessageText('На какой срок продлить показ анкеты?', { reply_markup: keyboard }).catch(() => {});

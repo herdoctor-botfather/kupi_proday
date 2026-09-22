@@ -8,6 +8,7 @@ import type {
   SpecialistListItem,
   SpecialistQuery,
 } from '@app/shared';
+import { isLaunchFree } from '@app/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { boundingBox, haversineKm } from '../common/geo';
 import { detailInclude, listInclude, toDetail, toListItem } from './specialists.mapper';
@@ -271,6 +272,10 @@ export class SpecialistsService {
    * владельца, платить за них некому, и это витрина самой площадки.
    */
   private visibleInCatalog(): Prisma.SpecialistWhereInput {
+    // На время запуска показ бесплатный: спрашивать оплату за место в
+    // каталоге, где ещё нет клиентов, — верный способ остаться без мастеров.
+    if (isLaunchFree()) return { status: 'ACTIVE' };
+
     return {
       status: 'ACTIVE',
       OR: [{ subscriptionUntil: { gt: new Date() } }, { userId: null }],

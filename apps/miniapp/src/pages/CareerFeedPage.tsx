@@ -60,6 +60,8 @@ export function CareerFeedPage({ kind }: { kind: 'JOB' | 'RESUME' }) {
   };
 
   const isJobs = kind === 'JOB';
+  /** Список отраслей свёрнут: развёрнутый, он занимал весь экран до ленты. */
+  const [industriesOpen, setIndustriesOpen] = useState(false);
 
   /** Название выбранной отрасли или должности — для строки сброса. */
   const categoryName = (categories.data ?? [])
@@ -92,11 +94,32 @@ export function CareerFeedPage({ kind }: { kind: 'JOB' | 'RESUME' }) {
         листать. «Транспорт и логистика» в чип не влезает вовсе.
         Столбец показывает все отрасли разом и ведёт дальше — к
         должностям, как в остальных разделах площадки.
+
+        Но шестнадцать строк подряд отодвигали сами вакансии на два
+        экрана вниз. Поэтому столбец свёрнут в одну строку и
+        раскрывается по нажатию — тот, кто пришёл листать, листает сразу.
       */}
       {!categorySlug && (categories.data?.length ?? 0) > 0 && (
         <>
-          <h2 className="section-title">Отрасли</h2>
-          <div className="steps">
+          <button
+            type="button"
+            className={`industry-toggle${industriesOpen ? ' industry-toggle--open' : ''}`}
+            aria-expanded={industriesOpen}
+            onClick={() => {
+              haptic.tap();
+              setIndustriesOpen((open) => !open);
+            }}
+          >
+            <span>🏢 Отрасль: все</span>
+            <span className="industry-toggle__side">
+              {industriesOpen ? 'Свернуть' : `Выбрать из ${categories.data?.length ?? 0}`}
+              <span className="industry-toggle__arrow" aria-hidden>
+                ▾
+              </span>
+            </span>
+          </button>
+          {industriesOpen && (
+            <div className="steps">
             {(categories.data ?? []).map((category) => (
               <button
                 key={category.id}
@@ -118,7 +141,8 @@ export function CareerFeedPage({ kind }: { kind: 'JOB' | 'RESUME' }) {
                 </span>
               </button>
             ))}
-          </div>
+            </div>
+          )}
         </>
       )}
 

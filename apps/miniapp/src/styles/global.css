@@ -5422,3 +5422,36 @@ body {
   text-align: center;
   text-decoration: none;
 }
+
+/* Свёрнутый список отраслей в карьере: одна строка вместо шестнадцати. */
+.industry-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  margin: 12px 0;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--hairline);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+}
+.industry-toggle__side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-hint);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.industry-toggle__arrow {
+  transition: transform 0.2s ease;
+}
+.industry-toggle--open .industry-toggle__arrow {
+  transform: rotate(180deg);
+}

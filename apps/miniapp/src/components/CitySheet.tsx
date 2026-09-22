@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { RUSSIAN_CITIES } from '../lib/russian-cities';
 import { SearchInput } from './SearchInput';
 import { haptic } from '../lib/telegram';
+import { CityMapPicker } from './CityMapPicker';
 
 /**
  * Выбор города из полного списка.
@@ -28,6 +29,8 @@ export function CitySheet({
   onClose: () => void;
 }) {
   const [query, setQuery] = useState('');
+  /** Выбор на карте вместо списка — для тех, кто не нашёл свой посёлок по названию. */
+  const [onMap, setOnMap] = useState(false);
 
   const live = withCounts ?? [];
   const liveNames = new Set(live.map((item) => item.name));
@@ -53,6 +56,21 @@ export function CitySheet({
         <div className="sheet__grip" aria-hidden />
         <h2 className="sheet__title">Выберите город</h2>
 
+        <button
+          type="button"
+          className="button button--secondary city-sheet__map-toggle"
+          onClick={() => {
+            haptic.tap();
+            setOnMap((value) => !value);
+          }}
+        >
+          {onMap ? '☰ Выбрать из списка' : '🗺 Выбрать на карте'}
+        </button>
+
+        {onMap ? (
+          <CityMapPicker onPick={(city) => pick(city)} />
+        ) : (
+          <>
         <SearchInput value={query} onChange={setQuery} placeholder="Начните вводить название" />
 
         <div className="city-sheet__list">
@@ -81,8 +99,12 @@ export function CitySheet({
             );
           })}
 
-          {found.length === 0 && <p className="form-hint">Такого города в списке нет</p>}
+          {found.length === 0 && (
+            <p className="form-hint">Такого города в списке нет — попробуйте выбрать его на карте</p>
+          )}
         </div>
+          </>
+        )}
 
         <button type="button" className="sheet__cancel" onClick={onClose}>
           Закрыть

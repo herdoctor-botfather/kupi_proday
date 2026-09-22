@@ -5641,3 +5641,39 @@ body {
   color: var(--accent);
   opacity: 1;
 }
+
+/* ─── Выбор города на карте ─── */
+.city-sheet__map-toggle {
+  margin-bottom: 12px;
+}
+.city-map {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.city-map__canvas {
+  width: 100%;
+  height: 45vh;
+  min-height: 240px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-secondary);
+}
+.city-map__bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.city-map__locate {
+  width: auto;
+  flex: none;
+  padding: 8px 14px;
+}
+.city-map__found {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

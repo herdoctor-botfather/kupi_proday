@@ -21,6 +21,7 @@ import { ImagesModule } from './images/images.module';
 import { TextModule } from './text/text.module';
 import { ReferralsModule } from './referrals/referrals.module';
 import { DemandModule } from './demand/demand.module';
+import { GeoModule } from './geo/geo.module';
 import { UrgentModule } from './urgent/urgent.module';
 import { HealthController } from './common/health.controller';
 
@@ -49,6 +50,7 @@ import { HealthController } from './common/health.controller';
     ReferralsModule,
     DemandModule,
     UrgentModule,
+    GeoModule,
   ],
   controllers: [HealthController],
 })

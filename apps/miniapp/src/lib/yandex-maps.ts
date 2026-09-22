@@ -30,7 +30,7 @@ export interface MapBounds {
 /** Прямоугольник видимой области: [[юг, запад], [север, восток]]. */
 export type YmapsBounds = [LatLng, LatLng];
 
-interface YmapsEvent {
+export interface YmapsEvent {
   get(name: string): unknown;
 }
 
@@ -49,7 +49,7 @@ export interface YmapsMap {
     remove(object: YmapsGeoObject): void;
     removeAll(): void;
   };
-  events: { add(type: string, handler: () => void): void };
+  events: { add(type: string, handler: (event: YmapsEvent) => void): void };
   getBounds(): YmapsBounds;
   setCenter(center: LatLng, zoom?: number, options?: { duration?: number }): void;
   destroy(): void;

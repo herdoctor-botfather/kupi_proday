@@ -182,6 +182,8 @@ export const api = {
     request<UrgentRequest>('/urgent', { method: 'POST', body: JSON.stringify(dto) }),
   myUrgent: () => request<UrgentRequest[]>('/urgent/mine'),
   /** Вызовы, адресованные мне как мастеру, и взятые мной. */
+  /** Какой город стоит в точке на карте. */
+  cityAt: (lat: number, lng: number) => request<{ city: string | null }>(`/geo/city${qs({ lat, lng })}`),
   incomingUrgent: () => request<UrgentRequest[]>('/urgent/incoming'),
   urgentDetail: (id: string) => request<UrgentRequestDetail>(`/urgent/${id}`),
   takeUrgent: (id: string) =>

@@ -9,6 +9,7 @@ import {
   type MapBounds,
   type YmapsApi,
   type YmapsClusterer,
+  type YmapsGeoObject,
   type YmapsMap,
 } from '../lib/yandex-maps';
 import { ErrorState, LoadingState } from '../components/states';
@@ -49,13 +50,17 @@ const DEFAULT_ZOOM = 11;
 export function MapPage() {
   const [searchParams] = useSearchParams();
   const focusId = searchParams.get('focus');
+  /** Пришли по «Найти рядом»: сразу спросить, где человек, и показать это. */
+  const near = searchParams.get('near') === '1';
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<YmapsMap | null>(null);
   const clustererRef = useRef<YmapsClusterer | null>(null);
   const apiRef = useRef<YmapsApi | null>(null);
   /** Разметка метки и группы: создаётся один раз, после готовности API. */
-  const layoutsRef = useRef<{ marker: unknown; cluster: unknown } | null>(null);
+  const layoutsRef = useRef<{ marker: unknown; cluster: unknown; me: unknown } | null>(null);
+  /** Метка «Вы здесь» — одна, переставляется при новом определении места. */
+  const meRef = useRef<YmapsGeoObject | null>(null);
 
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +86,9 @@ export function MapPage() {
           ),
           cluster: ymaps.templateLayoutFactory.createClass(
             '<div class="map-cluster">{{ properties.geoObjects.length }}</div>',
+          ),
+          me: ymaps.templateLayoutFactory.createClass(
+            '<div class="map-me"><span class="map-me__dot"></span><span class="map-me__label">Вы здесь</span></div>',
           ),
         };
 
@@ -216,11 +224,35 @@ export function MapPage() {
       });
   }, [focusId, status]);
 
-  // ─── Центрирование по геолокации ───
+  // ─── «Найти рядом»: спросить место, как только карта готова ───
   useEffect(() => {
-    if (!geo.coords || !mapRef.current) return;
-    mapRef.current.setCenter([geo.coords.lat, geo.coords.lng], 14, { duration: 300 });
-  }, [geo.coords]);
+    if (near && status === 'ready') geo.request();
+    // geo.request стабилен; повторять запрос при каждом рендере незачем.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [near, status]);
+
+  // ─── Центрирование по геолокации и метка «Вы здесь» ───
+  useEffect(() => {
+    const map = mapRef.current;
+    const ymaps = apiRef.current;
+    const layouts = layoutsRef.current;
+    if (!geo.coords || !map || !ymaps || !layouts) return;
+
+    map.setCenter([geo.coords.lat, geo.coords.lng], 14, { duration: 300 });
+
+    /*
+     * Без метки центрирование ничего не объясняло: карта просто сдвигалась,
+     * и человек не понимал, где он среди мастеров. Метка ставится вне
+     * группировки, чтобы её не поглотила соседняя кучка мастеров.
+     */
+    if (meRef.current) map.geoObjects.remove(meRef.current);
+    meRef.current = new ymaps.Placemark(
+      [geo.coords.lat, geo.coords.lng],
+      {},
+      { iconLayout: layouts.me, zIndex: 1000 },
+    );
+    map.geoObjects.add(meRef.current);
+  }, [geo.coords, status]);
 
   if (status === 'error') {
     return (
@@ -248,6 +280,17 @@ export function MapPage() {
           {geo.loading ? <span className="map__locate-wait" aria-hidden /> : <IconLocate />}
         </button>
       </div>
+
+      {/* Список по расстоянию — для тех, кому удобнее читать, чем водить картой. */}
+      {geo.coords && (
+        <Link
+          className="map__as-list"
+          to={`/specialists?lat=${geo.coords.lat}&lng=${geo.coords.lng}&sort=distance`}
+        >
+          ☰ Мастера рядом списком
+        </Link>
+      )}
+      {geo.error && <div className="map__geo-error">{geo.error}</div>}
 
       {selected && (
         <div className="map-sheet">

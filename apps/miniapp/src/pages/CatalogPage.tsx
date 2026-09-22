@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
@@ -7,7 +7,6 @@ import { AsyncContent, EmptyState } from '../components/states';
 import { SearchInput } from '../components/SearchInput';
 import { SpecialistCard } from '../components/SpecialistCard';
 import { FeedHeader, FeedMore } from '../components/Feed';
-import { useGeolocation } from '../lib/geolocation';
 import { haptic } from '../lib/telegram';
 import { pluralize } from '../lib/format';
 import { categoryStyle } from '../lib/category-colors';
@@ -45,7 +44,6 @@ const FEED_PAGE_SIZE = 4;
 export function CatalogPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
-  const geo = useGeolocation();
 
   const categories = useAsync(() => api.categories(), []);
 
@@ -54,13 +52,6 @@ export function CatalogPage() {
     [],
   );
 
-  // Координаты приходят асинхронно — переход делаем эффектом, а не в рендере.
-  useEffect(() => {
-    if (!geo.coords) return;
-    const { lat, lng } = geo.coords;
-    geo.clear();
-    navigate(`/specialists?lat=${lat}&lng=${lng}&sort=distance`);
-  }, [geo.coords, geo.clear, navigate]);
 
   const submitSearch = (event: React.FormEvent) => {
     event.preventDefault();
@@ -93,13 +84,14 @@ export function CatalogPage() {
         className="button button--secondary"
         onClick={() => {
           haptic.tap();
-          geo.request();
+          // «Рядом» — это про место, и отвечать на него картой честнее
+          // списка: видно, где ты и кто вокруг. Местоположение карта
+          // запросит сама, а список по расстоянию остаётся кнопкой на ней.
+          navigate('/map?near=1');
         }}
-        disabled={geo.loading}
       >
-        {geo.loading ? 'Определяем местоположение...' : '📍 Найти рядом'}
+        📍 Найти рядом
       </button>
-      {geo.error && <div style={{ color: 'var(--destructive)', fontSize: 13, marginTop: 8 }}>{geo.error}</div>}
 
       <h2 className="section-title">Категории</h2>
 

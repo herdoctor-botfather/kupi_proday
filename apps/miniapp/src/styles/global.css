@@ -5558,3 +5558,68 @@ body {
   font: inherit;
   color: var(--text);
 }
+
+/* ─── Метка «Вы здесь» на карте ─── */
+.map-me {
+  position: relative;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+}
+.map-me__dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6);
+  animation: map-me-pulse 1.8s ease-out infinite;
+}
+.map-me__label {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+@keyframes map-me-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6); }
+  100% { box-shadow: 0 0 0 16px rgba(59, 130, 246, 0); }
+}
+
+/* Кнопка «списком» поверх карты, над нижней панелью. */
+.map__as-list {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--tabbar-height) + 28px);
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+  text-decoration: none;
+}
+.map__geo-error {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 64px;
+  z-index: 5;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--destructive);
+  font-size: 13px;
+}

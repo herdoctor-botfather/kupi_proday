@@ -5,6 +5,7 @@ import { useAsync } from '../lib/useAsync';
 import { AsyncContent } from '../components/states';
 import { ChipsRow } from '../components/ChipsRow';
 import { CityInput } from '../components/CityInput';
+import { DropdownList } from '../components/DropdownList';
 import { haptic } from '../lib/telegram';
 
 /**
@@ -87,23 +88,18 @@ export function DemandWatchPage() {
         ))}
       </ChipsRow>
 
+      {/* Раздел — раскрывающимся списком: в строку помещалось два-три
+          раздела, остальные прятались за прокруткой вбок. */}
       <AsyncContent state={categories}>
         {(items) => (
-          <ChipsRow>
-            {items.map((category) => (
-              <button
-                key={category.id}
-                type="button"
-                className={`chip${categoryId === category.id ? ' chip--active' : ''}`}
-                onClick={() => {
-                  haptic.tap();
-                  setCategoryId(categoryId === category.id ? '' : category.id);
-                }}
-              >
-                {category.icon} {category.name}
-              </button>
-            ))}
-          </ChipsRow>
+          <DropdownList
+            label="🗂 Любой раздел"
+            allLabel="Любой раздел"
+            noun="разделов"
+            selectedKey={categoryId || null}
+            items={items.map((category) => ({ key: category.id, label: `${category.icon} ${category.name}` }))}
+            onPick={(id) => setCategoryId(id ?? '')}
+          />
         )}
       </AsyncContent>
 

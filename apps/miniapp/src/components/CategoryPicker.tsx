@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Category } from '@app/shared';
-import { ChipsRow } from './ChipsRow';
+import { DropdownList } from './DropdownList';
 import { haptic } from '../lib/telegram';
 
 /**
@@ -71,42 +71,38 @@ export function CategoryPicker({
         </div>
       )}
 
-      <ChipsRow>
-        {categories.map((category) => (
-          <button
-            key={category.id}
-            type="button"
-            className={`chip${openSlug === category.slug ? ' chip--active' : ''}`}
-            onClick={() => {
-              haptic.tap();
-              setOpenSlug(openSlug === category.slug ? null : category.slug);
-            }}
-          >
-            {category.icon} {category.name}
-          </button>
-        ))}
-      </ChipsRow>
+      {/* Раздел — раскрывающимся списком, а не строкой чипов: в строку
+          помещалось три раздела, остальные прятались за прокруткой. */}
+      <DropdownList
+        label="🗂 Выберите раздел"
+        noun="разделов"
+        selectedKey={openSlug}
+        items={categories.map((category) => ({ key: category.slug, label: `${category.icon} ${category.name}` }))}
+        onPick={setOpenSlug}
+      />
 
+      {/* Подразделы — столбцом с галочками: выбрать можно несколько. */}
       {open && (
-        <ChipsRow>
-          <button
-            type="button"
-            className={`chip chip--sub${selected.includes(open.id) ? ' chip--active' : ''}`}
-            onClick={() => toggle(open.id)}
-          >
-            Весь раздел
-          </button>
-          {(open.children ?? []).map((child) => (
-            <button
-              key={child.id}
-              type="button"
-              className={`chip chip--sub${selected.includes(child.id) ? ' chip--active' : ''}`}
-              onClick={() => toggle(child.id)}
-            >
-              {child.name}
-            </button>
-          ))}
-        </ChipsRow>
+        <div className="steps">
+          {[{ id: open.id, name: 'Весь раздел' }, ...(open.children ?? [])].map((item) => {
+            const on = selected.includes(item.id);
+            return (
+              <button
+                key={item.id}
+                type="button"
+                className={`step${on ? ' step--active' : ''}`}
+                onClick={() => toggle(item.id)}
+              >
+                <span className="step__name">{item.name}</span>
+                <span className="step__side">
+                  <span className="step__chevron" aria-hidden>
+                    {on ? '✓' : '+'}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
       )}
     </div>
   );

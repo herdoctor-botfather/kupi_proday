@@ -30,6 +30,7 @@ import type {
   SpecialistDetail,
   DemandWatch,
   UrgentRequest,
+  UrgentRequestDetail,
   UrgentRequestDto,
   DemandWatchDto,
   ReferralSummary,
@@ -180,6 +181,11 @@ export const api = {
   createUrgent: (dto: UrgentRequestDto) =>
     request<UrgentRequest>('/urgent', { method: 'POST', body: JSON.stringify(dto) }),
   myUrgent: () => request<UrgentRequest[]>('/urgent/mine'),
+  /** Вызовы, адресованные мне как мастеру, и взятые мной. */
+  incomingUrgent: () => request<UrgentRequest[]>('/urgent/incoming'),
+  urgentDetail: (id: string) => request<UrgentRequestDetail>(`/urgent/${id}`),
+  takeUrgent: (id: string) =>
+    request<{ conversationId: string | null }>(`/urgent/${id}/take`, { method: 'POST' }),
   cancelUrgent: (id: string) =>
     request<UrgentRequest[]>(`/urgent/${id}/cancel`, { method: 'POST' }),
 

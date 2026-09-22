@@ -32,6 +32,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { ReferralsPage } from './pages/ReferralsPage';
 import { DemandWatchPage } from './pages/DemandWatchPage';
 import { UrgentPage } from './pages/UrgentPage';
+import { UrgentDetailPage } from './pages/UrgentDetailPage';
 import { UrgentSalePage } from './pages/UrgentSalePage';
 import { EmptyState } from './components/states';
 import { useBackButtonEffect } from './lib/telegram';
@@ -192,6 +193,7 @@ function Shell() {
       <Route path="/profile/referrals" element={<ReferralsPage />} />
       <Route path="/profile/demand" element={<DemandWatchPage />} />
       <Route path="/urgent" element={<UrgentPage />} />
+      <Route path="/urgent/:id" element={<UrgentDetailPage />} />
       <Route path="/market/urgent" element={<UrgentSalePage />} />
       <Route path="/chats" element={<ChatsPage />} />
       <Route path="/chat/:id" element={<ChatPage />} />

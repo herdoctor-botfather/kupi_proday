@@ -8,10 +8,17 @@ import {
 import type { UrgentRequestDto } from '@app/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import type { Prisma } from '@prisma/client';
 import { publicName } from '../common/public-name';
 
 /** Сколько открытых вызовов можно держать одновременно. */
 const MAX_OPEN = 3;
+
+/** Что подгружаем к вызову, чтобы показать его человеку. */
+const URGENT_INCLUDE = {
+  category: { select: { name: true, icon: true } },
+  takenBy: { select: { id: true, firstName: true, photoUrl: true, avatarUrl: true } },
+} satisfies Prisma.UrgentRequestInclude;
 
 /**
  * «Надо срочно» — вызов мастера на сейчас.
@@ -97,13 +104,101 @@ export class UrgentService {
       where: { userId },
       orderBy: { createdAt: 'desc' },
       take: 20,
-      include: {
-        category: { select: { name: true, icon: true } },
-        takenBy: { select: { id: true, firstName: true, photoUrl: true, avatarUrl: true } },
-      },
+      include: URGENT_INCLUDE,
     });
 
-    return rows.map((row) => ({
+    return rows.map((row) => this.toDto(row));
+  }
+
+  /**
+   * Вызовы для мастера: открытые в его разделах и городе, плюс те,
+   * что он уже взял.
+   *
+   * Раньше мастер узнавал о вызове только из сообщения бота, и стоило
+   * его пролистать — вызов терялся: в приложении его было не найти.
+   */
+  async incoming(viewerId: string) {
+    const specialist = await this.prisma.specialist.findUnique({
+      where: { userId: viewerId },
+      select: { status: true, city: true, categories: { select: { categoryId: true } } },
+    });
+    if (!specialist || specialist.status !== 'ACTIVE') return [];
+
+    const rows = await this.prisma.urgentRequest.findMany({
+      where: {
+        OR: [
+          {
+            status: 'OPEN',
+            neededBy: { gt: new Date() },
+            userId: { not: viewerId },
+            city: { equals: specialist.city, mode: 'insensitive' },
+            categoryId: { in: specialist.categories.map((item) => item.categoryId) },
+          },
+          { takenById: viewerId },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      include: URGENT_INCLUDE,
+    });
+
+    return rows.map((row) => this.toDto(row));
+  }
+
+  /**
+   * Один вызов — для заказчика и для мастера.
+   *
+   * Заказчик видит, что с вызовом: ждёт, взят кем, сгорел. Мастер —
+   * суть беды и кнопку «Беру». Чужим вызов не показываем: в нём адрес
+   * беды и время, когда человек дома, — это не для всех подряд.
+   */
+  async detail(viewerId: string, id: string) {
+    const row = await this.prisma.urgentRequest.findUnique({ where: { id }, include: URGENT_INCLUDE });
+    if (!row) throw new NotFoundException({ code: 'URGENT_NOT_FOUND', message: 'Вызов не найден' });
+
+    const owner = row.userId === viewerId;
+    const takenByMe = row.takenById === viewerId;
+
+    if (!owner && !takenByMe) {
+      const fits = await this.prisma.specialist.count({
+        where: {
+          userId: viewerId,
+          status: 'ACTIVE',
+          city: { equals: row.city, mode: 'insensitive' },
+          categories: { some: { categoryId: row.categoryId } },
+        },
+      });
+      if (fits === 0) throw new ForbiddenException('Этот вызов адресован другим мастерам');
+    }
+
+    // Переписка появляется, когда вызов взяли: её и открываем обеим сторонам.
+    let conversationId: string | null = null;
+    if ((owner || takenByMe) && row.takenById) {
+      const taker = await this.prisma.specialist.findUnique({
+        where: { userId: row.takenById },
+        select: { id: true },
+      });
+      if (taker) {
+        const conversation = await this.prisma.conversation.findUnique({
+          where: { specialistId_clientId: { specialistId: taker.id, clientId: row.userId } },
+          select: { id: true },
+        });
+        conversationId = conversation?.id ?? null;
+      }
+    }
+
+    const dto = this.toDto(row);
+    return {
+      ...dto,
+      role: owner ? ('owner' as const) : ('master' as const),
+      takenByMe,
+      canTake: !owner && dto.status === 'OPEN',
+      conversationId,
+    };
+  }
+
+  private toDto(row: Prisma.UrgentRequestGetPayload<{ include: typeof URGENT_INCLUDE }>) {
+    return {
       id: row.id,
       title: row.title,
       description: row.description,
@@ -120,7 +215,7 @@ export class UrgentService {
             photoUrl: row.takenBy.avatarUrl ?? row.takenBy.photoUrl,
           }
         : null,
-    }));
+    };
   }
 
   /**

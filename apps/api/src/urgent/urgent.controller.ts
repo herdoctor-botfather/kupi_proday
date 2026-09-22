@@ -25,6 +25,17 @@ export class UrgentController {
     return this.urgent.mine(user.id);
   }
 
+  /** Вызовы для мастера — стоит выше ':id', иначе «incoming» приняли бы за идентификатор. */
+  @Get('incoming')
+  incoming(@CurrentUser() user: RequestUser) {
+    return this.urgent.incoming(user.id);
+  }
+
+  @Get(':id')
+  detail(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+    return this.urgent.detail(user.id, id);
+  }
+
   @Post(':id/take')
   @HttpCode(200)
   take(@Param('id') id: string, @CurrentUser() user: RequestUser) {

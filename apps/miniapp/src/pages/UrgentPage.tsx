@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { UrgentRequest } from '@app/shared';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
@@ -8,7 +9,7 @@ import { CityInput } from '../components/CityInput';
 import { haptic } from '../lib/telegram';
 
 /** Время вызова человеческими словами: окно или крайний срок. */
-function when(request: UrgentRequest): string {
+export function when(request: UrgentRequest): string {
   const clock = (value: string) =>
     new Date(value).toLocaleString('ru-RU', {
       day: 'numeric',
@@ -30,7 +31,7 @@ const HOURS = [
   { value: 24, label: 'До завтра' },
 ];
 
-const STATUS_VIEW: Record<UrgentRequest['status'], { icon: string; text: string }> = {
+export const STATUS_VIEW: Record<UrgentRequest['status'], { icon: string; text: string }> = {
   OPEN: { icon: '📣', text: 'Мастера оповещены, ждём отклика' },
   TAKEN: { icon: '✅', text: 'Взял мастер' },
   EXPIRED: { icon: '🕘', text: 'Срок вышел, никто не взялся' },
@@ -90,6 +91,9 @@ function atSlot(offset: number, minutes: number): Date {
 export function UrgentPage() {
   const categories = useAsync(() => api.categories('SERVICE'), []);
   const mine = useAsync(() => api.myUrgent(), []);
+  // Мастеру — вызовы его разделов и города: найти их можно не только в сообщении бота.
+  const incoming = useAsync(() => api.incomingUrgent(), []);
+  const navigate = useNavigate();
 
   const [categoryId, setCategoryId] = useState('');
   const [city, setCity] = useState('');
@@ -335,7 +339,16 @@ export function UrgentPage() {
                 return (
                   <div key={request.id} className="my-listing">
                     <div className="my-listing__head">
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                      {/* Вся строка открывает вызов: там статус, мастер и переписка. */}
+                      <div
+                        style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                          haptic.tap();
+                          navigate(`/urgent/${request.id}`);
+                        }}
+                      >
                         <div className="my-listing__title">{request.title}</div>
                         <div className="card__headline">
                           {request.category.icon} {request.category.name} · {request.city}
@@ -345,6 +358,7 @@ export function UrgentPage() {
                           {view.icon} {view.text}
                           {request.takenBy ? `: ${request.takenBy.name}` : ''}
                         </div>
+                        <div className="urgent-open">Открыть ›</div>
                       </div>
                       {request.status === 'OPEN' && (
                         <button
@@ -365,6 +379,34 @@ export function UrgentPage() {
           )
         }
       </AsyncContent>
+
+      {(incoming.data?.length ?? 0) > 0 && (
+        <>
+          <h2 className="section-title">Вызовы для вас</h2>
+          <div className="card-list">
+            {incoming.data!.map((request) => (
+              <button
+                key={request.id}
+                type="button"
+                className="my-listing urgent-incoming"
+                onClick={() => {
+                  haptic.tap();
+                  navigate(`/urgent/${request.id}`);
+                }}
+              >
+                <div className="my-listing__title">{request.title}</div>
+                <div className="card__headline">
+                  {request.category.icon} {request.category.name} · {request.city}
+                </div>
+                <div className="card__headline">{when(request)}</div>
+                <div className="urgent-open">
+                  {request.status === 'OPEN' ? '⚡️ Открыть и взять ›' : 'Открыть ›'}
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

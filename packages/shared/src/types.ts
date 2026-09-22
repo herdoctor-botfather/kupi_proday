@@ -289,6 +289,18 @@ export interface UrgentRequest {
   takenBy: ConversationParty | null;
 }
 
+/** Вызов, открытый целиком: кто смотрит и что ему можно. */
+export interface UrgentRequestDetail extends UrgentRequest {
+  /** Заказчик или мастер, которому вызов адресован. */
+  role: 'owner' | 'master';
+  /** Этот мастер вызов и взял. */
+  takenByMe: boolean;
+  /** Мастер ещё может взять: вызов открыт и срок не вышел. */
+  canTake: boolean;
+  /** Переписка заказчика с взявшим мастером — когда вызов взят. */
+  conversationId: string | null;
+}
+
 /** Подписка на спрос в том виде, в каком её показывают человеку. */
 export interface DemandWatch {
   id: string;

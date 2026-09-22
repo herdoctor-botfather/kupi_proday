@@ -4,7 +4,7 @@ import type { Onboarding } from '@app/shared';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { haptic } from '../lib/telegram';
-import { markRoleChosen } from '../lib/session';
+import { leaveOnboarding, markRoleChosen } from '../lib/session';
 import { CitySheet } from '../components/CitySheet';
 import { SearchInput } from '../components/SearchInput';
 import { WelcomeOffer } from '../components/WelcomeOffer';
@@ -98,7 +98,10 @@ export function OnboardingPage() {
         onSubmit={(event) => {
           event.preventDefault();
           const trimmed = search.trim();
-          if (trimmed.length >= 2) navigate(`/search?q=${encodeURIComponent(trimmed)}`);
+          if (trimmed.length >= 2) {
+            leaveOnboarding();
+            navigate(`/search?q=${encodeURIComponent(trimmed)}`);
+          }
         }}
       >
         <SearchInput
@@ -274,8 +277,15 @@ export function OnboardingPage() {
           поэтому сказать об этом нужно рядом с дверями, а не прятать
           в справке. Ссылки открываются внутри приложения. */}
       <p className="onboarding__note">
-        Продолжая, вы принимаете <Link to="/terms">правила площадки</Link> и{' '}
-        <Link to="/privacy">политику конфиденциальности</Link>.
+        Продолжая, вы принимаете{' '}
+        <Link to="/terms" onClick={leaveOnboarding}>
+          правила площадки
+        </Link>{' '}
+        и{' '}
+        <Link to="/privacy" onClick={leaveOnboarding}>
+          политику конфиденциальности
+        </Link>
+        .
       </p>
 
       <p className="onboarding__note">

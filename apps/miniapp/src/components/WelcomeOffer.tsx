@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { LAUNCH_FREE_LABEL, isLaunchFree } from '@app/shared';
 import { haptic } from '../lib/telegram';
+import { leaveOnboarding } from '../lib/session';
 
 /**
  * Чем встречаем новичка.
@@ -47,13 +48,24 @@ export function WelcomeOffer() {
       </div>
 
       <div className="welcome__actions">
-        <Link to="/market/sell" className="button button--sm" onClick={() => haptic.tap()}>
+        <Link
+          to="/market/sell"
+          className="button button--sm"
+          onClick={() => {
+            haptic.tap();
+            // Блок стоит на стартовом экране: без этого переход вернул бы назад.
+            leaveOnboarding();
+          }}
+        >
           Разместить бесплатно
         </Link>
         <Link
           to="/profile/referrals"
           className="button button--secondary button--sm"
-          onClick={() => haptic.tap()}
+          onClick={() => {
+            haptic.tap();
+            leaveOnboarding();
+          }}
         >
           🎁 Позвать друзей
         </Link>

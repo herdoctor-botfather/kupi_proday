@@ -280,9 +280,30 @@ export class SpecialistsService {
   private buildWhere(query: SpecialistQuery): Prisma.SpecialistWhereInput {
     const where: Prisma.SpecialistWhereInput = this.visibleInCatalog();
 
-    // Раздел вместе с подкатегориями: «Красота» — это и маникюр, и брови.
+    const and: Prisma.SpecialistWhereInput[] = [];
+
+    /*
+     * Раздел вместе с подкатегориями: «Красота» — это и маникюр, и брови.
+     *
+     * И обратное: мастер, выбравший только «Красоту» целиком, не уточнив,
+     * виден в каждом её подразделе. Иначе он пропадал из «Маникюра», хотя
+     * делает именно маникюр, — а выбирать один общий раздел люди склонны.
+     * Кто уточнил подразделы, тот виден только в них: парикмахер не
+     * должен всплывать среди мастеров маникюра.
+     */
     if (query.categorySlug) {
-      where.categories = { some: { category: { OR: [{ slug: query.categorySlug }, { parent: { slug: query.categorySlug } }] } } };
+      const slug = query.categorySlug;
+      and.push({
+        OR: [
+          { categories: { some: { category: { OR: [{ slug }, { parent: { slug } }] } } } },
+          {
+            AND: [
+              { categories: { some: { category: { children: { some: { slug } } } } } },
+              { categories: { none: { category: { parent: { children: { some: { slug } } } } } } },
+            ],
+          },
+        ],
+      });
     }
     if (query.city) {
       where.city = { equals: query.city, mode: 'insensitive' };
@@ -299,18 +320,17 @@ export class SpecialistsService {
        * проверка оплаты, и запись поверх неё показывала бы в поиске
        * анкеты, которых в каталоге нет.
        */
-      where.AND = [
-        {
-          OR: [
-            { displayName: { contains: query.q, mode: 'insensitive' } },
-            { headline: { contains: query.q, mode: 'insensitive' } },
-            { about: { contains: query.q, mode: 'insensitive' } },
-            { services: { some: { name: { contains: query.q, mode: 'insensitive' } } } },
-            { categories: { some: { category: { name: { contains: query.q, mode: 'insensitive' } } } } },
-          ],
-        },
-      ];
+      and.push({
+        OR: [
+          { displayName: { contains: query.q, mode: 'insensitive' } },
+          { headline: { contains: query.q, mode: 'insensitive' } },
+          { about: { contains: query.q, mode: 'insensitive' } },
+          { services: { some: { name: { contains: query.q, mode: 'insensitive' } } } },
+          { categories: { some: { category: { name: { contains: query.q, mode: 'insensitive' } } } } },
+        ],
+      });
     }
+    if (and.length > 0) where.AND = and;
     return where;
   }
 

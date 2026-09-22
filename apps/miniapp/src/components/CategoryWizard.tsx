@@ -84,8 +84,30 @@ export function CategoryWizard({
     }
   }
 
+  /*
+   * Шаг назад — отдельной заметной кнопкой.
+   *
+   * Строка пути мелкая и серая: снять в ней последний выбор можно, но
+   * догадываются немногие, и человек, промахнувшийся с подразделом,
+   * начинал форму заново. Кнопка откатывает ровно на один шаг.
+   */
+  const last = path[path.length - 1];
+  const previous = path[path.length - 2];
+
   return (
     <div className="wizard">
+      {last && (
+        <button
+          type="button"
+          className="step-back"
+          onClick={() => {
+            haptic.tap();
+            last.onDrop();
+          }}
+        >
+          ‹ Назад{previous ? ` к «${previous.label}»` : ' к разделам'}
+        </button>
+      )}
       {path.length > 0 && (
         <div className="crumbs">
           {path.map((item, index) => (

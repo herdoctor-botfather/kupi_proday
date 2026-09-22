@@ -164,8 +164,38 @@ export function CategoryStepPage({ mode }: { mode: StepMode }) {
     );
   }
 
+  /*
+   * Ровно один шаг назад: снять последний выбор, иначе выйти из
+   * подраздела в раздел, иначе — к списку разделов. Мелкая строка пути
+   * этого не объясняла, и человек жал системное «Назад», вылетая
+   * из витрины целиком.
+   */
+  const chosenSteps = steps.filter((attribute) => chosen[attribute.slug]);
+  const lastChosen = chosenSteps[chosenSteps.length - 1];
+  const rootLabel = isService ? 'Услуги' : isCareer ? 'Карьера' : mode === 'buy' ? 'Запросы' : 'Товары';
+  const inSubsection = Boolean(section && section.slug !== current.slug);
+  const back = lastChosen
+    ? {
+        label: chosenSteps.length > 1 ? String(chosen[chosenSteps[chosenSteps.length - 2].slug]) : current.name,
+        run: () => dropValue(lastChosen.slug),
+      }
+    : inSubsection && section
+      ? { label: section.name, run: () => openCategory(section.slug) }
+      : { label: rootLabel, run: () => navigate(rootPath(mode)) };
+
   return (
     <div className="page">
+      <button
+        type="button"
+        className="step-back"
+        onClick={() => {
+          haptic.tap();
+          back.run();
+        }}
+      >
+        ‹ Назад к «{back.label}»
+      </button>
+
       {/* Путь: где человек находится и что уже выбрал. Каждый шаг можно снять. */}
       <div className="crumbs">
         <button type="button" className="crumbs__item" onClick={() => navigate(rootPath(mode))}>

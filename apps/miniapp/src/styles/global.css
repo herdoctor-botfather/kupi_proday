@@ -5409,3 +5409,16 @@ body {
   width: 100%;
   min-width: 0;
 }
+
+/* Путь к своим вакансиям и резюме из «Карьеры»: тихая ссылка, не третья дверь. */
+.career-mine {
+  display: block;
+  margin: 4px 0 20px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  border: 1px dashed var(--hairline);
+  color: var(--text-hint);
+  font-size: 14px;
+  text-align: center;
+  text-decoration: none;
+}

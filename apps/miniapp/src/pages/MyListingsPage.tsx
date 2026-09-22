@@ -37,6 +37,15 @@ const REMOVE_REASONS: { label: string; hint: string; action: 'sold' | 'hide'; as
   { label: 'Пока недоступно', hint: 'Временно скрыть, вернуть позже', action: 'hide' },
 ];
 
+const SECTION_TITLE = {
+  SELL: 'Объявления',
+  BUY: 'Запросы на покупку',
+  JOB: 'Вакансии',
+  RESUME: 'Резюме',
+} as const;
+
+const KIND_ICON = { SELL: '📦', BUY: '🔎', JOB: '💼', RESUME: '🙋' } as const;
+
 export function MyListingsPage() {
   const navigate = useNavigate();
   const state = useAsync(() => api.myListings(), []);
@@ -116,12 +125,15 @@ export function MyListingsPage() {
               назвал сам. Разделяем заголовками, порядок внутри прежний.
             */
             <div className="card-list">
-              {(['SELL', 'BUY'] as const).flatMap((kind) => {
+              {/* Вакансии и резюме — тоже объявления и тоже проходят проверку.
+                  Раньше экран знал только продажу и запросы, и отправленное
+                  резюме пропадало: ни статуса, ни следа, что оно дошло. */}
+              {(['SELL', 'BUY', 'JOB', 'RESUME'] as const).flatMap((kind) => {
                 const group = listings.filter((listing) => listing.kind === kind);
                 if (group.length === 0) return [];
                 return [
                   <div key={kind} className="section-title">
-                    {kind === 'SELL' ? 'Объявления' : 'Запросы на покупку'}
+                    {SECTION_TITLE[kind]}
                   </div>,
                   ...group.map((listing) => {
                     const view = STATUS_VIEW[listing.status];
@@ -132,7 +144,7 @@ export function MyListingsPage() {
                             {listing.coverUrl ? (
                               <img src={listing.coverUrl} alt="" loading="lazy" />
                             ) : (
-                              <span aria-hidden>{listing.kind === 'BUY' ? '🔎' : '📦'}</span>
+                              <span aria-hidden>{KIND_ICON[listing.kind]}</span>
                             )}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -141,6 +153,9 @@ export function MyListingsPage() {
                               {/* У запроса цена — не ценник, а потолок,
                                   который человек назвал сам. */}
                               {listing.kind === 'BUY' && <span className="card__headline">до </span>}
+                              {(listing.kind === 'JOB' || listing.kind === 'RESUME') && (
+                                <span className="card__headline">от </span>
+                              )}
                               {formatPrice(listing.priceAmount, listing.currency)}
                             </div>
                             <div className="card__headline">

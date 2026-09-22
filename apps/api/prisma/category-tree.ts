@@ -59,13 +59,14 @@ export const PRODUCT_TREE: CategoryNode[] = [
     icon: '📱',
     children: [
       { slug: 'electronics-phones', name: 'Телефоны' },
-      { slug: 'electronics-computers', name: 'Ноутбуки и компьютеры' },
+      // Комплектующие и периферия — внутри, первым шагом «Тип»: отдельная
+      // полка рядом с компьютерами путала — видеокарту искали в обеих.
+      { slug: 'electronics-computers', name: 'Ноутбуки, компьютеры и комплектующие' },
       { slug: 'electronics-tablets', name: 'Планшеты и электронные книги' },
       { slug: 'electronics-tv', name: 'Телевизоры и проекторы' },
       { slug: 'electronics-audio', name: 'Аудио и наушники' },
       { slug: 'electronics-photo', name: 'Фото и видео' },
       { slug: 'electronics-consoles', name: 'Игровые приставки' },
-      { slug: 'electronics-parts', name: 'Комплектующие и периферия' },
       { slug: 'electronics-office', name: 'Оргтехника и расходники' },
       { slug: 'electronics-smart', name: 'Умный дом и гаджеты' },
     ],

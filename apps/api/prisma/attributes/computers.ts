@@ -31,25 +31,20 @@ const BRANDS_BY_TYPE: Record<string, string[]> = {
   Другое: ['Другая'],
 };
 
-const TYPES = Object.keys(BRANDS_BY_TYPE);
-
-const brands = Object.entries(BRANDS_BY_TYPE).flatMap(([type, list]) =>
-  list.map((brand) => `${type}::${brand}`),
-);
+const PART_TYPES = Object.keys(BRANDS_BY_TYPE);
 
 /** Диагонали мониторов — те, что действительно продаются. */
 const MONITOR_SIZES = ['21.5″', '23.8″', '24″', '27″', '31.5″', '34″', '49″'];
 
-export const PERIPHERAL_ATTRIBUTES: AttributeSpec[] = [
-  { slug: 'type', name: 'Что именно', options: TYPES, required: true, isStep: true },
-  { slug: 'brand', name: 'Марка', options: brands, dependsOn: 'type', isStep: true },
-  {
-    slug: 'diagonal',
-    name: 'Диагональ монитора',
-    options: MONITOR_SIZES.map((size) => `Монитор::${size}`),
-    dependsOn: 'type',
-  },
-];
+/** Вариант первого шага, за которым открывается железо и периферия. */
+const PARTS = 'Комплектующие и периферия';
+
+/** Сами компьютеры — у них марка, линейка, память и экран. */
+const COMPUTER_TYPES = ['Ноутбук', 'Системный блок', 'Моноблок', 'Мини-ПК'];
+
+/** Одни и те же варианты для каждого типа компьютера, но не для комплектующих. */
+const forComputers = (options: string[]) =>
+  COMPUTER_TYPES.flatMap((type) => options.map((option) => `${type}::${option}`));
 
 /**
  * Линейки ноутбуков по маркам.
@@ -73,19 +68,28 @@ const LAPTOP_LINES: Record<string, string[]> = {
   Другая: ['Другая линейка'],
 };
 
-/** Ноутбуки и системные блоки: экран списком, а не числом от руки. */
+/**
+ * Ноутбуки, компьютеры и комплектующие — одна полка.
+ *
+ * Раньше комплектующие стояли отдельным разделом рядом, и человек с
+ * видеокартой не знал, куда идти. Теперь это вариант первого шага:
+ * «Ноутбук» ведёт к марке и линейке, «Комплектующие и периферия» — к
+ * типу железа и его марке. Память, накопитель и экран спрашиваются
+ * только у компьютеров: у мышки их нет.
+ */
 export const COMPUTER_ATTRIBUTES: AttributeSpec[] = [
   {
     slug: 'type',
     name: 'Тип',
-    options: ['Ноутбук', 'Системный блок', 'Моноблок', 'Мини-ПК'],
+    options: [...COMPUTER_TYPES, PARTS],
     required: true,
     isStep: true,
   },
   {
     slug: 'brand',
     name: 'Марка',
-    options: Object.keys(LAPTOP_LINES),
+    options: forComputers(Object.keys(LAPTOP_LINES)),
+    dependsOn: 'type',
     isStep: true,
   },
   {
@@ -97,12 +101,43 @@ export const COMPUTER_ATTRIBUTES: AttributeSpec[] = [
     dependsOn: 'brand',
     isStep: true,
   },
-  { slug: 'ram', name: 'Оперативная память', options: ['4 ГБ', '8 ГБ', '16 ГБ', '32 ГБ', '64 ГБ'] },
-  { slug: 'storage', name: 'Накопитель', options: ['128 ГБ', '256 ГБ', '512 ГБ', '1 ТБ', '2 ТБ'] },
+  {
+    slug: 'part',
+    name: 'Что именно',
+    options: PART_TYPES.map((part) => `${PARTS}::${part}`),
+    dependsOn: 'type',
+    isStep: true,
+  },
+  {
+    slug: 'partBrand',
+    name: 'Марка',
+    options: Object.entries(BRANDS_BY_TYPE).flatMap(([part, list]) => list.map((brand) => `${part}::${brand}`)),
+    dependsOn: 'part',
+    isStep: true,
+  },
+  {
+    slug: 'diagonal',
+    name: 'Диагональ монитора',
+    options: MONITOR_SIZES.map((size) => `Монитор::${size}`),
+    dependsOn: 'part',
+  },
+  {
+    slug: 'ram',
+    name: 'Оперативная память',
+    options: forComputers(['4 ГБ', '8 ГБ', '16 ГБ', '32 ГБ', '64 ГБ']),
+    dependsOn: 'type',
+  },
+  {
+    slug: 'storage',
+    name: 'Накопитель',
+    options: forComputers(['128 ГБ', '256 ГБ', '512 ГБ', '1 ТБ', '2 ТБ']),
+    dependsOn: 'type',
+  },
   {
     slug: 'screen',
     name: 'Диагональ экрана',
-    options: ['13.3″', '14″', '15.6″', '16″', '17.3″'],
+    options: forComputers(['13.3″', '14″', '15.6″', '16″', '17.3″']),
+    dependsOn: 'type',
   },
 ];
 

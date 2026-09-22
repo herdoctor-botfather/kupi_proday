@@ -128,7 +128,7 @@ export class ListingsService {
   }
 
   async create(userId: string, dto: ListingDto): Promise<MyListing> {
-    await this.assertCategoriesExist(dto.categoryIds);
+    await this.assertCategoriesExist(dto.categoryIds, dto.kind);
 
     // Лимит считается по каждой витрине отдельно: два десятка запросов
     // не должны мешать человеку продавать свои вещи.
@@ -197,7 +197,7 @@ export class ListingsService {
       });
     }
 
-    await this.assertCategoriesExist(dto.categoryIds);
+    await this.assertCategoriesExist(dto.categoryIds, dto.kind);
     const prepared = this.toData(dto);
 
     // Опубликованное остаётся на витрине, но идёт на повторную проверку:
@@ -495,9 +495,20 @@ export class ListingsService {
     return { data, hadContacts };
   }
 
-  private async assertCategoriesExist(ids: string[]): Promise<void> {
+  /**
+   * Категории должны быть с той же полки, что и объявление.
+   *
+   * Вакансии и резюме раскладываются по отраслям — это категории вида
+   * JOB, а не товарные. Проверка поначалу знала только товары и
+   * отвергала любую вакансию: «выбрана недоступная категория товаров».
+   */
+  private async assertCategoriesExist(ids: string[], kind: ListingKind): Promise<void> {
     const found = await this.prisma.category.count({
-      where: { id: { in: ids }, isActive: true, kind: 'PRODUCT' },
+      where: {
+        id: { in: ids },
+        isActive: true,
+        kind: kind === 'JOB' || kind === 'RESUME' ? 'JOB' : 'PRODUCT',
+      },
     });
     if (found !== ids.length) {
       throw new BadRequestException({

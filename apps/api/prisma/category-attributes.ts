@@ -25,7 +25,6 @@ import {
   APPLIANCE_ATTRIBUTES,
   COMPUTER_ATTRIBUTES,
   CONSOLE_ATTRIBUTES,
-  PERIPHERAL_ATTRIBUTES,
   TV_ATTRIBUTES,
 } from './attributes/computers';
 import { CAR_ATTRIBUTES } from './attributes/cars';
@@ -70,7 +69,6 @@ export const CATEGORY_ATTRIBUTES: Record<string, AttributeSpec[]> = {
   // моделей длиннее, чем всё остальное вместе взятое.
   'electronics-phones': [...PHONE_ATTRIBUTES, color],
   'electronics-computers': COMPUTER_ATTRIBUTES,
-  'electronics-parts': PERIPHERAL_ATTRIBUTES,
   'electronics-tv': TV_ATTRIBUTES,
   'electronics-consoles': CONSOLE_ATTRIBUTES,
   'home-appliances': APPLIANCE_ATTRIBUTES,

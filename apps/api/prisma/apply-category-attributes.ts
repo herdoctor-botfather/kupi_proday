@@ -17,6 +17,7 @@ async function main(): Promise<void> {
   let created = 0;
   let updated = 0;
   let missing = 0;
+  let removed = 0;
 
   /*
    * У карьеры характеристики одни на все отрасли: график, опыт и оплата
@@ -68,9 +69,33 @@ async function main(): Promise<void> {
         created += 1;
       }
     }
+
+    /*
+     * Характеристики, убранные из описания, удаляем — но только пустые.
+     *
+     * Раньше скрипт умел лишь добавлять, и убранное поле продолжало
+     * висеть в форме. Если же у поля есть значения в объявлениях, его
+     * не трогаем: удаление стёрло бы то, что люди уже заполнили. Такое
+     * поле сначала переносят вручную, потом скрипт уберёт его сам.
+     */
+    const kept = specs.map((spec) => spec.slug);
+    const orphans = await prisma.categoryAttribute.findMany({
+      where: { categoryId: category.id, slug: { notIn: kept } },
+      select: { id: true, slug: true, _count: { select: { values: true } } },
+    });
+    for (const orphan of orphans) {
+      if (orphan._count.values > 0) {
+        console.warn(`${categorySlug}.${orphan.slug}: убрано из описания, но заполнено в ${orphan._count.values} объявл. — оставляю`);
+        continue;
+      }
+      await prisma.categoryAttribute.delete({ where: { id: orphan.id } });
+      removed += 1;
+    }
   }
 
-  console.log(`характеристик создано: ${created}, обновлено: ${updated}, категорий не найдено: ${missing}`);
+  console.log(
+    `характеристик создано: ${created}, обновлено: ${updated}, удалено: ${removed}, категорий не найдено: ${missing}`,
+  );
 }
 
 main()

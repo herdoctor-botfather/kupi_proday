@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { CitySheet } from '../components/CitySheet';
 import { useAsync } from '../lib/useAsync';
-import { ChipsRow } from '../components/ChipsRow';
 import { usePagedFeed } from '../lib/usePagedFeed';
 import { AsyncContent, EmptyState } from '../components/states';
 import { SearchInput } from '../components/SearchInput';
@@ -45,6 +44,8 @@ export function MarketCatalogPage() {
   const categories = useAsync(() => api.categories('PRODUCT'), []);
   const cities = useAsync(() => api.listingCities(), []);
   const [citiesOpen, setCitiesOpen] = useState(false);
+  /** Список городов на главной свёрнут в одну строку. */
+  const [cityListOpen, setCityListOpen] = useState(false);
   const feed = usePagedFeed(
     (page) => api.listings({ pageSize: FEED_PAGE_SIZE, sort: 'new', page }),
     [],
@@ -128,27 +129,58 @@ export function MarketCatalogPage() {
 
       {/* Города заменяют «Найти рядом» из услуг: geolocation тут не поможет —
           у товара нет координат, только город, указанный продавцом. */}
+      {/* Раскрывающимся списком, а не строкой чипов: в строку помещалось
+          два-три города, остальные прятались за прокруткой вбок. */}
       {(cities.data?.length ?? 0) > 1 && (
         <>
-          <h2 className="section-title">Города</h2>
-          <ChipsRow>
-            {cities.data!.slice(0, CITIES_SHOWN).map((city) => (
-              <button
-                key={city.name}
-                type="button"
-                className="chip"
-                onClick={() => {
-                  haptic.tap();
-                  navigate(`/market/listings?city=${encodeURIComponent(city.name)}`);
-                }}
-              >
-                {city.name} · {city.count}
+          <button
+            type="button"
+            className={`industry-toggle${cityListOpen ? ' industry-toggle--open' : ''}`}
+            aria-expanded={cityListOpen}
+            onClick={() => {
+              haptic.tap();
+              setCityListOpen((open) => !open);
+            }}
+          >
+            <span>📍 Объявления по городам</span>
+            <span className="industry-toggle__side">
+              {cityListOpen ? 'Свернуть' : `${cities.data!.length} ${pluralize(cities.data!.length, ['город', 'города', 'городов'])}`}
+              <span className="industry-toggle__arrow" aria-hidden>
+                ▾
+              </span>
+            </span>
+          </button>
+          {cityListOpen && (
+            <div className="steps">
+              {cities.data!.slice(0, CITIES_SHOWN).map((city) => (
+                <button
+                  key={city.name}
+                  type="button"
+                  className="step"
+                  onClick={() => {
+                    haptic.tap();
+                    navigate(`/market/listings?city=${encodeURIComponent(city.name)}`);
+                  }}
+                >
+                  <span className="step__name">{city.name}</span>
+                  <span className="step__side">
+                    <span className="step__count">{city.count}</span>
+                    <span className="step__chevron" aria-hidden>
+                      ›
+                    </span>
+                  </span>
+                </button>
+              ))}
+              <button type="button" className="step" onClick={() => setCitiesOpen(true)}>
+                <span className="step__name">Все города</span>
+                <span className="step__side">
+                  <span className="step__chevron" aria-hidden>
+                    ›
+                  </span>
+                </span>
               </button>
-            ))}
-            <button type="button" className="chip" onClick={() => setCitiesOpen(true)}>
-              Все города ›
-            </button>
-          </ChipsRow>
+            </div>
+          )}
         </>
       )}
 

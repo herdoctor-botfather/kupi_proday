@@ -37,6 +37,48 @@ const STATUS_VIEW: Record<UrgentRequest['status'], { icon: string; text: string 
   CANCELLED: { icon: '✖️', text: 'Вы отменили' },
 };
 
+/** Дни для своего окна: дальше послезавтра срочный вызов не назначают. */
+const DAYS = ['Сегодня', 'Завтра', 'Послезавтра'];
+
+/** Последний получасовой слот суток — 23:30, в минутах от полуночи. */
+const LAST_SLOT = 23 * 60 + 30;
+
+/** Ближайший будущий получасовой слот сегодня, в минутах от полуночи. */
+function nextSlot(): number {
+  const now = new Date();
+  return Math.ceil((now.getHours() * 60 + now.getMinutes() + 1) / 30) * 30;
+}
+
+/** Сегодня выбирать уже нечего — окно по умолчанию ставим на завтра. */
+const lateEvening = () => nextSlot() > LAST_SLOT - 30;
+
+/** Получасовые слоты между двумя отметками включительно. */
+function slots(from: number, to: number): number[] {
+  const result: number[] = [];
+  for (let value = from; value <= to; value += 30) result.push(value);
+  return result;
+}
+
+/** 570 → «09:30». */
+function clock(minutes: number): string {
+  return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+}
+
+/** «23 сент.» для дня через offset дней от сегодня. */
+function dayLabel(offset: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + offset);
+  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+}
+
+/** Момент: день через offset от сегодня плюс минуты от полуночи, по местному времени. */
+function atSlot(offset: number, minutes: number): Date {
+  const date = new Date();
+  date.setDate(date.getDate() + offset);
+  date.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
+  return date;
+}
+
 /**
  * «Надо срочно» — вызов мастера на сейчас.
  *
@@ -56,8 +98,17 @@ export function UrgentPage() {
   const [hours, setHours] = useState(4);
   /** Человек назначает окно сам, а не выбирает из готовых сроков. */
   const [custom, setCustom] = useState(false);
-  const [fromAt, setFromAt] = useState('');
-  const [toAt, setToAt] = useState('');
+  /*
+   * Своё окно — день кнопкой и время списком, а не календарём.
+   *
+   * Раньше здесь стояли два поля «дата и время»: на телефоне они не
+   * помещались в ширину, сдвигали страницу вбок и открывали громоздкий
+   * календарь — ради выбора между «сегодня» и «завтра». Срочный вызов
+   * дальше послезавтра не назначают, а время удобнее крутить колесом.
+   */
+  const [day, setDay] = useState(() => (lateEvening() ? 1 : 0));
+  const [fromMin, setFromMin] = useState(() => (lateEvening() ? 9 * 60 : nextSlot()));
+  const [toMin, setToMin] = useState(() => (lateEvening() ? 12 * 60 : Math.min(nextSlot() + 120, LAST_SLOT)));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,8 +127,8 @@ export function UrgentPage() {
         // встречу на три часа ночи.
         ...(custom
           ? {
-              fromAt: fromAt ? new Date(fromAt).toISOString() : undefined,
-              toAt: new Date(toAt).toISOString(),
+              fromAt: atSlot(day, fromMin).toISOString(),
+              toAt: atSlot(day, toMin).toISOString(),
             }
           : { hours }),
       });
@@ -192,26 +243,64 @@ export function UrgentPage() {
       </ChipsRow>
 
       {custom && (
-        <div className="form-row">
-          <div className="field">
-            <span className="field__label">С</span>
-            <input
-              className="form-input"
-              type="datetime-local"
-              value={fromAt}
-              onChange={(event) => setFromAt(event.target.value)}
-            />
+        <>
+          <ChipsRow>
+            {DAYS.map((label, index) => (
+              <button
+                key={label}
+                type="button"
+                className={`chip${day === index ? ' chip--active' : ''}`}
+                disabled={index === 0 && lateEvening()}
+                onClick={() => {
+                  haptic.tap();
+                  setDay(index);
+                  // На сегодня прошедшее время выбрать нельзя — подтягиваем окно.
+                  if (index === 0 && fromMin < nextSlot()) {
+                    setFromMin(nextSlot());
+                    setToMin(Math.max(toMin, Math.min(nextSlot() + 120, LAST_SLOT)));
+                  }
+                }}
+              >
+                {label}, {dayLabel(index)}
+              </button>
+            ))}
+          </ChipsRow>
+
+          <div className="time-window">
+            <label className="time-window__field">
+              <span className="field__label">С</span>
+              <select
+                className="form-input"
+                value={fromMin}
+                onChange={(event) => {
+                  const value = Number(event.target.value);
+                  setFromMin(value);
+                  if (toMin <= value) setToMin(Math.min(value + 60, LAST_SLOT));
+                }}
+              >
+                {slots(day === 0 ? nextSlot() : 0, LAST_SLOT - 30).map((value) => (
+                  <option key={value} value={value}>
+                    {clock(value)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="time-window__field">
+              <span className="field__label">До</span>
+              <select
+                className="form-input"
+                value={toMin}
+                onChange={(event) => setToMin(Number(event.target.value))}
+              >
+                {slots(fromMin + 30, LAST_SLOT).map((value) => (
+                  <option key={value} value={value}>
+                    {clock(value)}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-          <div className="field">
-            <span className="field__label">До</span>
-            <input
-              className="form-input"
-              type="datetime-local"
-              value={toAt}
-              onChange={(event) => setToAt(event.target.value)}
-            />
-          </div>
-        </div>
+        </>
       )}
 
       {error && <p className="form-error">{error}</p>}
@@ -226,7 +315,7 @@ export function UrgentPage() {
           city.trim().length < 2 ||
           // Своё время выбрано, но не заполнено: кнопка, которая заведомо
           // откажет, хуже недоступной.
-          (custom && !toAt)
+          (custom && toMin <= fromMin)
         }
         onClick={() => void send()}
       >

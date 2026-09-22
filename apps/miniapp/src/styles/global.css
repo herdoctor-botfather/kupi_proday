@@ -5389,3 +5389,23 @@ body {
   font-weight: 600;
   color: #22c55e;
 }
+
+/* Своё окно срочного вызова: «с» и «до» в одну строку, строго по ширине.
+   min-width: 0 обязателен — без него поле держит ширину своего
+   содержимого и выталкивает страницу вбок, как это делали поля даты. */
+.time-window {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0 16px;
+}
+.time-window__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.time-window__field select {
+  width: 100%;
+  min-width: 0;
+}

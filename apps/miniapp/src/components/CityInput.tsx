@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { api } from '../lib/api';
 import { useAsync, useDebounced } from '../lib/useAsync';
+import { RUSSIAN_CITIES } from '../lib/russian-cities';
+
+/** Сколько подсказок показывать: меньше шести выглядело как «городов нет». */
+const SUGGESTIONS = 6;
 
 /**
  * Поле города с подсказкой из уже введённых значений.
@@ -25,10 +29,26 @@ export function CityInput({
   const debounced = useDebounced(value, 250);
   const cities = useAsync(() => api.cities(debounced.trim() || undefined), [debounced]);
 
-  // Точное совпадение подсказывать незачем — человек уже написал это слово.
-  const suggestions = (cities.data ?? []).filter(
-    (city) => city.name.toLowerCase() !== value.trim().toLowerCase(),
-  );
+  /*
+   * Сначала города, где уже есть объявления, — со счётчиком. Потом
+   * крупнейшие города страны, подходящие под набранное.
+   *
+   * У молодой площадки объявления есть в двух-трёх городах, и список
+   * из них одних отвечал «больше нигде», хотя вопрос был «где я».
+   * Точное совпадение не подсказываем — человек уже написал это слово.
+   */
+  const typed = value.trim().toLowerCase();
+  const live = (cities.data ?? []).filter((city) => city.name.toLowerCase() !== typed);
+  const known = new Set(live.map((city) => city.name.toLowerCase()));
+  const popular = RUSSIAN_CITIES.filter((name) => {
+    const lower = name.toLowerCase();
+    return !known.has(lower) && lower !== typed && (!typed || lower.includes(typed));
+  })
+    // Совпадение с начала слова важнее совпадения в середине: «нов» — это
+    // Новосибирск и Новгород раньше, чем Великий Новгород.
+    .sort((a, b) => Number(!a.toLowerCase().startsWith(typed)) - Number(!b.toLowerCase().startsWith(typed)))
+    .map((name) => ({ name, count: 0 }));
+  const suggestions = [...live, ...popular].slice(0, Math.max(SUGGESTIONS, live.length));
 
   return (
     <div className="city-input">
@@ -46,7 +66,7 @@ export function CityInput({
 
       {focused && suggestions.length > 0 && (
         <div className="city-input__list">
-          {suggestions.slice(0, 6).map((city) => (
+          {suggestions.slice(0, SUGGESTIONS).map((city) => (
             <button
               key={city.name}
               type="button"
@@ -57,7 +77,7 @@ export function CityInput({
               }}
             >
               <span>{city.name}</span>
-              <span className="city-input__count">{city.count}</span>
+              {city.count > 0 && <span className="city-input__count">{city.count}</span>}
             </button>
           ))}
         </div>

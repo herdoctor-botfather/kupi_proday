@@ -11,7 +11,7 @@ import { ImageError, prepareImage } from '../lib/image';
 import { Stars } from '../components/Rating';
 import { REVIEW_TEXT_MAX } from '@app/shared';
 import { ReviewCard } from '../components/Reviews';
-import { formatDate, formatPrice } from '../lib/format';
+import { formatDate, formatPrice, pluralize } from '../lib/format';
 import { Link, useNavigate } from 'react-router-dom';
 import { resetRoleChoice } from '../lib/session';
 import { haptic, tg } from '../lib/telegram';
@@ -454,7 +454,20 @@ const INVOLVEMENT_SECTIONS: { kind: Involvement['kind']; title: string; icon: st
   { kind: 'SERVICE', title: 'Услуги', icon: '🛠' },
   { kind: 'SELL', title: 'Товары', icon: '📦' },
   { kind: 'BUY', title: 'Запросы', icon: '🔎' },
+  // Отклики на чужие вакансии и резюме: сервер их отдавал, но без
+  // своих разделов они здесь не показывались вовсе.
+  { kind: 'JOB', title: 'Вакансии', icon: '💼' },
+  { kind: 'RESUME', title: 'Резюме', icon: '🙋' },
 ];
+
+/** Как назвать состояние своей вакансии или резюме одним словом. */
+const CAREER_STATUS: Record<string, string> = {
+  PENDING: '⏳ На проверке',
+  ACTIVE: '✅ Опубликовано',
+  HIDDEN: '🙈 Скрыто',
+  REJECTED: '✖️ Отклонено',
+  SOLD: '✔️ Закрыто',
+};
 
 /**
  * Сделки: что человек ждёт оценить и во что он ввязался.
@@ -471,12 +484,48 @@ const INVOLVEMENT_SECTIONS: { kind: Involvement['kind']; title: string; icon: st
 function DealsTab() {
   const pending = useAsync(() => api.pendingDeals(), []);
   const involved = useAsync(() => api.involvements(), []);
+  /*
+   * Своё резюме — соискателю, свои вакансии — работодателю.
+   *
+   * Карьера — это ожидание: разместил и ждёшь, напишут ли. Место, где
+   * человек смотрит «что у меня в процессе», должно показывать и это,
+   * а не только чужое, куда он написал сам.
+   */
+  const mine = useAsync(() => api.myListings(), []);
+  const navigate = useNavigate();
 
   const deals = pending.data ?? [];
   const items = involved.data ?? [];
+  const career = (mine.data ?? []).filter((listing) => listing.kind === 'JOB' || listing.kind === 'RESUME');
 
   return (
     <>
+      {career.length > 0 && (
+        <>
+          <div className="section-title">💼 Моя карьера</div>
+          <div className="card-list">
+            {career.map((listing) => (
+              <button
+                key={listing.id}
+                type="button"
+                className="my-listing career-own"
+                onClick={() => {
+                  haptic.tap();
+                  navigate(`/market/sell?id=${listing.id}`);
+                }}
+              >
+                <div className="card__headline">{listing.kind === 'JOB' ? 'Моя вакансия' : 'Моё резюме'}</div>
+                <div className="my-listing__title">{listing.title}</div>
+                <div className="card__headline">
+                  {CAREER_STATUS[listing.status] ?? listing.status} · {listing.viewCount}{' '}
+                  {pluralize(listing.viewCount, ['просмотр', 'просмотра', 'просмотров'])}
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
       {deals.length > 0 && (
         <>
           <div className="section-title">Ждут вашей оценки</div>
@@ -495,7 +544,7 @@ function DealsTab() {
 
       <AsyncContent state={involved}>
         {() =>
-          items.length === 0 && deals.length === 0 ? (
+          items.length === 0 && deals.length === 0 && career.length === 0 ? (
             <EmptyState
               icon="🤝"
               title="Участий пока нет"

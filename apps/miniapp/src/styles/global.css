@@ -5623,3 +5623,12 @@ body {
   color: var(--destructive);
   font-size: 13px;
 }
+
+/* Своя вакансия или резюме во вкладке «Сделки»: карточка-кнопка. */
+.career-own {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+}

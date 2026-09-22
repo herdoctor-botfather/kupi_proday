@@ -1,27 +1,24 @@
-import { useNavigate } from 'react-router-dom';
 import type { Category } from '@app/shared';
-import { ChipsRow } from './ChipsRow';
-import { haptic } from '../lib/telegram';
+import { DropdownList } from './DropdownList';
 
 /**
  * Разделы и подкатегории в ленте.
  *
- * Два ряда вместо одного длинного. Раньше категории были плоским
- * списком, и добавить их стало некуда: тридцать чипов в строку человек
- * не пролистывает до конца, а значит последние категории для него не
- * существуют. Теперь верхний ряд — десяток разделов, а подкатегории
- * появляются только у открытого раздела, где их немного.
+ * Два раскрывающихся списка: «Раздел» и, когда он выбран, «Подраздел».
+ * Раньше это были две строки чипов с прокруткой вбок: видно два-три
+ * раздела из одиннадцати, а остальные существовали только для того, кто
+ * догадается листать. Свёрнутый список показывает текущий выбор и
+ * раскрывает все варианты разом.
  *
- * Выбор раздела не сбрасывается при выборе подкатегории: нижний ряд
+ * Выбор раздела не сбрасывается при выборе подкатегории: второй список
  * остаётся на месте, чтобы можно было перебрать соседние полки, не
- * возвращаясь наверх.
+ * возвращаясь к разделам.
  */
 export function CategoryChips({
   categories,
   current,
   onChange,
   allLabel = 'Все категории',
-  stepsPath,
 }: {
   /** Дерево: разделы с вложенными подкатегориями. */
   categories: Category[];
@@ -29,10 +26,9 @@ export function CategoryChips({
   current?: string;
   onChange: (slug: string | null) => void;
   allLabel?: string;
-  /** Куда вести за подробным выбором: «/market/c» и его собратья. */
+  /** Больше не нужен: все подразделы видны в списке. Оставлен для совместимости вызовов. */
   stepsPath?: string;
 }) {
-  const navigate = useNavigate();
   if (categories.length === 0) return null;
 
   const root =
@@ -41,67 +37,33 @@ export function CategoryChips({
 
   const children = root?.children ?? [];
 
-  const pick = (slug: string | null) => {
-    haptic.tap();
-    onChange(slug);
-  };
-
   return (
     <>
-      <ChipsRow>
-        <button type="button" className={`chip${!current ? ' chip--active' : ''}`} onClick={() => pick(null)}>
-          {allLabel}
-        </button>
-        {categories.map((category) => (
-          <button
-            key={category.id}
-            type="button"
-            className={`chip${root?.slug === category.slug ? ' chip--active' : ''}`}
-            onClick={() => pick(category.slug)}
-          >
-            {category.icon} {category.name}
-          </button>
-        ))}
-      </ChipsRow>
+      <DropdownList
+        label={`🗂 ${allLabel}`}
+        allLabel={allLabel}
+        noun="разделов"
+        selectedKey={root?.slug ?? null}
+        items={categories.map((category) => ({
+          key: category.slug,
+          label: `${category.icon} ${category.name}`,
+          count: category.itemCount,
+        }))}
+        onPick={onChange}
+      />
 
-      {children.length > 0 && (
-        <ChipsRow>
-          {/* Полный выбор — отдельным экраном: в ряду чипов видно три
-              названия из двадцати, и остальные для человека не существуют. */}
-          {stepsPath && root && (
-            <button
-              type="button"
-              className="chip chip--sub"
-              onClick={() => {
-                haptic.tap();
-                navigate(`${stepsPath}/${root.slug}`);
-              }}
-            >
-              Все разделы ›
-            </button>
-          )}
-          {/* «Весь раздел» — возврат с полки к шкафу целиком. Без него
-              выбранную подкатегорию нельзя расширить обратно, не сбросив
-              заодно и раздел. */}
-          <button
-            type="button"
-            className={`chip chip--sub${current === root?.slug ? ' chip--active' : ''}`}
-            onClick={() => pick(root?.slug ?? null)}
-          >
-            Весь раздел
-          </button>
-          {children.map((child) => (
-            <button
-              key={child.id}
-              type="button"
-              className={`chip chip--sub${current === child.slug ? ' chip--active' : ''}`}
-              onClick={() => pick(child.slug)}
-            >
-              {child.name}
-              {child.itemCount > 0 && <span style={{ opacity: 0.6 }}> {child.itemCount}</span>}
-            </button>
-          ))}
-        </ChipsRow>
+      {root && children.length > 0 && (
+        <DropdownList
+          label="Весь раздел"
+          // «Весь раздел» — возврат с полки к шкафу целиком: без него
+          // выбранную подкатегорию нельзя расширить обратно, не сбросив
+          // заодно и раздел.
+          allLabel="Весь раздел"
+          noun="подразделов"
+          selectedKey={current === root.slug ? null : current}
+          items={children.map((child) => ({ key: child.slug, label: child.name, count: child.itemCount }))}
+          onPick={(slug) => onChange(slug ?? root.slug)}
+        />
       )}
     </>
   );

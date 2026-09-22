@@ -6,8 +6,8 @@ import { useDefaultCity } from '../lib/home-city';
 import { useAsync, useDebounced } from '../lib/useAsync';
 import { usePagedFeed } from '../lib/usePagedFeed';
 import { EmptyState } from '../components/states';
+import { DropdownList } from '../components/DropdownList';
 import { SearchInput } from '../components/SearchInput';
-import { ChipsRow } from '../components/ChipsRow';
 import { ListingCard } from '../components/ListingCard';
 import { FeedMore } from '../components/Feed';
 import { haptic } from '../lib/telegram';
@@ -88,48 +88,24 @@ export function WantedPage() {
       <SearchInput value={query} onChange={setQuery} placeholder="Что ищут" />
 
       {/*
-        Разделы столбцом, а не рядом чипов: в строку с прокруткой
-        помещается три названия, и остальные существуют только для того,
-        кто догадается её листать. Столбец показывает все разом и ведёт
-        дальше — к полкам внутри раздела, как в остальных дверях.
+        Разделы — раскрывающимся списком: столбец из одиннадцати строк
+        отодвигал сами запросы на экран вниз, а строка чипов прятала
+        половину разделов за прокруткой. Выбор раздела ведёт дальше — к
+        полкам внутри него, как в остальных дверях.
       */}
-      {!categorySlug && (categories.data?.length ?? 0) > 0 && (
-        <>
-          <h2 className="section-title">Разделы</h2>
-          <div className="steps">
-            {(categories.data ?? []).map((category) => (
-              <button
-                key={category.id}
-                type="button"
-                className="step"
-                onClick={() => {
-                  haptic.tap();
-                  navigate(`/wanted/c/${category.slug}`);
-                }}
-              >
-                <span className="step__name">
-                  {category.icon} {category.name}
-                </span>
-                <span className="step__side">
-                  {category.itemCount > 0 && <span className="step__count">{category.itemCount}</span>}
-                  <span className="step__chevron" aria-hidden>
-                    ›
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Выбранный раздел — строкой со сбросом: иначе непонятно, почему
-          видна только часть запросов. */}
-      {categorySlug && (
-        <ChipsRow>
-          <button type="button" className="chip chip--active" onClick={() => setParam('category', null)}>
-            {categoryName ?? 'Раздел'} ✕
-          </button>
-        </ChipsRow>
+      {(categories.data?.length ?? 0) > 0 && (
+        <DropdownList
+          label={categoryName ? `🗂 ${categoryName}` : '🗂 Раздел: все'}
+          allLabel="Все разделы"
+          noun="разделов"
+          selectedKey={categorySlug ?? null}
+          items={(categories.data ?? []).map((category) => ({
+            key: category.slug,
+            label: `${category.icon} ${category.name}`,
+            count: category.itemCount,
+          }))}
+          onPick={(slug) => (slug ? navigate(`/wanted/c/${slug}`) : setParam('category', null))}
+        />
       )}
 
       <CityButton

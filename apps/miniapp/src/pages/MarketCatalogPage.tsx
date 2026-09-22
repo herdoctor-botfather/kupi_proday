@@ -198,24 +198,6 @@ export function MarketCatalogPage() {
           Категории и города отвечают на вопрос «где искать», но не на
           вопрос «что тут вообще продают». Тому, кто зашёл посмотреть,
           а не за конкретной вещью, нужен именно товар перед глазами. */}
-      {/*
-        Встречный спрос на витрине.
-
-        Продавец приходит смотреть, «сколько такое стоит», и видит заодно
-        людей, которым его вещь нужна прямо сейчас. Это и есть повод
-        выложить: не в пустоту, а тем, кто уже ждёт.
-      */}
-      {wanted.items.length > 0 && (
-        <>
-          <FeedHeader title="Сейчас ищут" to="/wanted" total={wanted.total} />
-          <div className="listing-grid">
-            {wanted.items.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
-            ))}
-          </div>
-        </>
-      )}
-
       <FeedHeader title="Новые объявления" to="/market/listings" total={feed.total} />
 
       {feed.items.length > 0 ? (
@@ -236,6 +218,27 @@ export function MarketCatalogPage() {
             action={{ label: 'Выложить вещь', to: '/market/sell' }}
           />
         )
+      )}
+
+      {/* Спрос — после объявлений: на витрину приходят прежде всего за
+          товаром, а встречные запросы — дополнение, которое видит тот,
+          кто долистал. */}
+      {/*
+        Встречный спрос на витрине.
+
+        Продавец приходит смотреть, «сколько такое стоит», и видит заодно
+        людей, которым его вещь нужна прямо сейчас. Это и есть повод
+        выложить: не в пустоту, а тем, кто уже ждёт.
+      */}
+      {wanted.items.length > 0 && (
+        <>
+          <FeedHeader title="Сейчас ищут" to="/wanted" total={wanted.total} />
+          <div className="listing-grid">
+            {wanted.items.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

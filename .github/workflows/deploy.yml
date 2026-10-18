@@ -1,0 +1,55 @@
+# Выкладка на сервер при изменении кода.
+#
+# Зачем: рабочие компьютеры сидят за VPN, который перескакивает между
+# точками выхода и рвёт SSH на середине рукопожатия. Выкладывать с них
+# вручную мучительно. Здесь же SSH идёт от GitHub, которому VPN не мешает,
+# а от человека требуется только `git push` — обычный HTTPS.
+#
+# Ключ, которым подключается GitHub, на сервере ограничен: в authorized_keys
+# у него стоит forced command, поэтому им нельзя сделать ничего, кроме
+# запуска scripts/deploy.sh. Даже утекший, он не даёт доступа к серверу.
+#
+# Выложить без изменений в коде: вкладка Actions → этот процесс →
+# «Run workflow».
+name: Выкладка
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Две выкладки разом сломали бы друг друга: вторая ждёт окончания первой.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Выложить на сервер
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          SSH_HOST: ${{ secrets.DEPLOY_HOST }}
+          SSH_PORT: ${{ secrets.DEPLOY_PORT }}
+          SSH_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # Отпечаток сервера берём заранее: без этого ssh спросит
+          # подтверждение и зависнет, а отключать проверку нельзя —
+          # она защищает от подмены сервера.
+          ssh-keyscan -p "$SSH_PORT" -T 20 "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          # Команда не указывается: ключ на сервере сам запускает выкладку.
+          ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" \
+              -o StrictHostKeyChecking=yes \
+              -o ConnectTimeout=30 \
+              -o ServerAliveInterval=30 \
+              "$SSH_USER@$SSH_HOST" true

@@ -10,5 +10,31 @@
       "Bash(git push *)",
       "Bash(ssh tgspec *)"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git pull --rebase --autostash >/dev/null 2>&1 || echo \"{\\\"systemMessage\\\":\\\"git pull не прошёл — возможно, есть несохранённые правки. Проверьте вручную.\\\"}\"",
+            "timeout": 120,
+            "statusMessage": "Забираю обновления из GitHub..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git rev-parse --abbrev-ref \"@{u}\" >/dev/null 2>&1 && [ -n \"$(git log \"@{u}..HEAD\" --oneline 2>/dev/null)\" ] && { git push >/dev/null 2>&1 && echo \"{\\\"systemMessage\\\":\\\"Изменения отправлены в GitHub — выкладка запущена\\\"}\" || echo \"{\\\"systemMessage\\\":\\\"git push не прошёл — отправьте вручную\\\"}\"; } || true",
+            "timeout": 120,
+            "statusMessage": "Отправляю изменения в GitHub..."
+          }
+        ]
+      }
+    ]
   }
 }

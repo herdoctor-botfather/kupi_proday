@@ -114,6 +114,15 @@ main() {
     if curl -sf --max-time 5 http://127.0.0.1:3000/api/health > /dev/null; then
       echo "  отвечает"
       trap - ERR
+
+      # Убираем за собой: слои прежней сборки и кэш больше не нужны —
+      # новый образ уже работает. Без этого несколько выкладок подряд
+      # съедают десяток гигабайт за день, а когда диск кончается,
+      # первым ложится Postgres. Ночной сторож чистит только то, что
+      # старше суток, и до свежего мусора не добирается.
+      docker image prune -af --filter 'until=2h' >/dev/null 2>&1 || true
+      docker builder prune -af --filter 'until=2h' >/dev/null 2>&1 || true
+
       say "Готово: $(git log -1 --pretty='%h %s')"
       exit 0
     fi

@@ -50,11 +50,17 @@ fi
 echo "$SIGNATURE $(date +%s)" > "$STATE"
 
 LINES=""
-[ "$LISTINGS" -gt 0 ] && LINES="${LINES}📦 Объявлений: ${LISTINGS}%0A"
-[ "$SPECIALISTS" -gt 0 ] && LINES="${LINES}🔧 Анкет мастеров: ${SPECIALISTS}%0A"
-[ "$REVIEWS" -gt 0 ] && LINES="${LINES}⭐️ Отзывов: ${REVIEWS}%0A"
+[ "$LISTINGS" -gt 0 ] && LINES="${LINES}📦 Объявлений: ${LISTINGS}
+"
+[ "$SPECIALISTS" -gt 0 ] && LINES="${LINES}🔧 Анкет мастеров: ${SPECIALISTS}
+"
+[ "$REVIEWS" -gt 0 ] && LINES="${LINES}⭐️ Отзывов: ${REVIEWS}
+"
 
-TEXT="🗂 <b>Ждут проверки</b>%0A%0A${LINES}%0AОткройте админку: https://${ADMIN_DOMAIN}"
+TEXT=$(printf '🗂 <b>Ждут проверки</b>
+
+%b
+Откройте админку: https://%s' "$LINES" "$ADMIN_DOMAIN")
 
 IFS=',' read -ra IDS <<< "${ADMIN_TELEGRAM_IDS:-}"
 for id in "${IDS[@]}"; do

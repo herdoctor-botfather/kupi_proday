@@ -23,6 +23,8 @@ URL="https://${APP_DOMAIN:-localhost}/api/health"
 STATE=/var/tmp/tgspec-health.state
 FAILS=$(cat "$STATE" 2>/dev/null || echo 0)
 
+# Переносы строк передаём как есть: curl кодирует их сам. Записанные
+# как %0A, они кодировались бы дважды, и человек читал бы «%0A» в тексте.
 notify() {
   local text="$1"
   IFS=',' read -ra IDS <<< "${ADMIN_TELEGRAM_IDS:-}"
@@ -40,7 +42,9 @@ notify() {
 if curl -fs -m 20 "$URL" > /dev/null 2>&1 || (sleep 5; curl -fs -m 20 "$URL" > /dev/null 2>&1); then
   # Приложение отвечает. Если до этого была тревога — сообщаем, что всё прошло.
   if [ "$FAILS" -ge 2 ]; then
-    notify "✅ <b>NADO снова работает</b>%0A%0AПриложение отвечает. Было недоступно примерно $(( FAILS * 5 )) минут."
+    notify "✅ <b>NADO снова работает</b>
+
+Приложение отвечает. Было недоступно примерно $(( FAILS * 5 )) минут."
   fi
   echo 0 > "$STATE"
   exit 0
@@ -58,7 +62,9 @@ if [ "$FAILS" -eq 2 ]; then
   docker compose -f docker-compose.prod.yml up -d --no-deps api > /dev/null 2>&1 || true
   sleep 20
   if curl -fs -m 20 "$URL" > /dev/null 2>&1; then
-    notify "⚠️ <b>NADO не отвечало</b>%0A%0AПриложение было недоступно, перезапуск помог. Сейчас работает."
+    notify "⚠️ <b>NADO не отвечало</b>
+
+Приложение было недоступно, перезапуск помог. Сейчас работает."
     echo 0 > "$STATE"
     exit 0
   fi
@@ -68,4 +74,11 @@ fi
 STATUS=$(docker compose -f docker-compose.prod.yml ps --format '{{.Service}}: {{.Status}}' 2>&1 | head -4 | tr '\n' ' ')
 DISK=$(df --output=pcent / | tail -1 | tr -d ' ')
 
-notify "🔴 <b>NADO не отвечает</b>%0A%0AУже $(( FAILS * 5 )) минут. Перезапуск не помог.%0A%0AСлужбы: ${STATUS}%0AДиск занят: ${DISK}%0A%0AНужно зайти на сервер."
+notify "🔴 <b>NADO не отвечает</b>
+
+Уже $(( FAILS * 5 )) минут. Перезапуск не помог.
+
+Службы: ${STATUS}
+Диск занят: ${DISK}
+
+Нужно зайти на сервер."

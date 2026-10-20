@@ -23,6 +23,16 @@ export function ListingPage() {
   const state = useAsync(() => api.listing(idOrSlug), [idOrSlug]);
   const isAuthenticated = useIsAuthenticated();
   const [photoIndex, setPhotoIndex] = useState(0);
+  /*
+   * Снимок во весь экран.
+   *
+   * На карточке фотография помещается в узкую полосу, и разглядеть на ней
+   * состояние вещи — потёртость, пятно, трещину — невозможно. Раньше она
+   * вообще не открывалась, даже когда была единственной: лента миниатюр
+   * появлялась только при нескольких снимках, а сама картинка оставалась
+   * мёртвой. Теперь нажатие открывает её целиком.
+   */
+  const [fullscreen, setFullscreen] = useState(false);
 
   return (
     <div className="page">
@@ -34,7 +44,20 @@ export function ListingPage() {
             <>
               {listing.photos.length > 0 ? (
                 <div className="listing-photos">
-                  <img className="listing-photos__main" src={listing.photos[photoIndex]?.url} alt="" />
+                  <button
+                    type="button"
+                    className="listing-photos__open"
+                    onClick={() => {
+                      haptic.tap();
+                      setFullscreen(true);
+                    }}
+                    aria-label="Открыть фотографию"
+                  >
+                    <img className="listing-photos__main" src={listing.photos[photoIndex]?.url} alt="" />
+                    <span className="listing-photos__zoom" aria-hidden>
+                      ⤢
+                    </span>
+                  </button>
                   {listing.photos.length > 1 && (
                     <div className="listing-photos__strip">
                       {listing.photos.map((photo, index) => (
@@ -56,6 +79,55 @@ export function ListingPage() {
               ) : (
                 <div className="listing-photos__empty" aria-hidden>
                   {listing.kind === 'BUY' ? '🔎' : '📦'}
+                </div>
+              )}
+
+              {fullscreen && listing.photos.length > 0 && (
+                <div className="photo-viewer" onClick={() => setFullscreen(false)}>
+                  <img
+                    className="photo-viewer__image"
+                    src={listing.photos[photoIndex]?.url}
+                    alt=""
+                    onClick={(event) => event.stopPropagation()}
+                  />
+
+                  {listing.photos.length > 1 && (
+                    <>
+                      {/* Листание внутри просмотра: возвращаться на карточку
+                          ради следующего снимка — лишний шаг. */}
+                      <button
+                        type="button"
+                        className="photo-viewer__nav photo-viewer__nav--prev"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          haptic.tap();
+                          setPhotoIndex((index) => (index === 0 ? listing.photos.length - 1 : index - 1));
+                        }}
+                        aria-label="Предыдущая фотография"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        className="photo-viewer__nav photo-viewer__nav--next"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          haptic.tap();
+                          setPhotoIndex((index) => (index + 1) % listing.photos.length);
+                        }}
+                        aria-label="Следующая фотография"
+                      >
+                        ›
+                      </button>
+                      <div className="photo-viewer__counter">
+                        {photoIndex + 1} из {listing.photos.length}
+                      </div>
+                    </>
+                  )}
+
+                  <button type="button" className="photo-viewer__close" aria-label="Закрыть">
+                    ✕
+                  </button>
                 </div>
               )}
 

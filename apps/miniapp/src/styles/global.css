@@ -5782,22 +5782,6 @@ body {
   position: relative;
   cursor: zoom-in;
 }
-/* Значок лупы подсказывает, что снимок открывается: без него нажатие
-   приходится угадывать. */
-.listing-photos__zoom {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  font-size: 15px;
-}
 .photo-viewer {
   position: fixed;
   inset: 0;

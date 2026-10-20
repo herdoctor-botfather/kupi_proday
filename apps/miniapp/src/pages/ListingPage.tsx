@@ -54,9 +54,6 @@ export function ListingPage() {
                     aria-label="Открыть фотографию"
                   >
                     <img className="listing-photos__main" src={listing.photos[photoIndex]?.url} alt="" />
-                    <span className="listing-photos__zoom" aria-hidden>
-                      ⤢
-                    </span>
                   </button>
                   {listing.photos.length > 1 && (
                     <div className="listing-photos__strip">

@@ -91,7 +91,14 @@ const MODELS: Record<string, string[]> = {
   Renault: ['Logan', 'Duster', 'Sandero', 'Kaptur', 'Arkana', 'Megane', 'Fluence', 'Symbol', 'Koleos'],
   Skoda: ['Octavia', 'Rapid', 'Kodiaq', 'Superb', 'Karoq', 'Fabia', 'Yeti', 'Kamiq'],
   Volkswagen: ['Polo', 'Tiguan', 'Passat', 'Golf', 'Touareg', 'Jetta', 'Teramont', 'Caddy', 'Transporter', 'Touran'],
-  BMW: ['3 серия', '5 серия', '7 серия', 'X1', 'X3', 'X5', 'X6', 'X7', '1 серия', '4 серия', 'M5'],
+  // M-линейка вынесена отдельными моделями, а не поколением обычной серии:
+  // продавец пишет в заголовке «BMW M3», покупатель так же и ищет, и
+  // сводить их в «3 серию» значило бы прятать машину от того, кто её ждёт.
+  BMW: [
+    '1 серия', '2 серия', '3 серия', '4 серия', '5 серия', '6 серия', '7 серия', '8 серия',
+    'X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7', 'Z4',
+    'M2', 'M3', 'M4', 'M5', 'M8', 'X3 M', 'X4 M', 'X5 M', 'X6 M',
+  ],
   'Mercedes-Benz': ['C-класс', 'E-класс', 'S-класс', 'GLC', 'GLE', 'GLA', 'GLS', 'Sprinter', 'Vito', 'A-класс', 'V-класс'],
   Audi: ['A3', 'A4', 'A6', 'A8', 'Q3', 'Q5', 'Q7', 'Q8', 'A5', 'TT'],
   Lada: ['Granta', 'Vesta', 'Lada Niva', 'Largus', 'XRAY', 'Kalina', 'Priora', '2107', 'Niva Travel', '2114', '2110', 'Iskra'],

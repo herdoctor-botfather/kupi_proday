@@ -8,7 +8,7 @@ import { AsyncContent } from '../components/states';
 import { ReportButton } from '../components/ReportButton';
 import { formatDate, formatPrice, pluralize } from '../lib/format';
 import { categoryStyle } from '../lib/category-colors';
-import { haptic, useBackButtonEffect } from '../lib/telegram';
+import { haptic } from '../lib/telegram';
 import { useIsAuthenticated } from '../lib/auth';
 
 /**
@@ -34,9 +34,15 @@ export function ListingPage() {
    */
   const [fullscreen, setFullscreen] = useState(false);
 
-  // Системная кнопка «назад» закрывает просмотр, а не весь экран: это
-  // первое, что человек нажимает, разглядев фотографию.
-  useBackButtonEffect(() => setFullscreen(false), fullscreen);
+  /*
+   * Системную кнопку «назад» здесь не трогаем.
+   *
+   * Попытка закрывать ею просмотр вышла боком: кнопкой распоряжается
+   * каркас приложения, он вешает на неё возврат с экрана. Перехват её
+   * прятал — и, закрыв фотографию, человек оставался в карточке без
+   * единого способа выйти. Просмотр закрывается крестиком и нажатием
+   * по тёмному фону, этого достаточно.
+   */
 
   return (
     <div className="page">

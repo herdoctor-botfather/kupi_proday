@@ -5683,3 +5683,26 @@ body {
   color: var(--accent);
   font-weight: 600;
 }
+
+/* Кнопка копирования рядом со ссылкой-приглашением. */
+.referral-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.referral-link__text {
+  flex: 1;
+  min-width: 0;
+  word-break: break-all;
+}
+.referral-link__copy {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-raised);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1;
+}

@@ -19,6 +19,23 @@ export function ReferralsPage() {
   const state = useAsync(() => api.referrals(), []);
   const [copied, setCopied] = useState(false);
 
+  /*
+   * Копирование отдельной кнопкой рядом со ссылкой.
+   *
+   * Большая кнопка выше открывает окно Telegram «поделиться» — это главный
+   * путь. Но ссылку часто нужно просто забрать: вставить в сторис, в чужой
+   * чат, в заметку. Выделять её пальцем из мелкого текста неудобно,
+   * поэтому рядом стоит значок, который кладёт ссылку в буфер.
+   */
+  const copy = (link: string) => {
+    haptic.tap();
+    void navigator.clipboard?.writeText(link).then(() => {
+      haptic.success();
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   const share = (link: string) => {
     haptic.tap();
     const app = tg();
@@ -69,7 +86,18 @@ export function ReferralsPage() {
               {copied ? 'Ссылка скопирована' : '🔗 Поделиться ссылкой'}
             </button>
 
-            <div className="referral-link">{data.link}</div>
+            <div className="referral-link">
+              <span className="referral-link__text">{data.link}</span>
+              <button
+                type="button"
+                className="referral-link__copy"
+                onClick={() => copy(data.link)}
+                aria-label="Скопировать ссылку"
+                title="Скопировать ссылку"
+              >
+                {copied ? '✓' : '⧉'}
+              </button>
+            </div>
 
             <h2 className="section-title">Подарки</h2>
 

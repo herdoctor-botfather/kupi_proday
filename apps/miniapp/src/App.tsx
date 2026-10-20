@@ -36,7 +36,7 @@ import { UrgentPage } from './pages/UrgentPage';
 import { UrgentDetailPage } from './pages/UrgentDetailPage';
 import { UrgentSalePage } from './pages/UrgentSalePage';
 import { EmptyState } from './components/states';
-import { useBackButtonEffect } from './lib/telegram';
+import { haptic, useBackButtonEffect } from './lib/telegram';
 import { isRoleChosenThisSession, markRoleChosen } from './lib/session';
 import { clearStartRoute, startRoute } from './lib/start-param';
 import { useGoBack } from './lib/navigation';
@@ -150,6 +150,30 @@ function Shell() {
   }, [location.pathname]);
 
   return (
+    <>
+      {/*
+        Своя кнопка «назад», не только в шапке Telegram.
+        
+        Системной кнопкой распоряжается Telegram, и положиться на неё одну
+        нельзя: на телефоне её легко не заметить, а стоит какому-нибудь
+        экрану её спрятать — человек запирается внутри и выходит только
+        перезапуском приложения. Своя кнопка видна всегда и работает
+        одинаково везде.
+      */}
+      {showBack && (
+        <button
+          type="button"
+          className="back-fab"
+          onClick={() => {
+            haptic.tap();
+            goBack();
+          }}
+          aria-label="Назад"
+        >
+          ‹
+        </button>
+      )}
+
     <Routes>
       <Route path="/" element={<CatalogPage />} />
       <Route path="/specialists" element={<SpecialistsPage />} />
@@ -214,5 +238,6 @@ function Shell() {
         }
       />
     </Routes>
+    </>
   );
 }

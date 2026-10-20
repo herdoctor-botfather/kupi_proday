@@ -8,7 +8,7 @@ import { AsyncContent } from '../components/states';
 import { ReportButton } from '../components/ReportButton';
 import { formatDate, formatPrice, pluralize } from '../lib/format';
 import { categoryStyle } from '../lib/category-colors';
-import { haptic } from '../lib/telegram';
+import { haptic, useBackButtonEffect } from '../lib/telegram';
 import { useIsAuthenticated } from '../lib/auth';
 
 /**
@@ -33,6 +33,10 @@ export function ListingPage() {
    * мёртвой. Теперь нажатие открывает её целиком.
    */
   const [fullscreen, setFullscreen] = useState(false);
+
+  // Системная кнопка «назад» закрывает просмотр, а не весь экран: это
+  // первое, что человек нажимает, разглядев фотографию.
+  useBackButtonEffect(() => setFullscreen(false), fullscreen);
 
   return (
     <div className="page">

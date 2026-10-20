@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isMessageReaction } from './constants.js';
 import {
   NEARBY_RADIUS_DEFAULT_KM,
   PAGE_SIZE_DEFAULT,
@@ -299,6 +300,16 @@ export const sendMessageSchema = z.object({
   text: z.string().trim().min(1, 'Сообщение пустое').max(2000, 'Сообщение не длиннее 2000 символов'),
 });
 export type SendMessageDto = z.infer<typeof sendMessageSchema>;
+
+/**
+ * Реакция на сообщение. Значок проверяется по закрытому списку: принимать
+ * любой символ значило бы пускать в переписку что угодно, включая то,
+ * чем неприятно получить ответ.
+ */
+export const reactionSchema = z.object({
+  emoji: z.string().refine(isMessageReaction, 'Неизвестная реакция'),
+});
+export type ReactionDto = z.infer<typeof reactionSchema>;
 
 export const startConversationSchema = z.object({
   specialistId: z.string().min(1).optional(),

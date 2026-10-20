@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, Query, UseGuards } from '@nestjs/common';
 import {
+  reactionSchema,
   sendMessageSchema,
   startConversationSchema,
   type ChatMessage,
@@ -54,5 +55,16 @@ export class ChatController {
     @CurrentUser() user: RequestUser,
   ): Promise<ChatMessage> {
     return this.chat.sendMessage(user.id, id, dto.text);
+  }
+
+  /** Поставить или снять реакцию. Повторное нажатие по тому же значку снимает её. */
+  @Post('messages/:id/reaction')
+  @HttpCode(200)
+  react(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(reactionSchema)) dto: { emoji: string },
+    @CurrentUser() user: RequestUser,
+  ): Promise<ChatMessage> {
+    return this.chat.react(user.id, id, dto.emoji);
   }
 }

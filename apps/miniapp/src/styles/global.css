@@ -5706,3 +5706,68 @@ body {
   font-size: 15px;
   line-height: 1;
 }
+
+/* ─── Реакции на сообщения ─── */
+.bubble-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 85%;
+  margin-bottom: 10px;
+}
+.bubble-row--mine {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+/* Пузырь стал кнопкой: сбрасываем вид кнопки, оставляя прежнее оформление. */
+.bubble-row .bubble {
+  max-width: 100%;
+  margin: 0;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.reactions__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-raised);
+  font-size: 14px;
+  line-height: 1.4;
+}
+.reactions__item--mine {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-raised));
+}
+.reactions__count {
+  font-size: 12px;
+  color: var(--text-hint);
+}
+.reaction-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow);
+}
+.reaction-picker__item {
+  padding: 4px 6px;
+  border: 0;
+  background: none;
+  font-size: 20px;
+  line-height: 1;
+}

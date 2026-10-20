@@ -403,6 +403,11 @@ export interface ChatMessage {
   isMine: boolean;
   /** В сообщении были контакты, и они скрыты. */
   hasMaskedContacts: boolean;
+  /**
+   * Реакции на сообщение, сгруппированные по значку.
+   * `mine` — эту реакцию поставил текущий пользователь.
+   */
+  reactions: { emoji: string; count: number; mine: boolean }[];
 }
 
 export interface ConversationThread {

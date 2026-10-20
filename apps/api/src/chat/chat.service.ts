@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import type { ChatMessage, ConversationSummary, ConversationThread } from '@app/shared';
-import { hasMeaningfulText, maskContacts } from '@app/shared';
+import { hasMeaningfulText, isMessageReaction, maskContacts } from '@app/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ContactPolicyService } from '../notifications/contact-policy.service';
@@ -167,6 +167,7 @@ export class ChatService {
       orderBy: { createdAt: 'desc' },
       // Просим на одно больше, чтобы понять, есть ли ещё, не считая всё.
       take: PAGE_SIZE + 1,
+      include: { reactions: { select: { emoji: true, userId: true } } },
     });
 
     const hasMore = messages.length > PAGE_SIZE;
@@ -355,15 +356,94 @@ export class ChatService {
     };
   }
 
-  private toMessage(row: { id: string; text: string; createdAt: Date; senderId: string; hasMaskedContacts: boolean }, userId: string): ChatMessage {
+  private toMessage(
+    row: {
+      id: string;
+      text: string;
+      createdAt: Date;
+      senderId: string;
+      hasMaskedContacts: boolean;
+      reactions?: { emoji: string; userId: string }[];
+    },
+    userId: string,
+  ): ChatMessage {
     return {
       id: row.id,
       text: row.text,
       createdAt: row.createdAt.toISOString(),
       isMine: row.senderId === userId,
       hasMaskedContacts: row.hasMaskedContacts,
+      reactions: groupReactions(row.reactions ?? [], userId),
     };
   }
+
+  /**
+   * Поставить или снять реакцию.
+   *
+   * Нажатие по уже стоящему значку снимает его, по другому — заменяет:
+   * в базе на пару «сообщение и человек» приходится одна строка. Реакция
+   * доступна обеим сторонам и на свои сообщения тоже — запрещать это
+   * незачем, а объяснять запрет пришлось бы.
+   */
+  async react(userId: string, messageId: string, emoji: string): Promise<ChatMessage> {
+    if (!isMessageReaction(emoji)) {
+      throw new BadRequestException({ code: 'BAD_REACTION', message: 'Неизвестная реакция' });
+    }
+
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { id: true, conversationId: true },
+    });
+    if (!message) throw new NotFoundException({ code: 'MESSAGE_NOT_FOUND', message: 'Сообщение не найдено' });
+
+    // Реакции — часть переписки, и ставить их может только её участник.
+    await this.requireParticipant(message.conversationId, userId);
+
+    const existing = await this.prisma.messageReaction.findUnique({
+      where: { messageId_userId: { messageId, userId } },
+      select: { emoji: true },
+    });
+
+    if (existing?.emoji === emoji) {
+      await this.prisma.messageReaction.delete({ where: { messageId_userId: { messageId, userId } } });
+    } else {
+      await this.prisma.messageReaction.upsert({
+        where: { messageId_userId: { messageId, userId } },
+        create: { messageId, userId, emoji },
+        update: { emoji },
+      });
+    }
+
+    const updated = await this.prisma.message.findUniqueOrThrow({
+      where: { id: messageId },
+      include: { reactions: { select: { emoji: true, userId: true } } },
+    });
+
+    return this.toMessage(updated, userId);
+  }
+}
+
+/**
+ * Реакции для показа: по одной строке на значок, с числом и пометкой своей.
+ *
+ * Порядок — по убыванию числа: самая частая реакция идёт первой, как
+ * в мессенджерах. При равенстве сохраняется порядок появления, чтобы
+ * значки не прыгали местами при каждом обновлении.
+ */
+function groupReactions(
+  rows: { emoji: string; userId: string }[],
+  userId: string,
+): { emoji: string; count: number; mine: boolean }[] {
+  const byEmoji = new Map<string, { emoji: string; count: number; mine: boolean }>();
+
+  for (const row of rows) {
+    const item = byEmoji.get(row.emoji) ?? { emoji: row.emoji, count: 0, mine: false };
+    item.count += 1;
+    if (row.userId === userId) item.mine = true;
+    byEmoji.set(row.emoji, item);
+  }
+
+  return [...byEmoji.values()].sort((a, b) => b.count - a.count);
 }
 
 /** Экранирование пользовательского текста для parse_mode: HTML. */

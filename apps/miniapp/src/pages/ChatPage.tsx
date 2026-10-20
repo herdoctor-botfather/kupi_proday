@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { CONTACT_PLACEHOLDER, containsContacts, type ChatMessage } from '@app/shared';
+import { CONTACT_PLACEHOLDER, MESSAGE_REACTIONS, containsContacts, type ChatMessage } from '@app/shared';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { ErrorState, LoadingState } from '../components/states';
@@ -28,6 +28,28 @@ export function ChatPage() {
   const [sendError, setSendError] = useState<string | null>(null);
   /** Отправленные сообщения показываем сразу, не дожидаясь следующего опроса. */
   const [pending, setPending] = useState<ChatMessage[]>([]);
+  /** Открытый выбор значков: одно сообщение за раз, иначе экран пестрит. */
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
+  /**
+   * Поставленные реакции храним рядом с ответом сервера.
+   *
+   * Переписка подтягивается опросом раз в пять секунд, и без этого значок
+   * загорался бы с задержкой до секунды — человек успевал нажать второй раз,
+   * решив, что не сработало. Ответ сервера приходит сразу и перекрывает
+   * прежнее состояние сообщения.
+   */
+  const [reacted, setReacted] = useState<Record<string, ChatMessage>>({});
+
+  const react = async (messageId: string, emoji: string) => {
+    haptic.tap();
+    setPickerFor(null);
+    try {
+      const updated = await api.reactToMessage(messageId, emoji);
+      setReacted((prev) => ({ ...prev, [messageId]: updated }));
+    } catch {
+      haptic.error();
+    }
+  };
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -42,8 +64,10 @@ export function ChatPage() {
     const loadedIds = new Set(loaded.map((m) => m.id));
     // Как только сообщение пришло с сервера, локальную копию убираем,
     // иначе оно двоилось бы до следующей перезагрузки.
-    return [...loaded, ...pending.filter((m) => !loadedIds.has(m.id))];
-  }, [thread.data, pending]);
+    const all = [...loaded, ...pending.filter((m) => !loadedIds.has(m.id))];
+    // Свежепоставленная реакция важнее того, что успел отдать опрос.
+    return all.map((message) => reacted[message.id] ?? message);
+  }, [thread.data, pending, reacted]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' });
@@ -73,6 +97,7 @@ export function ChatPage() {
 
   if (thread.loading && !thread.data) return <LoadingState text="Загружаем переписку..." />;
   if (thread.error && !thread.data) return <ErrorState message={thread.error} onRetry={thread.reload} />;
+
   if (!thread.data) return null;
 
   const { conversation } = thread.data;
@@ -116,13 +141,55 @@ export function ChatPage() {
         )}
 
         {messages.map((message) => (
-          <div key={message.id} className={`bubble${message.isMine ? ' bubble--mine' : ''}`}>
-            <div className="bubble__text">{message.text}</div>
-            <div className="bubble__time">
-              {new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' }).format(
-                new Date(message.createdAt),
-              )}
-            </div>
+          <div key={message.id} className={`bubble-row${message.isMine ? ' bubble-row--mine' : ''}`}>
+            {/* Нажатие по сообщению открывает значки: отдельной кнопки нет,
+                она занимала бы место у каждого пузыря ради редкого действия. */}
+            <button
+              type="button"
+              className={`bubble${message.isMine ? ' bubble--mine' : ''}`}
+              onClick={() => {
+                haptic.tap();
+                setPickerFor((current) => (current === message.id ? null : message.id));
+              }}
+            >
+              <div className="bubble__text">{message.text}</div>
+              <div className="bubble__time">
+                {new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' }).format(
+                  new Date(message.createdAt),
+                )}
+              </div>
+            </button>
+
+            {message.reactions.length > 0 && (
+              <div className="reactions">
+                {message.reactions.map((reaction) => (
+                  <button
+                    key={reaction.emoji}
+                    type="button"
+                    className={`reactions__item${reaction.mine ? ' reactions__item--mine' : ''}`}
+                    onClick={() => void react(message.id, reaction.emoji)}
+                  >
+                    {reaction.emoji}
+                    {reaction.count > 1 && <span className="reactions__count">{reaction.count}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {pickerFor === message.id && (
+              <div className="reaction-picker">
+                {MESSAGE_REACTIONS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    className="reaction-picker__item"
+                    onClick={() => void react(message.id, emoji)}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ))}
 

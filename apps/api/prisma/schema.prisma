@@ -72,16 +72,17 @@ model User {
   views               ProfileView[]
   favorites           Favorite[]
   reports             Report[]
-  conversations       Conversation[]   @relation("ClientConversations")
-  messages            Message[]        @relation("SentMessages")
+  conversations       Conversation[]    @relation("ClientConversations")
+  messages            Message[]         @relation("SentMessages")
+  messageReactions    MessageReaction[]
   listings            Listing[]
   payments            Payment[]
   walletEntries       WalletEntry[]
-  dealsAsSeller       Deal[]           @relation("DealsAsSeller")
-  dealsAsBuyer        Deal[]           @relation("DealsAsBuyer")
-  writtenUserReviews  UserReview[]     @relation("WrittenUserReviews")
-  receivedUserReviews UserReview[]     @relation("ReceivedUserReviews")
-  serviceRequests     ServiceRequest[] @relation("ServiceRequests")
+  dealsAsSeller       Deal[]            @relation("DealsAsSeller")
+  dealsAsBuyer        Deal[]            @relation("DealsAsBuyer")
+  writtenUserReviews  UserReview[]      @relation("WrittenUserReviews")
+  receivedUserReviews UserReview[]      @relation("ReceivedUserReviews")
+  serviceRequests     ServiceRequest[]  @relation("ServiceRequests")
   generatedImages     GeneratedImage[]
 
   /// Остаток звёзд на балансе. Хранится числом ради скорости: считать
@@ -1069,8 +1070,35 @@ model Message {
   createdAt DateTime  @default(now())
   readAt    DateTime?
 
+  reactions MessageReaction[]
+
   @@index([conversationId, createdAt])
   @@map("messages")
+}
+
+/// Реакция на сообщение: один человек — одна реакция.
+///
+/// Составной ключ из сообщения и пользователя делает «одну на двоих»
+/// невозможной на уровне базы: повторное нажатие заменяет прежний значок,
+/// а не копит их. Так же устроены реакции в самом Telegram, и люди этого
+/// и ждут — иначе под каждым сообщением выросла бы гирлянда от одного
+/// человека.
+model MessageReaction {
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Сам значок. Список допустимых держится в общем пакете: сервер
+  /// принимает только их, иначе в базу попал бы любой символ.
+  emoji String
+
+  createdAt DateTime @default(now())
+
+  @@id([messageId, userId])
+  @@index([messageId])
+  @@map("message_reactions")
 }
 
 // ─────────────────────────── Жалобы ───────────────────────────

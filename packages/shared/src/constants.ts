@@ -41,3 +41,21 @@ export const SERVICE_REQUEST_MINUTES = 30;
 
 /** Максимальная длина пояснения к заявке. */
 export const SERVICE_REQUEST_NOTE_MAX = 500;
+
+/**
+ * Реакции на сообщения.
+ *
+ * Десять значков, те же, что Telegram предлагает по умолчанию: люди
+ * узнают их и не задумываются, что значит каждый. Список закрытый —
+ * сервер принимает только эти значения, иначе в базу попал бы любой
+ * символ, включая то, чем неприятно получить ответ.
+ *
+ * Одна реакция от человека на сообщение: повторное нажатие по тому же
+ * значку снимает её, нажатие по другому — заменяет.
+ */
+export const MESSAGE_REACTIONS = ['👍', '❤️', '🔥', '👏', '😁', '🤔', '😢', '🙏', '👌', '🤝'] as const;
+
+export type MessageReaction = (typeof MESSAGE_REACTIONS)[number];
+
+export const isMessageReaction = (value: string): value is MessageReaction =>
+  (MESSAGE_REACTIONS as readonly string[]).includes(value);

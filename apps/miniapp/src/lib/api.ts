@@ -276,6 +276,13 @@ export const api = {
   listingCities: (kind?: string, q?: string) =>
     request<{ name: string; count: number }[]>(`/listings/cities${qs({ kind, q })}`),
 
+  /** Поставить или снять реакцию на сообщение. */
+  reactToMessage: (messageId: string, emoji: string) =>
+    request<ChatMessage>(`/chat/messages/${messageId}/reaction`, {
+      method: 'POST',
+      body: JSON.stringify({ emoji }),
+    }),
+
   myListings: () => request<MyListing[]>('/me/listings'),
   myListing: (id: string) => request<MyListing>(`/me/listings/${id}`),
   createListing: (dto: ListingDto) =>
